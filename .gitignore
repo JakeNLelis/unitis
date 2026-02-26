@@ -1,5 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+DATABASE.md
+
 # dependencies
 /node_modules
 /.pnp
@@ -36,6 +38,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# supabase (root-level only, not lib/supabase)
+/supabase
 
 # typescript
 *.tsbuildinfo

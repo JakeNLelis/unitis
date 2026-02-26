@@ -1,6 +1,5 @@
-import { AuthButton } from "@/components/auth-button";
+import { LogoutButton } from "@/components/logout-button";
 import Link from "next/link";
-import { Suspense } from "react";
 
 export default function ProtectedLayout({
   children,
@@ -15,9 +14,7 @@ export default function ProtectedLayout({
             <Link href="/" className="font-semibold">
               Plenum
             </Link>
-            <Suspense>
-              <AuthButton />
-            </Suspense>
+            <LogoutButton />
           </div>
         </nav>
         <div className="flex-1 w-full max-w-5xl p-5">{children}</div>
