@@ -128,3 +128,22 @@ export async function requireRole(allowedRoles: UserRole[]) {
 export async function requireSystemAdmin() {
   return requireRole(["system-admin"]);
 }
+
+export async function requireSEBOfficer() {
+  const profile = await getCurrentProfile();
+
+  if (!profile) {
+    redirect("/auth/login");
+  }
+
+  if (profile.role !== "seb-officer") {
+    redirect("/unauthorized");
+  }
+
+  const officer = await getSEBOfficer();
+  if (!officer) {
+    redirect("/unauthorized");
+  }
+
+  return { profile, officer };
+}

@@ -68,6 +68,23 @@ async function DashboardContent() {
           </CardContent>
         </Card>
       )}
+
+      {profile?.role === "seb-officer" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Election Management</CardTitle>
+            <CardDescription>You have SEB Officer access</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href="/officer"
+              className="text-primary hover:underline font-medium"
+            >
+              Go to Officer Panel →
+            </Link>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
