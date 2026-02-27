@@ -64,6 +64,23 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
     };
   }
 
+  // Check if user is a candidate
+  const { data: candidate } = await supabase
+    .from("candidates")
+    .select("candidate_id, full_name, email")
+    .eq("user_id", user.id)
+    .limit(1)
+    .single();
+
+  if (candidate) {
+    return {
+      id: user.id,
+      email: candidate.email,
+      role: "candidate",
+      display_name: candidate.full_name,
+    };
+  }
+
   return null;
 }
 
@@ -127,4 +144,23 @@ export async function requireRole(allowedRoles: UserRole[]) {
 
 export async function requireSystemAdmin() {
   return requireRole(["system-admin"]);
+}
+
+export async function requireSEBOfficer() {
+  const profile = await getCurrentProfile();
+
+  if (!profile) {
+    redirect("/auth/login");
+  }
+
+  if (profile.role !== "seb-officer") {
+    redirect("/unauthorized");
+  }
+
+  const officer = await getSEBOfficer();
+  if (!officer) {
+    redirect("/unauthorized");
+  }
+
+  return { profile, officer };
 }

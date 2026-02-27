@@ -1,10 +1,10 @@
-import { requireSystemAdmin } from "@/lib/auth";
+import { requireSEBOfficer } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 import Link from "next/link";
 import { Suspense } from "react";
 
-async function AdminNav() {
-  const profile = await requireSystemAdmin();
+async function OfficerNav() {
+  const { profile } = await requireSEBOfficer();
 
   return (
     <nav className="border-b">
@@ -16,22 +16,16 @@ async function AdminNav() {
             </Link>
             <div className="flex gap-4">
               <Link
-                href="/admin/officers"
+                href="/officer/elections"
                 className="text-sm hover:text-primary"
               >
-                SEB Officers
-              </Link>
-              <Link
-                href="/admin/academics"
-                className="text-sm hover:text-primary"
-              >
-                Academics
+                Elections
               </Link>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              {profile.email}
+              {profile.display_name}
             </span>
             <LogoutButton />
           </div>
@@ -41,7 +35,7 @@ async function AdminNav() {
   );
 }
 
-export default function AdminLayout({
+export default function OfficerLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -59,7 +53,7 @@ export default function AdminLayout({
           </nav>
         }
       >
-        <AdminNav />
+        <OfficerNav />
       </Suspense>
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {children}
