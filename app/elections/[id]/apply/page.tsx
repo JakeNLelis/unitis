@@ -33,20 +33,18 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
   const electionData = election as Election;
 
   // Check if candidacy period is open
+  // Use date-string comparison to avoid UTC-vs-local timezone issues
   const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const candStart = electionData.candidacy_start_date?.slice(0, 10) ?? null;
+  const candEnd = electionData.candidacy_end_date?.slice(0, 10) ?? null;
+
   const candidacyOpen =
-    electionData.candidacy_start_date &&
-    electionData.candidacy_end_date &&
-    now >= new Date(electionData.candidacy_start_date) &&
-    now <= new Date(electionData.candidacy_end_date);
+    candStart && candEnd && today >= candStart && today <= candEnd;
 
-  const candidacyNotStarted =
-    electionData.candidacy_start_date &&
-    now < new Date(electionData.candidacy_start_date);
+  const candidacyNotStarted = candStart && today < candStart;
 
-  const candidacyEnded =
-    electionData.candidacy_end_date &&
-    now > new Date(electionData.candidacy_end_date);
+  const candidacyEnded = candEnd && today > candEnd;
 
   // Fetch positions for this election
   const { data: positions } = await supabase
@@ -61,9 +59,16 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
     .select("course_id, name, acronym")
     .order("name", { ascending: true });
 
+  // Fetch partylists for this election
+  const { data: partylists } = await supabase
+    .from("partylists")
+    .select("partylist_id, name, acronym")
+    .eq("election_id", electionId)
+    .order("name", { ascending: true });
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-3xl mx-auto py-10 px-4 space-y-6">
+      <div className="container max-w-7xl mx-auto py-10 px-4 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Candidacy Application</h1>
@@ -100,8 +105,10 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
             <ApplicationForm
               electionId={electionId}
               electionName={electionData.name}
+              electionType={electionData.election_type}
               positions={positions}
               courses={courses || []}
+              partylists={partylists || []}
             />
           ) : (
             <Card>

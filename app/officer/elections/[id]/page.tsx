@@ -1,10 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSEBOfficer } from "@/lib/auth";
-import {
-  Election,
-  Position,
-  CandidateWithPosition,
-} from "@/lib/types/election";
+import { Election, Position, CandidateWithDetails } from "@/lib/types/election";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -15,14 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import Link from "next/link";
 import { AddPositionForm } from "./add-position-form";
 import { CandidateActions } from "./candidate-actions";
@@ -63,23 +51,26 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     .eq("election_id", electionId)
     .order("created_at", { ascending: true });
 
-  // Fetch candidates with position info
+  // Fetch candidates with position, course, and partylist info
   const { data: candidates } = await supabase
     .from("candidates")
-    .select("*, positions(title)")
+    .select(
+      "*, positions(title), courses(name, acronym), partylists(name, acronym)",
+    )
     .eq("election_id", electionId)
     .order("created_at", { ascending: false });
 
   const electionData = election as Election;
   const positionsData = (positions || []) as Position[];
-  const candidatesData = (candidates || []) as CandidateWithPosition[];
+  const candidatesData = (candidates || []) as CandidateWithDetails[];
 
   const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const candidacyOpen =
     electionData.candidacy_start_date &&
     electionData.candidacy_end_date &&
-    now >= new Date(electionData.candidacy_start_date) &&
-    now <= new Date(electionData.candidacy_end_date);
+    today >= electionData.candidacy_start_date.slice(0, 10) &&
+    today <= electionData.candidacy_end_date.slice(0, 10);
 
   const pendingCount = candidatesData.filter(
     (c) => c.application_status === "pending",
@@ -206,40 +197,111 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
               No applications yet.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Student ID</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {candidatesData.map((candidate) => (
-                  <TableRow key={candidate.candidate_id}>
-                    <TableCell className="font-medium">
-                      {candidate.full_name}
-                    </TableCell>
-                    <TableCell>{candidate.student_id}</TableCell>
-                    <TableCell>{candidate.positions?.title || "–"}</TableCell>
-                    <TableCell>{candidate.email}</TableCell>
-                    <TableCell>
-                      {getStatusBadge(candidate.application_status)}
-                    </TableCell>
-                    <TableCell>
-                      <CandidateActions
-                        candidateId={candidate.candidate_id}
-                        currentStatus={candidate.application_status}
-                        electionId={electionId}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-4">
+              {candidatesData.map((candidate) => (
+                <Card key={candidate.candidate_id} className="border">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {candidate.full_name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {candidate.student_id} · {candidate.email}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(candidate.application_status)}
+                        <CandidateActions
+                          candidateId={candidate.candidate_id}
+                          currentStatus={candidate.application_status}
+                          electionId={electionId}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Position</p>
+                        <p className="font-medium">
+                          {candidate.positions?.title || "–"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Course</p>
+                        <p className="font-medium">
+                          {candidate.courses?.acronym ||
+                            candidate.courses?.name ||
+                            "–"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Partylist</p>
+                        <p className="font-medium">
+                          {candidate.partylists
+                            ? `${candidate.partylists.name} (${candidate.partylists.acronym})`
+                            : "Independent"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Document links */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {candidate.cog_link && (
+                        <a
+                          href={candidate.cog_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline border rounded px-2 py-1"
+                        >
+                          COG ↗
+                        </a>
+                      )}
+                      {candidate.cor_link && (
+                        <a
+                          href={candidate.cor_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline border rounded px-2 py-1"
+                        >
+                          COR ↗
+                        </a>
+                      )}
+                      {candidate.good_moral_link && (
+                        <a
+                          href={candidate.good_moral_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline border rounded px-2 py-1"
+                        >
+                          Good Moral ↗
+                        </a>
+                      )}
+                      {!candidate.cog_link &&
+                        !candidate.cor_link &&
+                        !candidate.good_moral_link && (
+                          <span className="text-xs text-muted-foreground">
+                            No documents submitted
+                          </span>
+                        )}
+                    </div>
+
+                    {/* Rejection reason */}
+                    {candidate.application_status === "rejected" &&
+                      candidate.rejection_reason && (
+                        <div className="mt-3 bg-destructive/10 border border-destructive/20 rounded p-3">
+                          <p className="text-xs font-medium text-destructive">
+                            Rejection Reason
+                          </p>
+                          <p className="text-sm mt-1">
+                            {candidate.rejection_reason}
+                          </p>
+                        </div>
+                      )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

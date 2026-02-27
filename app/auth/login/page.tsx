@@ -1,11 +1,15 @@
 import { LoginForm } from "@/components/login-form";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getCurrentProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 async function LoginGate() {
   const user = await getCurrentUser();
   if (user) {
+    const profile = await getCurrentProfile();
+    if (profile?.role === "candidate") {
+      redirect("/candidate");
+    }
     redirect("/protected");
   }
 

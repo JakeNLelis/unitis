@@ -21,6 +21,12 @@ async function AdminNav() {
               >
                 SEB Officers
               </Link>
+              <Link
+                href="/admin/academics"
+                className="text-sm hover:text-primary"
+              >
+                Academics
+              </Link>
             </div>
           </div>
           <div className="flex items-center gap-4">

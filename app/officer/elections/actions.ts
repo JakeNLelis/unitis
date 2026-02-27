@@ -110,18 +110,32 @@ export async function createPosition(formData: FormData) {
 export async function updateCandidateStatus(
   candidateId: string,
   status: "approved" | "rejected",
+  rejectionReason?: string,
 ) {
   const officer = await getSEBOfficer();
   if (!officer) {
     return { error: "Unauthorized" };
   }
 
+  if (status === "rejected" && !rejectionReason?.trim()) {
+    return { error: "A rejection reason is required." };
+  }
+
   // Use admin client to bypass RLS — auth already verified above
   const supabase = await createAdminClient();
 
+  const updateData: Record<string, unknown> = {
+    application_status: status,
+  };
+  if (status === "rejected") {
+    updateData.rejection_reason = rejectionReason!.trim();
+  } else {
+    updateData.rejection_reason = null;
+  }
+
   const { error } = await supabase
     .from("candidates")
-    .update({ application_status: status })
+    .update(updateData)
     .eq("candidate_id", candidateId);
 
   if (error) {

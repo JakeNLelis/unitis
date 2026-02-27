@@ -19,9 +19,12 @@ export function AddPositionForm({ electionId }: { electionId: string }) {
     );
   }
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    const formData = new FormData(e.currentTarget);
     formData.set("election_id", electionId);
 
     const result = await createPosition(formData);
@@ -32,7 +35,7 @@ export function AddPositionForm({ electionId }: { electionId: string }) {
   }
 
   return (
-    <form action={handleSubmit} className="border rounded-lg p-4 space-y-3">
+    <form onSubmit={handleSubmit} className="border rounded-lg p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label htmlFor="title" className="text-sm">

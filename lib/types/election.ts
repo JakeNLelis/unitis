@@ -21,6 +21,20 @@ export interface Position {
 }
 
 export type ApplicationStatus = "pending" | "approved" | "rejected";
+export type AffiliationStatus = "pending" | "verified" | "rejected";
+
+export interface Partylist {
+  partylist_id: string;
+  election_id: string;
+  name: string;
+  acronym: string;
+  platform: string | null;
+  logo_url: string | null;
+  registered_by_email: string;
+  registered_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Candidate {
   candidate_id: string;
@@ -38,6 +52,10 @@ export interface Candidate {
   cor_link: string | null;
   good_moral_link: string | null;
   application_status: ApplicationStatus;
+  partylist_id: string | null;
+  affiliation_status: AffiliationStatus | null;
+  rejection_reason: string | null;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +64,12 @@ export interface CandidateWithPosition extends Candidate {
   positions: {
     title: string;
   };
+}
+
+export interface CandidateWithDetails extends Candidate {
+  positions: { title: string };
+  courses: { name: string; acronym: string | null };
+  partylists: { name: string; acronym: string } | null;
 }
 
 export interface PositionWithCandidates extends Position {
