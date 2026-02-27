@@ -24,7 +24,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.className} antialiased`}>
+        {children}
+        <footer className="fixed bottom-2 right-3 text-[10px] text-muted-foreground/50 select-none pointer-events-none z-50">
+          UN.010.001
+        </footer>
+      </body>
     </html>
   );
 }
