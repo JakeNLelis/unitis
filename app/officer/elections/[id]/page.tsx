@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getSEBOfficer } from "@/lib/auth";
 import { Election, Position, CandidateWithDetails } from "@/lib/types/election";
 import { notFound } from "next/navigation";
@@ -15,6 +16,10 @@ import Link from "next/link";
 import { AddPositionForm } from "./add-position-form";
 import { CandidateActions } from "./candidate-actions";
 import { PositionList } from "./position-list";
+import { EditElectionDates } from "./edit-election-dates";
+import { DeleteElectionButton } from "./delete-election-button";
+import { ElectionResults } from "./election-results";
+import { VoterMasterlist } from "./voter-masterlist";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -44,6 +49,9 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     notFound();
   }
 
+  // Use admin client to bypass RLS for data fetching
+  const adminSupabase = await createAdminClient();
+
   // Fetch positions
   const { data: positions } = await supabase
     .from("positions")
@@ -51,14 +59,27 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     .eq("election_id", electionId)
     .order("created_at", { ascending: true });
 
-  // Fetch candidates with position, course, and partylist info
-  const { data: candidates } = await supabase
+  // Fetch candidates with position, course, and partylist info (admin client to bypass RLS)
+  const { data: candidates } = await adminSupabase
     .from("candidates")
     .select(
       "*, positions(title), courses(name, acronym), partylists(name, acronym)",
     )
     .eq("election_id", electionId)
     .order("created_at", { ascending: false });
+
+  // Fetch voters
+  const { data: voters } = await adminSupabase
+    .from("voters")
+    .select("voter_id, student_id, is_voted")
+    .eq("election_id", electionId)
+    .order("created_at", { ascending: true });
+
+  const votersData = (voters || []) as {
+    voter_id: string;
+    student_id: string;
+    is_voted: boolean;
+  }[];
 
   const electionData = election as Election;
   const positionsData = (positions || []) as Position[];
@@ -71,6 +92,9 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     electionData.candidacy_end_date &&
     today >= electionData.candidacy_start_date.slice(0, 10) &&
     today <= electionData.candidacy_end_date.slice(0, 10);
+
+  const votingStarted =
+    electionData.start_date && today >= electionData.start_date.slice(0, 10);
 
   const pendingCount = candidatesData.filter(
     (c) => c.application_status === "pending",
@@ -96,45 +120,25 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           <h1 className="text-2xl font-bold">{electionData.name}</h1>
           <p className="text-muted-foreground">{electionData.election_type}</p>
         </div>
-        {candidacyOpen && (
-          <Badge variant="default">Candidacy Filing Open</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {candidacyOpen && (
+            <Badge variant="default">Candidacy Filing Open</Badge>
+          )}
+          <DeleteElectionButton
+            electionId={electionId}
+            electionName={electionData.name}
+          />
+        </div>
       </div>
 
       {/* Date info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Candidacy Filing Period
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {electionData.candidacy_start_date &&
-            electionData.candidacy_end_date ? (
-              <p className="font-medium">
-                {new Date(electionData.candidacy_start_date).toLocaleString()} –{" "}
-                {new Date(electionData.candidacy_end_date).toLocaleString()}
-              </p>
-            ) : (
-              <p className="text-muted-foreground">Not set</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Voting Period
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-medium">
-              {new Date(electionData.start_date).toLocaleString()} –{" "}
-              {new Date(electionData.end_date).toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <EditElectionDates
+        electionId={electionId}
+        candidacyStartDate={electionData.candidacy_start_date}
+        candidacyEndDate={electionData.candidacy_end_date}
+        startDate={electionData.start_date}
+        endDate={electionData.end_date}
+      />
 
       {/* Application link */}
       {candidacyOpen && (
@@ -155,6 +159,22 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Voting link */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Voting Link</CardTitle>
+          <CardDescription>
+            Share this link with students to cast their ballot
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <code className="text-sm bg-muted px-3 py-2 rounded block">
+            {typeof window !== "undefined" ? window.location.origin : ""}
+            {`/elections/${electionId}/vote`}
+          </code>
+        </CardContent>
+      </Card>
 
       {/* Positions */}
       <Card>
@@ -303,6 +323,32 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Election results — only show after voting has started */}
+      {votingStarted && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Election Results</CardTitle>
+            <CardDescription>Live vote tallies per position</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ElectionResults electionId={electionId} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Voter masterlist */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Voter Masterlist</CardTitle>
+          <CardDescription>
+            Manage the list of student IDs authorized to vote in this election
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <VoterMasterlist electionId={electionId} voters={votersData} />
         </CardContent>
       </Card>
     </div>

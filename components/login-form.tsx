@@ -41,10 +41,14 @@ export function LoginForm({
 
       // Route based on user role stored in metadata
       const role = data.user?.user_metadata?.role;
-      if (role === "candidate") {
+      if (role === "system-admin") {
+        router.push("/admin");
+      } else if (role === "seb-officer") {
+        router.push("/officer");
+      } else if (role === "candidate") {
         router.push("/candidate");
       } else {
-        router.push("/protected");
+        router.push("/");
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");

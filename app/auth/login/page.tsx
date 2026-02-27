@@ -3,14 +3,24 @@ import { getCurrentUser, getCurrentProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+function redirectByRole(role: string | undefined) {
+  switch (role) {
+    case "system-admin":
+      redirect("/admin");
+    case "seb-officer":
+      redirect("/officer");
+    case "candidate":
+      redirect("/candidate");
+    default:
+      redirect("/");
+  }
+}
+
 async function LoginGate() {
   const user = await getCurrentUser();
   if (user) {
     const profile = await getCurrentProfile();
-    if (profile?.role === "candidate") {
-      redirect("/candidate");
-    }
-    redirect("/protected");
+    redirectByRole(profile?.role);
   }
 
   return (

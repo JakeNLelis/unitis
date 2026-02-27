@@ -125,8 +125,18 @@ async function ElectionsList() {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
+                {status.label === "Voting Open" && (
+                  <Link href={`/elections/${election.election_id}/vote`}>
+                    <Button size="sm">Vote Now</Button>
+                  </Link>
+                )}
                 <Link href={`/elections/${election.election_id}/apply`}>
-                  <Button size="sm">
+                  <Button
+                    size="sm"
+                    variant={
+                      status.label === "Voting Open" ? "outline" : "default"
+                    }
+                  >
                     {candidacyOpen
                       ? "Apply as Candidate"
                       : "View Candidacy Info"}
