@@ -117,7 +117,9 @@ export function BallotForm({
     return (
       <Card className="max-w-lg mx-auto">
         <CardContent className="pt-6 text-center space-y-4">
-          <div className="text-5xl">✓</div>
+          <div className="mx-auto size-12 rounded-full bg-green-600 flex items-center justify-center text-white text-xl font-bold">
+            ✓
+          </div>
           <h2 className="text-2xl font-bold">Vote Submitted!</h2>
           <p className="text-muted-foreground">
             Your ballot for{" "}

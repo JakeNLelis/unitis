@@ -12,7 +12,19 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Auth check: require a logged-in user
   const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
+  }
 
   const { data: candidates, error } = await supabase
     .from("candidates")

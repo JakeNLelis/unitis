@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -42,7 +42,7 @@ export function ElectionResults({ electionId }: ElectionResultsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function fetchResults() {
+  const fetchResults = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -60,13 +60,13 @@ export function ElectionResults({ electionId }: ElectionResultsProps) {
     }
 
     setLoading(false);
-  }
+  }, [electionId]);
 
   useEffect(() => {
     fetchResults();
     // Future: subscribe to realtime channel here
     // return () => { unsubscribe(); };
-  }, [electionId]);
+  }, [fetchResults]);
 
   if (loading) {
     return <p className="text-muted-foreground">Loading results...</p>;
@@ -85,7 +85,8 @@ export function ElectionResults({ electionId }: ElectionResultsProps) {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            Total votes cast: <span className="font-semibold">{totalVoters}</span>
+            Total votes cast:{" "}
+            <span className="font-semibold">{totalVoters}</span>
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchResults}>

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getTodayStr } from "@/lib/utils";
 
 export async function registerPartylist(formData: FormData) {
   const election_id = formData.get("election_id") as string;
@@ -40,9 +41,8 @@ export async function registerPartylist(formData: FormData) {
     return { error: "This election has been archived." };
   }
 
-  // Use date-string comparison to avoid UTC-vs-local timezone issues
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  // Use string-based date comparison to avoid UTC timezone mismatch
+  const today = getTodayStr();
   const candStart = election.candidacy_start_date?.slice(0, 10) ?? null;
   const candEnd = election.candidacy_end_date?.slice(0, 10) ?? null;
   if (!candStart || !candEnd || today < candStart || today > candEnd) {
@@ -102,8 +102,37 @@ export async function updateAffiliationStatus(
   candidateId: string,
   status: "verified" | "rejected",
 ) {
-  // Use admin client since this could be called by partylist rep
+  // Auth check: verify the caller is logged in
+  const supabaseAuth = await createClient();
+  const {
+    data: { user },
+  } = await supabaseAuth.auth.getUser();
+  if (!user) return { error: "You must be logged in to perform this action." };
+
   const adminSupabase = await createAdminClient();
+
+  // Verify the caller is the partylist rep for this candidate's partylist
+  const { data: candidate } = await adminSupabase
+    .from("candidates")
+    .select("partylist_id, partylists(registered_by_email)")
+    .eq("candidate_id", candidateId)
+    .single();
+
+  if (!candidate || !candidate.partylist_id) {
+    return { error: "Candidate is not affiliated with a partylist." };
+  }
+
+  const partylist = candidate.partylists as unknown as {
+    registered_by_email: string;
+  } | null;
+  if (
+    !partylist ||
+    partylist.registered_by_email.toLowerCase() !== user.email?.toLowerCase()
+  ) {
+    return {
+      error: "Only the partylist representative can manage affiliations.",
+    };
+  }
 
   const updateData: Record<string, unknown> = {
     affiliation_status: status,

@@ -49,8 +49,10 @@ export function PartylistRegistrationForm({
     return (
       <Card className="max-w-2xl mx-auto">
         <CardContent className="pt-6 text-center space-y-4">
-          <div className="text-4xl">🎉</div>
-          <h2 className="text-xl font-bold">Partylist Registered!</h2>
+          <div className="mx-auto size-12 rounded-full bg-green-600/10 flex items-center justify-center">
+            <span className="text-lg font-bold text-green-600">&#10003;</span>
+          </div>
+          <h2 className="text-xl font-bold">Partylist registered</h2>
           <p className="text-muted-foreground">
             Your partylist has been successfully registered for{" "}
             <strong>{electionName}</strong>. Candidates can now select your

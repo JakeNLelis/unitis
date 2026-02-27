@@ -62,7 +62,11 @@ export function AddPositionForm({ electionId }: { electionId: string }) {
           />
         </div>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={isLoading}>
           {isLoading ? "Adding..." : "Add"}

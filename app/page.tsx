@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { toDateStr } from "@/lib/utils";
+import { Election } from "@/lib/types/election";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,46 +12,45 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Shield,
+  Vote,
+  FileText,
+  Search,
+  Users,
+  Settings,
+  Calendar,
+  //ArrowRight,
+  ChevronRight,
+} from "lucide-react";
 
-interface ElectionRow {
-  election_id: string;
-  name: string;
-  election_type: string;
-  start_date: string;
-  end_date: string;
-  candidacy_start_date: string | null;
-  candidacy_end_date: string | null;
-  is_archived: boolean;
-}
-
-/** Extract YYYY-MM-DD from any date/timestamp string or Date object */
-function toDateStr(value: string | Date): string {
-  if (value instanceof Date) {
-    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
-  }
-  // DB may return "2026-02-27" or "2026-02-27T00:00:00+00:00" — take first 10 chars
-  return value.slice(0, 10);
-}
-
-function getElectionStatus(election: ElectionRow) {
+function getElectionStatus(election: Election) {
   const today = toDateStr(new Date());
   const start = toDateStr(election.start_date);
   const end = toDateStr(election.end_date);
 
   if (today >= start && today <= end) {
-    return { label: "Voting Open", color: "bg-green-600" };
+    return { label: "Voting Open", variant: "default" as const, icon: Vote };
   }
   if (election.candidacy_start_date && election.candidacy_end_date) {
     const candStart = toDateStr(election.candidacy_start_date);
     const candEnd = toDateStr(election.candidacy_end_date);
     if (today >= candStart && today <= candEnd) {
-      return { label: "Filing Open", color: "bg-blue-600" };
+      return {
+        label: "Filing Open",
+        variant: "secondary" as const,
+        icon: FileText,
+      };
     }
   }
   if (today < start) {
-    return { label: "Upcoming", color: "bg-yellow-600" };
+    return {
+      label: "Upcoming",
+      variant: "secondary" as const,
+      icon: Calendar,
+    };
   }
-  return { label: "Ended", color: "bg-gray-500" };
+  return { label: "Ended", variant: "outline" as const, icon: Calendar };
 }
 
 async function ElectionsList() {
@@ -61,7 +62,7 @@ async function ElectionsList() {
     .eq("is_archived", false)
     .order("start_date", { ascending: true });
 
-  const activeElections = (elections as ElectionRow[] | null)?.filter((e) => {
+  const activeElections = (elections as Election[] | null)?.filter((e) => {
     const status = getElectionStatus(e);
     return status.label !== "Ended";
   });
@@ -69,9 +70,15 @@ async function ElectionsList() {
   if (!activeElections || activeElections.length === 0) {
     return (
       <Card>
-        <CardContent className="pt-6 text-center">
-          <p className="text-muted-foreground">
-            No upcoming or active elections at this time.
+        <CardContent className="py-12 text-center">
+          <div className="mx-auto mb-3 size-10 rounded-full bg-muted flex items-center justify-center">
+            <Vote className="size-5 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground font-medium">
+            No active elections at this time
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Check back later for upcoming elections.
           </p>
         </CardContent>
       </Card>
@@ -82,6 +89,7 @@ async function ElectionsList() {
     <div className="grid gap-4">
       {activeElections.map((election) => {
         const status = getElectionStatus(election);
+        const StatusIcon = status.icon;
         const today = toDateStr(new Date());
         const candidacyOpen =
           election.candidacy_start_date &&
@@ -90,79 +98,103 @@ async function ElectionsList() {
           today <= toDateStr(election.candidacy_end_date);
 
         return (
-          <Card key={election.election_id}>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <CardTitle className="text-xl">{election.name}</CardTitle>
-                  <CardDescription>{election.election_type}</CardDescription>
+          <Card
+            key={election.election_id}
+            className="overflow-hidden transition-all hover:shadow-md hover:border-primary/30"
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <StatusIcon className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{election.name}</CardTitle>
+                    <CardDescription className="mt-0.5">
+                      {election.election_type}
+                    </CardDescription>
+                  </div>
                 </div>
-                <Badge className={status.color}>{status.label}</Badge>
+                <Badge variant={status.variant}>{status.label}</Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Voting Period:</span>{" "}
-                  {new Date(election.start_date).toLocaleDateString()} –{" "}
-                  {new Date(election.end_date).toLocaleDateString()}
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calendar className="size-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">Voting:</span>{" "}
+                  <span className="font-medium">
+                    {new Date(election.start_date).toLocaleDateString()} –{" "}
+                    {new Date(election.end_date).toLocaleDateString()}
+                  </span>
                 </div>
                 {election.candidacy_start_date &&
                   election.candidacy_end_date && (
-                    <div>
+                    <div className="flex items-center gap-2">
+                      <FileText className="size-3.5 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        Filing Period:
+                        Filing:
                       </span>{" "}
-                      {new Date(
-                        election.candidacy_start_date,
-                      ).toLocaleDateString()}{" "}
-                      –{" "}
-                      {new Date(
-                        election.candidacy_end_date,
-                      ).toLocaleDateString()}
+                      <span className="font-medium">
+                        {new Date(
+                          election.candidacy_start_date,
+                        ).toLocaleDateString()}{" "}
+                        –{" "}
+                        {new Date(
+                          election.candidacy_end_date,
+                        ).toLocaleDateString()}
+                      </span>
                     </div>
                   )}
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-1 border-t">
                 {status.label === "Voting Open" && (
-                  <Link href={`/elections/${election.election_id}/vote`}>
-                    <Button size="sm">Vote Now</Button>
-                  </Link>
+                  <Button asChild size="sm">
+                    <Link href={`/elections/${election.election_id}/vote`}>
+                      <Vote className="size-4" />
+                      Vote Now
+                    </Link>
+                  </Button>
                 )}
-                <Link href={`/elections/${election.election_id}/apply`}>
-                  <Button
-                    size="sm"
-                    variant={
-                      status.label === "Voting Open" ? "outline" : "default"
-                    }
-                  >
+                <Button
+                  asChild
+                  size="sm"
+                  variant={
+                    status.label === "Voting Open" ? "outline" : "default"
+                  }
+                >
+                  <Link href={`/elections/${election.election_id}/apply`}>
+                    <FileText className="size-4" />
                     {candidacyOpen
                       ? "Apply as Candidate"
                       : "View Candidacy Info"}
-                  </Button>
-                </Link>
-                <Link href={`/elections/${election.election_id}/status`}>
-                  <Button size="sm" variant="outline">
-                    Check Application Status
-                  </Button>
-                </Link>
-                {candidacyOpen && (
-                  <Link
-                    href={`/elections/${election.election_id}/register-partylist`}
-                  >
-                    <Button size="sm" variant="outline">
-                      Register Partylist
-                    </Button>
                   </Link>
-                )}
-                <Link
-                  href={`/elections/${election.election_id}/manage-partylist`}
-                >
-                  <Button size="sm" variant="ghost">
-                    Manage Partylist
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/elections/${election.election_id}/status`}>
+                    <Search className="size-4" />
+                    Check Status
+                  </Link>
+                </Button>
+                {candidacyOpen && (
+                  <Button asChild size="sm" variant="outline">
+                    <Link
+                      href={`/elections/${election.election_id}/register-partylist`}
+                    >
+                      <Users className="size-4" />
+                      Register Partylist
+                    </Link>
                   </Button>
-                </Link>
+                )}
+                <Button asChild size="sm" variant="ghost">
+                  <Link
+                    href={`/elections/${election.election_id}/manage-partylist`}
+                  >
+                    <Settings className="size-4" />
+                    Manage Partylist
+                  </Link>
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -175,31 +207,53 @@ async function ElectionsList() {
 export default function Home() {
   return (
     <main className="min-h-screen bg-background">
-      <div className="container max-w-4xl mx-auto py-10 px-4 space-y-8">
-        {/* Header */}
+      {/* Hero */}
+      <div className="border-b bg-card">
+        <div className="container max-w-4xl mx-auto px-4 py-16 sm:py-20">
+          <div className="flex flex-col items-center text-center gap-6">
+            <div className="size-14 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <Shield className="size-7 text-primary-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-balance">
+                Plenum
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-md mx-auto text-balance">
+                Secure, transparent election management for university student
+                bodies
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <Link href="/auth/login">
+                Sign in
+                <ChevronRight className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Elections */}
+      <div className="container max-w-4xl mx-auto px-4 py-10 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold">Plenum</h1>
-            <p className="text-muted-foreground mt-1">
-              University Election System
+            <h2 className="text-xl font-semibold">Active elections</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Participate in ongoing or upcoming elections
             </p>
           </div>
-          <Link href="/auth/login">
-            <Button variant="outline">Login</Button>
-          </Link>
         </div>
-
-        {/* Elections */}
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold">Active Elections</h2>
-          <Suspense
-            fallback={
-              <p className="text-muted-foreground">Loading elections...</p>
-            }
-          >
-            <ElectionsList />
-          </Suspense>
-        </section>
+        <Suspense
+          fallback={
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">Loading elections...</p>
+              </CardContent>
+            </Card>
+          }
+        >
+          <ElectionsList />
+        </Suspense>
       </div>
     </main>
   );

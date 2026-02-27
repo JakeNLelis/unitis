@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
   turbopack: {
     resolveAlias: {
       // Required for @react-pdf/renderer

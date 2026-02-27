@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSEBOfficer } from "@/lib/auth";
 import { Election } from "@/lib/types/election";
+import { toDateStr } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -17,27 +19,22 @@ function getElectionStatus(election: Election): {
   label: string;
   variant: "default" | "secondary" | "outline" | "destructive";
 } {
-  const now = new Date();
-  const start = new Date(election.start_date);
-  const end = new Date(election.end_date);
-  const candidacyStart = election.candidacy_start_date
-    ? new Date(election.candidacy_start_date)
+  const today = toDateStr(new Date());
+  const start = toDateStr(election.start_date);
+  const end = toDateStr(election.end_date);
+  const candStart = election.candidacy_start_date
+    ? toDateStr(election.candidacy_start_date)
     : null;
-  const candidacyEnd = election.candidacy_end_date
-    ? new Date(election.candidacy_end_date)
+  const candEnd = election.candidacy_end_date
+    ? toDateStr(election.candidacy_end_date)
     : null;
 
   if (election.is_archived) return { label: "Archived", variant: "outline" };
-  if (now >= start && now <= end)
+  if (today >= start && today <= end)
     return { label: "Voting Open", variant: "default" };
-  if (
-    candidacyStart &&
-    candidacyEnd &&
-    now >= candidacyStart &&
-    now <= candidacyEnd
-  )
+  if (candStart && candEnd && today >= candStart && today <= candEnd)
     return { label: "Filing Open", variant: "secondary" };
-  if (now < start) return { label: "Upcoming", variant: "secondary" };
+  if (today < start) return { label: "Upcoming", variant: "secondary" };
   return { label: "Ended", variant: "outline" };
 }
 
@@ -122,15 +119,20 @@ export default function ElectionsPage() {
             Manage your elections and candidacy applications
           </p>
         </div>
-        <Link href="/officer/elections/new">
-          <Button>Create Election</Button>
-        </Link>
+        <Button asChild>
+          <Link href="/officer/elections/new">
+            <Plus className="size-4" />
+            Create Election
+          </Link>
+        </Button>
       </div>
 
       <Suspense
         fallback={
-          <div className="border rounded-lg p-8 text-center text-muted-foreground">
-            Loading elections...
+          <div className="space-y-4">
+            <div className="h-24 bg-muted/50 rounded-lg animate-pulse" />
+            <div className="h-24 bg-muted/50 rounded-lg animate-pulse" />
+            <div className="h-24 bg-muted/50 rounded-lg animate-pulse" />
           </div>
         }
       >

@@ -65,7 +65,9 @@ async function VotingContent({ electionId }: { electionId: string }) {
           <CardContent className="pt-6 text-center space-y-4">
             {alreadyVoted ? (
               <>
-                <div className="text-5xl">✓</div>
+                <div className="mx-auto size-12 rounded-full bg-green-600 flex items-center justify-center text-white text-xl font-bold">
+                  ✓
+                </div>
                 <h2 className="text-2xl font-bold">Already Voted</h2>
                 <p className="text-muted-foreground">
                   You have already submitted your ballot for{" "}
@@ -82,9 +84,9 @@ async function VotingContent({ electionId }: { electionId: string }) {
                 </p>
               </>
             )}
-            <Link href="/">
-              <Button variant="outline">Back to Home</Button>
-            </Link>
+            <Button asChild variant="outline">
+              <Link href="/">Back to Home</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -154,7 +156,15 @@ export default function VotePage({
     <main className="min-h-screen bg-background">
       <div className="container max-w-3xl mx-auto py-10 px-4">
         <Suspense
-          fallback={<p className="text-muted-foreground">Loading ballot...</p>}
+          fallback={
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+                <div className="h-4 w-40 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="h-48 bg-muted/50 rounded-lg animate-pulse" />
+            </div>
+          }
         >
           <VotePageWrapper params={params} />
         </Suspense>

@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -138,7 +139,12 @@ export default function NewElectionPage() {
               </div>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2">
+                <AlertCircle className="size-4 text-destructive shrink-0" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
 
             <div className="flex gap-4">
               <Button type="submit" disabled={isLoading}>

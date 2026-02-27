@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getTodayStr } from "@/lib/utils";
 
 interface BallotSubmission {
   electionId: string;
@@ -45,11 +46,12 @@ export async function submitBallot(data: BallotSubmission) {
     return { error: "This election has been archived." };
   }
 
-  const now = new Date();
-  const start = new Date(election.start_date);
-  const end = new Date(election.end_date);
+  // Use string-based date comparison to avoid UTC timezone mismatch
+  const today = getTodayStr();
+  const start = election.start_date.slice(0, 10);
+  const end = election.end_date.slice(0, 10);
 
-  if (now < start || now > end) {
+  if (today < start || today > end) {
     return { error: "Voting is not currently open for this election." };
   }
 
@@ -143,6 +145,7 @@ export async function submitBallot(data: BallotSubmission) {
   // Validate selections
   const allCandidateIds: string[] = [];
 
+  // Collect all selected candidate IDs first
   for (const position of positions) {
     const selected = selections[position.position_id] || [];
 
@@ -152,32 +155,40 @@ export async function submitBallot(data: BallotSubmission) {
       };
     }
 
-    // Verify each selected candidate is approved and belongs to this position
-    for (const candidateId of selected) {
-      const { data: candidate } = await adminSupabase
-        .from("candidates")
-        .select("candidate_id, position_id, application_status")
-        .eq("candidate_id", candidateId)
-        .single();
-
-      if (!candidate) {
-        return { error: "Invalid candidate selection." };
-      }
-
-      if (candidate.position_id !== position.position_id) {
-        return { error: "Candidate does not belong to the selected position." };
-      }
-
-      if (candidate.application_status !== "approved") {
-        return { error: "You can only vote for approved candidates." };
-      }
-
-      allCandidateIds.push(candidateId);
-    }
+    allCandidateIds.push(...selected);
   }
 
   if (allCandidateIds.length === 0) {
     return { error: "You must select at least one candidate." };
+  }
+
+  // Fetch all selected candidates in a single query instead of N+1
+  const { data: validCandidates } = await adminSupabase
+    .from("candidates")
+    .select("candidate_id, position_id, application_status")
+    .in("candidate_id", allCandidateIds);
+
+  if (!validCandidates || validCandidates.length !== allCandidateIds.length) {
+    return { error: "Invalid candidate selection." };
+  }
+
+  // Validate each candidate belongs to the correct position and is approved
+  const candidateMap = new Map(validCandidates.map((c) => [c.candidate_id, c]));
+
+  for (const position of positions) {
+    const selected = selections[position.position_id] || [];
+    for (const candidateId of selected) {
+      const candidate = candidateMap.get(candidateId);
+      if (!candidate) {
+        return { error: "Invalid candidate selection." };
+      }
+      if (candidate.position_id !== position.position_id) {
+        return { error: "Candidate does not belong to the selected position." };
+      }
+      if (candidate.application_status !== "approved") {
+        return { error: "You can only vote for approved candidates." };
+      }
+    }
   }
 
   // Create vote record

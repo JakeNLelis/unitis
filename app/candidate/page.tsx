@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ExternalLink } from "lucide-react";
 
 interface CandidateApplication {
   candidate_id: string;
@@ -188,9 +189,9 @@ async function CandidateDashboard() {
                       href={app.cog_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline border rounded px-2 py-1"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline border rounded px-2 py-1"
                     >
-                      COG ↗
+                      COG <ExternalLink className="size-3" />
                     </a>
                   )}
                   {app.cor_link && (
@@ -198,9 +199,9 @@ async function CandidateDashboard() {
                       href={app.cor_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline border rounded px-2 py-1"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline border rounded px-2 py-1"
                     >
-                      COR ↗
+                      COR <ExternalLink className="size-3" />
                     </a>
                   )}
                   {app.good_moral_link && (
@@ -208,9 +209,9 @@ async function CandidateDashboard() {
                       href={app.good_moral_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline border rounded px-2 py-1"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline border rounded px-2 py-1"
                     >
-                      Good Moral ↗
+                      Good Moral <ExternalLink className="size-3" />
                     </a>
                   )}
                   {!app.cog_link && !app.cor_link && !app.good_moral_link && (
@@ -243,8 +244,13 @@ export default function CandidatePage() {
   return (
     <Suspense
       fallback={
-        <div className="space-y-4">
-          <p className="text-muted-foreground">Loading your applications...</p>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-72 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-40 bg-muted/50 rounded-lg animate-pulse" />
+          <div className="h-40 bg-muted/50 rounded-lg animate-pulse" />
         </div>
       }
     >

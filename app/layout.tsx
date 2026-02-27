@@ -8,7 +8,12 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Plenum",
+  title: {
+    default: "Plenum",
+    template: "%s — Plenum",
+  },
+  description:
+    "Secure, transparent election management for university student bodies.",
 };
 
 const inter = Inter({
@@ -26,8 +31,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
         {children}
-        <footer className="fixed bottom-2 right-3 text-[10px] text-muted-foreground/50 select-none pointer-events-none z-50">
-          UN.010.001
+        <footer className="fixed bottom-2 right-3 text-[10px] text-muted-foreground/40 select-none pointer-events-none z-50 tracking-wider font-medium">
+          UN.010.003
         </footer>
       </body>
     </html>

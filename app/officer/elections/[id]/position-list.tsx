@@ -81,7 +81,11 @@ function PositionItem({
             />
           </div>
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
         <div className="flex gap-2">
           <Button size="sm" onClick={handleUpdate} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save"}
@@ -127,7 +131,11 @@ function PositionItem({
           {isDeleting ? "Deleting..." : "Delete"}
         </Button>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mt-2">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
     </div>
   );
 }

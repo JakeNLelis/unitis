@@ -280,17 +280,14 @@ export function ApplicationForm({
                   <span className="font-semibold">{credentials.password}</span>
                 </div>
               </div>
-              <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-3 text-sm text-yellow-800 dark:text-yellow-200">
+              <div className="bg-accent border border-primary/20 rounded-md p-3 text-sm text-foreground">
                 <strong>Important:</strong> Please write down or screenshot
                 these credentials. You will not be able to see the password
                 again.
               </div>
-              <a
-                href="/auth/login"
-                className="inline-flex items-center justify-center w-full rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-              >
-                Go to Login
-              </a>
+              <Button asChild className="w-full">
+                <a href="/auth/login">Go to Login</a>
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -302,12 +299,9 @@ export function ApplicationForm({
                 You already have an account from a previous application. Log in
                 with your existing credentials to check your status.
               </p>
-              <a
-                href="/auth/login"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-              >
-                Go to Login
-              </a>
+              <Button asChild>
+                <a href="/auth/login">Go to Login</a>
+              </Button>
             </CardContent>
           </Card>
         )}

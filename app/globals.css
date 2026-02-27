@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 220 20% 98%;
     --foreground: 220 20% 10%;
     --card: 0 0% 100%;
     --card-foreground: 220 20% 10%;
@@ -23,38 +23,13 @@
     --border: 220 15% 88%;
     --input: 220 15% 88%;
     --ring: 220 85% 45%;
+    --sidebar-background: 0 0% 100%;
     --chart-1: 220 85% 45%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-  }
-  .dark {
-    --background: 220 20% 6%;
-    --foreground: 0 0% 98%;
-    --card: 220 20% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 220 20% 8%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 220 85% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 14%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 220 15% 14%;
-    --muted-foreground: 220 10% 60%;
-    --accent: 220 30% 18%;
-    --accent-foreground: 220 85% 70%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 220 85% 55%;
-    --chart-1: 220 85% 55%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
   }
 }
 
@@ -64,5 +39,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }

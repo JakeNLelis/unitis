@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getTodayStr } from "@/lib/utils";
 import crypto from "crypto";
 
 function generatePassword(): string {
@@ -77,9 +78,8 @@ export async function submitCandidacyApplication(formData: FormData) {
     return { error: "This election has been archived." };
   }
 
-  // Use date-string comparison to avoid UTC-vs-local timezone issues
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  // Use string-based date comparison to avoid UTC timezone mismatch
+  const today = getTodayStr();
   const candStart = election.candidacy_start_date?.slice(0, 10) ?? null;
   const candEnd = election.candidacy_end_date?.slice(0, 10) ?? null;
   if (!candStart || !candEnd || today < candStart || today > candEnd) {
@@ -107,10 +107,21 @@ export async function submitCandidacyApplication(formData: FormData) {
   let userId: string | null = null;
   let isExistingAccount = false;
 
-  const { data: existingUsers } = await adminSupabase.auth.admin.listUsers();
-  const existingUser = existingUsers?.users?.find(
-    (u) => u.email?.toLowerCase() === email.toLowerCase(),
-  );
+  // Look up existing user by email directly (avoid loading all users)
+  const { data: existingUserLookup } = await adminSupabase
+    .from("candidates")
+    .select("user_id")
+    .eq("email", email.toLowerCase())
+    .limit(1)
+    .maybeSingle();
+
+  let existingUser: { id: string } | null = null;
+  if (existingUserLookup?.user_id) {
+    const { data: userById } = await adminSupabase.auth.admin.getUserById(
+      existingUserLookup.user_id,
+    );
+    existingUser = userById?.user ?? null;
+  }
 
   if (existingUser) {
     // Reuse existing auth account (candidate applying to another position/election)
