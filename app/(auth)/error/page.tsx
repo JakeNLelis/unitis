@@ -69,7 +69,7 @@ export default function Page({
           </CardHeader>
           <CardContent className="flex justify-center">
             <Button asChild variant="outline">
-              <Link href="/auth/login">Back to sign in</Link>
+              <Link href="/login">Back to sign in</Link>
             </Button>
           </CardContent>
         </Card>

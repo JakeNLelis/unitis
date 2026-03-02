@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getElectionResults } from "@/app/elections/[id]/vote/actions";
+import { getElectionResults } from "@/app/(public)/elections/[id]/vote/actions";
 
 interface CandidateResult {
   candidate_id: string;

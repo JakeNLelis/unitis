@@ -16,7 +16,7 @@ async function VotingContent({ electionId }: { electionId: string }) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   const adminSupabase = await createAdminClient();

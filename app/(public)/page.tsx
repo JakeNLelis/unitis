@@ -20,7 +20,7 @@ export default function Home() {
               </p>
             </div>
             <Button asChild variant="outline" size="sm" className="gap-1.5">
-              <Link href="/auth/login">
+              <Link href="/login">
                 Sign in
                 <ChevronRight className="size-4" />
               </Link>

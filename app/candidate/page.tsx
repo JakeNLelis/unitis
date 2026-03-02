@@ -69,7 +69,7 @@ async function CandidateDashboard() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   const supabase = await createClient();

@@ -286,7 +286,7 @@ export function ApplicationForm({
                 again.
               </div>
               <Button asChild className="w-full">
-                <a href="/auth/login">Go to Login</a>
+                <a href="/login">Go to Login</a>
               </Button>
             </CardContent>
           </Card>
@@ -300,7 +300,7 @@ export function ApplicationForm({
                 with your existing credentials to check your status.
               </p>
               <Button asChild>
-                <a href="/auth/login">Go to Login</a>
+                <a href="/login">Go to Login</a>
               </Button>
             </CardContent>
           </Card>
