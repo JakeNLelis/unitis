@@ -18,6 +18,7 @@ import {
   Users,
   Settings,
   Calendar,
+  ShieldCheck,
 } from "lucide-react";
 
 function getElectionStatus(election: Election) {
@@ -171,6 +172,14 @@ export async function ElectionsList() {
                   <Link href={`/elections/${election.election_id}/status`}>
                     <Search className="size-4" />
                     Check Status
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link
+                    href={`/elections/${election.election_id}/check-eligibility`}
+                  >
+                    <ShieldCheck className="size-4" />
+                    Check Eligibility
                   </Link>
                 </Button>
                 {candidacyOpen && (
