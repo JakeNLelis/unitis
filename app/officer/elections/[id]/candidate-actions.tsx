@@ -21,7 +21,7 @@ export function CandidateActions({
 }: {
   candidateId: string;
   currentStatus: string;
-  electionId: string;
+  electionId?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -114,7 +114,11 @@ export function CandidateActions({
               onChange={(e) => setRejectionReason(e.target.value)}
               rows={4}
             />
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button

@@ -2,7 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSEBOfficer } from "@/lib/auth";
 import { Election, Position, CandidateWithDetails } from "@/lib/types/election";
+import { getTodayStr } from "@/lib/utils";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,8 +15,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
+import {
+  ExternalLink,
+  FileText,
+  LinkIcon,
+  Users,
+  Vote,
+  BarChart3,
+  ListChecks,
+  Trash2,
+} from "lucide-react";
 import { AddPositionForm } from "./add-position-form";
 import { CandidateActions } from "./candidate-actions";
+import { CopyableUrl } from "./copyable-url";
 import { PositionList } from "./position-list";
 import { EditElectionDates } from "./edit-election-dates";
 import { DeleteElectionButton } from "./delete-election-button";
@@ -85,8 +98,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
   const positionsData = (positions || []) as Position[];
   const candidatesData = (candidates || []) as CandidateWithDetails[];
 
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const today = getTodayStr();
   const candidacyOpen =
     electionData.candidacy_start_date &&
     electionData.candidacy_end_date &&
@@ -99,6 +111,12 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
   const pendingCount = candidatesData.filter(
     (c) => c.application_status === "pending",
   ).length;
+
+  // Build the base URL from request headers (server component — no window)
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  const proto = headersList.get("x-forwarded-proto") || "http";
+  const baseUrl = `${proto}://${host}`;
 
   // Build the public application URL
   const applicationUrl = `/elections/${electionId}/apply`;
@@ -144,18 +162,22 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       {candidacyOpen && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Candidacy Application Link
-            </CardTitle>
-            <CardDescription>
-              Share this link with students who want to apply as candidates
-            </CardDescription>
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <LinkIcon className="size-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-sm font-medium">
+                  Candidacy Application Link
+                </CardTitle>
+                <CardDescription>
+                  Share this link with students who want to apply as candidates
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <code className="text-sm bg-muted px-3 py-2 rounded block">
-              {typeof window !== "undefined" ? window.location.origin : ""}
-              {applicationUrl}
-            </code>
+            <CopyableUrl url={`${baseUrl}${applicationUrl}`} />
           </CardContent>
         </Card>
       )}
@@ -163,16 +185,20 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       {/* Voting link */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Voting Link</CardTitle>
-          <CardDescription>
-            Share this link with students to cast their ballot
-          </CardDescription>
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Vote className="size-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-medium">Voting Link</CardTitle>
+              <CardDescription>
+                Share this link with students to cast their ballot
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <code className="text-sm bg-muted px-3 py-2 rounded block">
-            {typeof window !== "undefined" ? window.location.origin : ""}
-            {`/elections/${electionId}/vote`}
-          </code>
+          <CopyableUrl url={`${baseUrl}/elections/${electionId}/vote`} />
         </CardContent>
       </Card>
 
@@ -180,12 +206,17 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Positions</CardTitle>
-              <CardDescription>
-                {positionsData.length} position
-                {positionsData.length !== 1 ? "s" : ""} defined
-              </CardDescription>
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ListChecks className="size-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Positions</CardTitle>
+                <CardDescription>
+                  {positionsData.length} position
+                  {positionsData.length !== 1 ? "s" : ""} defined
+                </CardDescription>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -201,13 +232,18 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Candidate Applications</CardTitle>
-              <CardDescription>
-                {candidatesData.length} total application
-                {candidatesData.length !== 1 ? "s" : ""}
-                {pendingCount > 0 && ` · ${pendingCount} pending review`}
-              </CardDescription>
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="size-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Candidate Applications</CardTitle>
+                <CardDescription>
+                  {candidatesData.length} total application
+                  {candidatesData.length !== 1 ? "s" : ""}
+                  {pendingCount > 0 && ` · ${pendingCount} pending review`}
+                </CardDescription>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -217,109 +253,110 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
               No applications yet.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="divide-y">
               {candidatesData.map((candidate) => (
-                <Card key={candidate.candidate_id} className="border">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {candidate.full_name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {candidate.student_id} · {candidate.email}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(candidate.application_status)}
-                        <CandidateActions
-                          candidateId={candidate.candidate_id}
-                          currentStatus={candidate.application_status}
-                          electionId={electionId}
-                        />
-                      </div>
+                <div
+                  key={candidate.candidate_id}
+                  className="py-4 first:pt-0 last:pb-0"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg">
+                        {candidate.full_name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {candidate.student_id} · {candidate.email}
+                      </p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Position</p>
-                        <p className="font-medium">
-                          {candidate.positions?.title || "–"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Course</p>
-                        <p className="font-medium">
-                          {candidate.courses?.acronym ||
-                            candidate.courses?.name ||
-                            "–"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Partylist</p>
-                        <p className="font-medium">
-                          {candidate.partylists
-                            ? `${candidate.partylists.name} (${candidate.partylists.acronym})`
-                            : "Independent"}
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(candidate.application_status)}
+                      <CandidateActions
+                        candidateId={candidate.candidate_id}
+                        currentStatus={candidate.application_status}
+                        electionId={electionId}
+                      />
                     </div>
+                  </div>
 
-                    {/* Document links */}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {candidate.cog_link && (
-                        <a
-                          href={candidate.cog_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline border rounded px-2 py-1"
-                        >
-                          COG ↗
-                        </a>
-                      )}
-                      {candidate.cor_link && (
-                        <a
-                          href={candidate.cor_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline border rounded px-2 py-1"
-                        >
-                          COR ↗
-                        </a>
-                      )}
-                      {candidate.good_moral_link && (
-                        <a
-                          href={candidate.good_moral_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline border rounded px-2 py-1"
-                        >
-                          Good Moral ↗
-                        </a>
-                      )}
-                      {!candidate.cog_link &&
-                        !candidate.cor_link &&
-                        !candidate.good_moral_link && (
-                          <span className="text-xs text-muted-foreground">
-                            No documents submitted
-                          </span>
-                        )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Position</p>
+                      <p className="font-medium">
+                        {candidate.positions?.title || "–"}
+                      </p>
                     </div>
+                    <div>
+                      <p className="text-muted-foreground">Course</p>
+                      <p className="font-medium">
+                        {candidate.courses?.acronym ||
+                          candidate.courses?.name ||
+                          "–"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Partylist</p>
+                      <p className="font-medium">
+                        {candidate.partylists
+                          ? `${candidate.partylists.name} (${candidate.partylists.acronym})`
+                          : "Independent"}
+                      </p>
+                    </div>
+                  </div>
 
-                    {/* Rejection reason */}
-                    {candidate.application_status === "rejected" &&
-                      candidate.rejection_reason && (
-                        <div className="mt-3 bg-destructive/10 border border-destructive/20 rounded p-3">
-                          <p className="text-xs font-medium text-destructive">
-                            Rejection Reason
-                          </p>
-                          <p className="text-sm mt-1">
-                            {candidate.rejection_reason}
-                          </p>
-                        </div>
+                  {/* Document links */}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {candidate.cog_link && (
+                      <a
+                        href={candidate.cog_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline border rounded px-2 py-1"
+                      >
+                        COG <ExternalLink className="size-3" />
+                      </a>
+                    )}
+                    {candidate.cor_link && (
+                      <a
+                        href={candidate.cor_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline border rounded px-2 py-1"
+                      >
+                        COR <ExternalLink className="size-3" />
+                      </a>
+                    )}
+                    {candidate.good_moral_link && (
+                      <a
+                        href={candidate.good_moral_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline border rounded px-2 py-1"
+                      >
+                        Good Moral <ExternalLink className="size-3" />
+                      </a>
+                    )}
+                    {!candidate.cog_link &&
+                      !candidate.cor_link &&
+                      !candidate.good_moral_link && (
+                        <span className="text-xs text-muted-foreground">
+                          No documents submitted
+                        </span>
                       )}
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  {/* Rejection reason */}
+                  {candidate.application_status === "rejected" &&
+                    candidate.rejection_reason && (
+                      <div className="mt-3 bg-destructive/10 border border-destructive/20 rounded p-3">
+                        <p className="text-xs font-medium text-destructive">
+                          Rejection Reason
+                        </p>
+                        <p className="text-sm mt-1">
+                          {candidate.rejection_reason}
+                        </p>
+                      </div>
+                    )}
+                </div>
               ))}
             </div>
           )}
@@ -330,8 +367,17 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       {votingStarted && (
         <Card>
           <CardHeader>
-            <CardTitle>Election Results</CardTitle>
-            <CardDescription>Live vote tallies per position</CardDescription>
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <BarChart3 className="size-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Election Results</CardTitle>
+                <CardDescription>
+                  Live vote tallies per position
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <ElectionResults electionId={electionId} />
@@ -342,10 +388,18 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       {/* Voter masterlist */}
       <Card>
         <CardHeader>
-          <CardTitle>Voter Masterlist</CardTitle>
-          <CardDescription>
-            Manage the list of student IDs authorized to vote in this election
-          </CardDescription>
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FileText className="size-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle>Voter Masterlist</CardTitle>
+              <CardDescription>
+                Manage the list of student IDs authorized to vote in this
+                election
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <VoterMasterlist electionId={electionId} voters={votersData} />
@@ -363,8 +417,14 @@ export default function ElectionDetailPage({
   return (
     <Suspense
       fallback={
-        <div className="space-y-4">
-          <p className="text-muted-foreground">Loading election...</p>
+        <div className="space-y-6">
+          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-40 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-32 bg-muted/50 rounded-lg animate-pulse" />
+          <div className="h-48 bg-muted/50 rounded-lg animate-pulse" />
         </div>
       }
     >

@@ -3,6 +3,8 @@
 #docs
 DATABASE.md
 CandidateApplication.md
+.github
+DesignGuidlines.md
 
 # dependencies
 /node_modules

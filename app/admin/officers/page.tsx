@@ -3,6 +3,7 @@ import { SEBOfficer, ROLE_LABELS } from "@/lib/types/auth";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -94,15 +95,23 @@ export default function OfficersPage() {
           <h1 className="text-2xl font-bold">SEB Officers</h1>
           <p className="text-muted-foreground">Manage SEB Officer accounts</p>
         </div>
-        <Link href="/admin/officers/new">
-          <Button>Add SEB Officer</Button>
-        </Link>
+        <Button asChild>
+          <Link href="/admin/officers/new">
+            <Plus className="size-4" />
+            Add SEB Officer
+          </Link>
+        </Button>
       </div>
 
       <Suspense
         fallback={
-          <div className="border rounded-lg p-8 text-center text-muted-foreground">
-            Loading officers...
+          <div className="border rounded-lg overflow-hidden">
+            <div className="h-10 bg-muted/50 border-b" />
+            <div className="space-y-0 divide-y">
+              <div className="h-12 bg-muted/30 animate-pulse" />
+              <div className="h-12 bg-muted/30 animate-pulse" />
+              <div className="h-12 bg-muted/30 animate-pulse" />
+            </div>
           </div>
         }
       >

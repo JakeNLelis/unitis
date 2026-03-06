@@ -137,7 +137,7 @@ export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
       )}
 
       {successMsg && (
-        <p className="text-sm text-green-700 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded p-2">
+        <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2">
           {successMsg}
         </p>
       )}
