@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -22,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { submitBallot } from "./actions";
+import { createClient } from "@/lib/supabase/client";
 
 interface CandidateOption {
   candidate_id: string;
@@ -40,27 +39,48 @@ interface PositionWithCandidates {
 interface BallotFormProps {
   electionId: string;
   electionName: string;
+  studentId: string;
   positions: PositionWithCandidates[];
 }
 
 export function BallotForm({
   electionId,
   electionName,
+  studentId,
   positions,
 }: BallotFormProps) {
   const router = useRouter();
   const [selections, setSelections] = useState<Record<string, string[]>>({});
-  const [studentId, setStudentId] = useState("");
+  const [abstained, setAbstained] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Sign out the voter session whenever they leave this page —
+  // whether by navigating away, closing the tab, or refreshing.
+  useEffect(() => {
+    const supabase = createClient();
+
+    function clearVoterSession() {
+      supabase.auth.signOut();
+    }
+
+    window.addEventListener("beforeunload", clearVoterSession);
+
+    return () => {
+      window.removeEventListener("beforeunload", clearVoterSession);
+      clearVoterSession();
+    };
+  }, []);
 
   function toggleCandidate(
     positionId: string,
     candidateId: string,
     maxVotes: number,
   ) {
+    // Un-abstain automatically when a candidate is selected
+    setAbstained((prev) => ({ ...prev, [positionId]: false }));
     setSelections((prev) => {
       const current = prev[positionId] || [];
       if (current.includes(candidateId)) {
@@ -83,15 +103,22 @@ export function BallotForm({
     });
   }
 
+  function toggleAbstain(positionId: string) {
+    const isCurrentlyAbstained = abstained[positionId] ?? false;
+    if (!isCurrentlyAbstained) {
+      setSelections((prev) => ({ ...prev, [positionId]: [] }));
+    }
+    setAbstained((prev) => ({
+      ...prev,
+      [positionId]: !isCurrentlyAbstained,
+    }));
+  }
+
   function getTotalSelections() {
     return Object.values(selections).reduce((sum, arr) => sum + arr.length, 0);
   }
 
   async function handleSubmit() {
-    if (!studentId.trim()) {
-      setError("Please enter your student ID.");
-      return;
-    }
     setError(null);
     setLoading(true);
 
@@ -110,6 +137,9 @@ export function BallotForm({
     }
 
     setConfirmOpen(false);
+    // Explicitly clear the voter session immediately on successful submission
+    const supabase = createClient();
+    await supabase.auth.signOut();
     setSubmitted(true);
   }
 
@@ -142,28 +172,9 @@ export function BallotForm({
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Voter Identification</CardTitle>
-          <CardDescription>
-            Enter your student ID to verify your eligibility to vote.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="student-id">Student ID</Label>
-            <Input
-              id="student-id"
-              placeholder="e.g. 20-1-01457"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {positions.map((position) => {
         const selected = selections[position.position_id] || [];
+        const positionAbstained = abstained[position.position_id] ?? false;
         return (
           <Card key={position.position_id}>
             <CardHeader>
@@ -175,9 +186,13 @@ export function BallotForm({
                     {position.max_votes !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
-                <Badge variant="secondary">
-                  {selected.length}/{position.max_votes}
-                </Badge>
+                {positionAbstained ? (
+                  <Badge variant="secondary">Abstain</Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    {selected.length}/{position.max_votes}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -192,22 +207,14 @@ export function BallotForm({
                     return (
                       <label
                         key={candidate.candidate_id}
-                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          isChecked
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:bg-muted/50"
+                        className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-colors ${
+                          positionAbstained
+                            ? "border-border opacity-50 cursor-not-allowed"
+                            : isChecked
+                              ? "border-primary bg-primary/5 cursor-pointer"
+                              : "border-border hover:bg-muted/50 cursor-pointer"
                         }`}
                       >
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={() =>
-                            toggleCandidate(
-                              position.position_id,
-                              candidate.candidate_id,
-                              position.max_votes,
-                            )
-                          }
-                        />
                         <div className="flex-1">
                           <p className="font-medium">{candidate.full_name}</p>
                           {candidate.partylist ? (
@@ -221,9 +228,46 @@ export function BallotForm({
                             </p>
                           )}
                         </div>
+                        <Checkbox
+                          checked={isChecked}
+                          disabled={positionAbstained}
+                          onCheckedChange={() =>
+                            toggleCandidate(
+                              position.position_id,
+                              candidate.candidate_id,
+                              position.max_votes,
+                            )
+                          }
+                        />
                       </label>
                     );
                   })}
+                  <div className="border-t border-border pt-3">
+                    <label
+                      className={`flex items-center justify-between gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        positionAbstained
+                          ? "border-destructive bg-destructive/5"
+                          : "border-muted bg-muted/40 hover:bg-muted/60"
+                      }`}
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-muted-foreground">
+                          Abstain
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {position.max_votes > 1
+                            ? "Do not vote for any candidate in this position"
+                            : "Do not vote for this position"}
+                        </p>
+                      </div>
+                      <Checkbox
+                        checked={positionAbstained}
+                        onCheckedChange={() =>
+                          toggleAbstain(position.position_id)
+                        }
+                      />
+                    </label>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -238,7 +282,11 @@ export function BallotForm({
         </p>
         <Button
           size="lg"
-          disabled={getTotalSelections() === 0 || !studentId.trim() || loading}
+          disabled={
+            (getTotalSelections() === 0 &&
+              !Object.values(abstained).some(Boolean)) ||
+            loading
+          }
           onClick={() => setConfirmOpen(true)}
         >
           Review & Submit Ballot
@@ -259,47 +307,46 @@ export function BallotForm({
           <div className="space-y-4 max-h-[50vh] overflow-y-auto">
             {positions.map((position) => {
               const selected = selections[position.position_id] || [];
-              if (selected.length === 0) return null;
+              const positionAbstained =
+                abstained[position.position_id] ?? false;
+              if (selected.length > 0) {
+                return (
+                  <div key={position.position_id}>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {position.title}
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {selected.map((candidateId) => {
+                        const candidate = position.candidates.find(
+                          (c) => c.candidate_id === candidateId,
+                        );
+                        return (
+                          <li key={candidateId} className="text-sm font-medium">
+                            {candidate?.full_name || "Unknown"}
+                            {candidate?.partylist && (
+                              <span className="text-muted-foreground">
+                                {" "}
+                                — {candidate.partylist.acronym}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              }
               return (
                 <div key={position.position_id}>
                   <p className="text-sm font-medium text-muted-foreground">
                     {position.title}
                   </p>
-                  <ul className="mt-1 space-y-1">
-                    {selected.map((candidateId) => {
-                      const candidate = position.candidates.find(
-                        (c) => c.candidate_id === candidateId,
-                      );
-                      return (
-                        <li key={candidateId} className="text-sm font-medium">
-                          {candidate?.full_name || "Unknown"}
-                          {candidate?.partylist && (
-                            <span className="text-muted-foreground">
-                              {" "}
-                              — {candidate.partylist.acronym}
-                            </span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <p className="text-sm text-muted-foreground italic">
+                    {positionAbstained ? "Abstain" : "No selection (abstain)"}
+                  </p>
                 </div>
               );
             })}
-
-            {/* Positions with no selections */}
-            {positions
-              .filter((p) => (selections[p.position_id] || []).length === 0)
-              .map((p) => (
-                <div key={p.position_id}>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {p.title}
-                  </p>
-                  <p className="text-sm text-muted-foreground italic">
-                    No selection (abstain)
-                  </p>
-                </div>
-              ))}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

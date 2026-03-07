@@ -23,17 +23,25 @@ export async function createElection(formData: FormData) {
     return { error: "Missing required fields" };
   }
 
+  // datetime-local values are naive local-time strings; convert to UTC ISO
+  // so PostgreSQL stores the correct moment regardless of DB server timezone.
+  const toISO = (s: string | null) => (s ? new Date(s).toISOString() : null);
+  const start_date_iso = new Date(start_date).toISOString();
+  const end_date_iso = new Date(end_date).toISOString();
+  const candidacy_start_date_iso = toISO(candidacy_start_date);
+  const candidacy_end_date_iso = toISO(candidacy_end_date);
+
   // Validate dates
-  const startDate = new Date(start_date);
-  const endDate = new Date(end_date);
+  const startDate = new Date(start_date_iso);
+  const endDate = new Date(end_date_iso);
 
   if (endDate <= startDate) {
     return { error: "End date must be after start date" };
   }
 
   if (candidacy_end_date && candidacy_start_date) {
-    const candStart = new Date(candidacy_start_date);
-    const candEnd = new Date(candidacy_end_date);
+    const candStart = new Date(candidacy_start_date_iso!);
+    const candEnd = new Date(candidacy_end_date_iso!);
 
     if (candEnd >= startDate) {
       return {
@@ -56,10 +64,10 @@ export async function createElection(formData: FormData) {
     .insert({
       name,
       election_type,
-      start_date,
-      end_date,
-      candidacy_start_date: candidacy_start_date || null,
-      candidacy_end_date: candidacy_end_date || null,
+      start_date: start_date_iso,
+      end_date: end_date_iso,
+      candidacy_start_date: candidacy_start_date_iso,
+      candidacy_end_date: candidacy_end_date_iso,
     })
     .select()
     .single();
@@ -221,17 +229,24 @@ export async function updateElectionDates(
     return { error: "Voting start and end dates are required" };
   }
 
+  // datetime-local values are naive local-time strings; convert to UTC ISO
+  const toISO = (s: string | null) => (s ? new Date(s).toISOString() : null);
+  const start_date_iso = new Date(start_date).toISOString();
+  const end_date_iso = new Date(end_date).toISOString();
+  const candidacy_start_date_iso = toISO(candidacy_start_date);
+  const candidacy_end_date_iso = toISO(candidacy_end_date);
+
   // Validate dates
-  const startDate = new Date(start_date);
-  const endDate = new Date(end_date);
+  const startDate = new Date(start_date_iso);
+  const endDate = new Date(end_date_iso);
 
   if (endDate <= startDate) {
     return { error: "Voting end date must be after voting start date" };
   }
 
   if (candidacy_end_date && candidacy_start_date) {
-    const candStart = new Date(candidacy_start_date);
-    const candEnd = new Date(candidacy_end_date);
+    const candStart = new Date(candidacy_start_date_iso!);
+    const candEnd = new Date(candidacy_end_date_iso!);
 
     if (candEnd >= startDate) {
       return {
@@ -251,10 +266,10 @@ export async function updateElectionDates(
   const { error } = await supabase
     .from("elections")
     .update({
-      start_date,
-      end_date,
-      candidacy_start_date: candidacy_start_date || null,
-      candidacy_end_date: candidacy_end_date || null,
+      start_date: start_date_iso,
+      end_date: end_date_iso,
+      candidacy_start_date: candidacy_start_date_iso,
+      candidacy_end_date: candidacy_end_date_iso,
     })
     .eq("election_id", electionId);
 

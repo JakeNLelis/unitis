@@ -18,15 +18,18 @@ export async function submitBallot(data: BallotSubmission) {
     return { error: "Student ID is required." };
   }
 
-  // Auth check
+  // Auth check: voter must have a verified @vsu.edu.ph session from voter-validation
   const supabase = await createClient();
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return { error: "You must be logged in to vote." };
+  if (authError || !user?.email?.endsWith("@vsu.edu.ph")) {
+    return {
+      error:
+        "Voter identity could not be verified. Please complete voter verification first.",
+    };
   }
 
   const adminSupabase = await createAdminClient();
@@ -53,11 +56,6 @@ export async function submitBallot(data: BallotSubmission) {
 
   if (today < start || today > end) {
     return { error: "Voting is not currently open for this election." };
-  }
-
-  const userEmail = user.email;
-  if (!userEmail) {
-    return { error: "Could not determine your email address." };
   }
 
   const trimmedId = studentId.trim();
@@ -93,7 +91,7 @@ export async function submitBallot(data: BallotSubmission) {
     // Update the email on the voter record
     await adminSupabase
       .from("voters")
-      .update({ email: userEmail })
+      .update({ email: user.email! })
       .eq("voter_id", masterlistVoter.voter_id);
 
     voterId = masterlistVoter.voter_id;
@@ -119,7 +117,7 @@ export async function submitBallot(data: BallotSubmission) {
         .insert({
           election_id: electionId,
           student_id: trimmedId,
-          email: userEmail,
+          email: user.email!,
           is_voted: false,
         })
         .select("voter_id")
