@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { submitBallot } from "./actions";
+import { createClient } from "@/lib/supabase/client";
 
 interface CandidateOption {
   candidate_id: string;
@@ -55,6 +56,23 @@ export function BallotForm({
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Sign out the voter session whenever they leave this page —
+  // whether by navigating away, closing the tab, or refreshing.
+  useEffect(() => {
+    const supabase = createClient();
+
+    function clearVoterSession() {
+      supabase.auth.signOut();
+    }
+
+    window.addEventListener("beforeunload", clearVoterSession);
+
+    return () => {
+      window.removeEventListener("beforeunload", clearVoterSession);
+      clearVoterSession();
+    };
+  }, []);
 
   function toggleCandidate(
     positionId: string,
@@ -119,6 +137,9 @@ export function BallotForm({
     }
 
     setConfirmOpen(false);
+    // Explicitly clear the voter session immediately on successful submission
+    const supabase = createClient();
+    await supabase.auth.signOut();
     setSubmitted(true);
   }
 
