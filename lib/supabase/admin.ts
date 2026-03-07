@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
  * Use this only in server-side code for operations like creating/deleting users.
  * This client bypasses RLS.
  */
-export async function createAdminClient() {
+export function createAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

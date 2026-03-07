@@ -1,4 +1,4 @@
-export type UserRole = "system-admin" | "seb-officer";
+export type UserRole = "system-admin" | "seb-officer" | "candidate";
 
 export interface SystemAdministrator {
   system_admin_id: string;
@@ -26,11 +26,13 @@ export interface UserProfile {
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   "system-admin": 2,
   "seb-officer": 1,
+  candidate: 0,
 };
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   "system-admin": "System Administrator",
   "seb-officer": "SEB Officer",
+  candidate: "Candidate",
 };
 
 export function canManageRole(
