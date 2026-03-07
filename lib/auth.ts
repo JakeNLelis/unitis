@@ -122,7 +122,7 @@ export async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   return user;
@@ -132,7 +132,7 @@ export async function requireRole(allowedRoles: UserRole[]) {
   const profile = await getCurrentProfile();
 
   if (!profile) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   if (!allowedRoles.includes(profile.role)) {
@@ -150,7 +150,7 @@ export async function requireSEBOfficer() {
   const profile = await getCurrentProfile();
 
   if (!profile) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   if (profile.role !== "seb-officer") {

@@ -60,11 +60,17 @@ export function EditElectionDates({
     setError(null);
     setLoading(true);
 
+    // datetime-local values are local time strings ("YYYY-MM-DDTHH:mm").
+    // Convert to UTC ISO strings so PostgreSQL stores the correct moment
+    // regardless of the DB server timezone.
+    const toISO = (local: string) =>
+      local ? new Date(local).toISOString() : null;
+
     const result = await updateElectionDates(electionId, {
-      start_date: votingStart,
-      end_date: votingEnd,
-      candidacy_start_date: candStart || null,
-      candidacy_end_date: candEnd || null,
+      start_date: new Date(votingStart).toISOString(),
+      end_date: new Date(votingEnd).toISOString(),
+      candidacy_start_date: toISO(candStart),
+      candidacy_end_date: toISO(candEnd),
     });
 
     setLoading(false);
