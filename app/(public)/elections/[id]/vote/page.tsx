@@ -10,14 +10,16 @@ import { BallotForm } from "./ballot-form";
 async function VotingContent({ electionId }: { electionId: string }) {
   const supabase = await createClient();
 
-  // Auth check
+  // Voter auth check: must have an active @vsu.edu.ph session from voter-validation
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!user?.email?.endsWith("@vsu.edu.ph")) {
+    redirect(`/elections/${electionId}/voter-validation`);
   }
+
+  const studentId = user.email!.split("@")[0];
 
   const adminSupabase = await createAdminClient();
 
@@ -40,14 +42,18 @@ async function VotingContent({ electionId }: { electionId: string }) {
   const end = new Date(election.end_date);
   const votingOpen = !election.is_archived && now >= start && now <= end;
 
-  // Check if user already voted
-  const userEmail = user.email!;
+  // Check if student is in masterlist and has already voted
   const { data: existingVoter } = await adminSupabase
     .from("voters")
     .select("voter_id, is_voted")
     .eq("election_id", electionId)
-    .eq("email", userEmail)
+    .eq("student_id", studentId)
     .single();
+
+  // Not in masterlist for this election — re-validate
+  if (!existingVoter) {
+    redirect(`/elections/${electionId}/voter-validation`);
+  }
 
   const alreadyVoted = existingVoter?.is_voted === true;
 
@@ -134,13 +140,14 @@ async function VotingContent({ electionId }: { electionId: string }) {
         <h1 className="text-2xl font-bold">{election.name}</h1>
         <p className="text-muted-foreground">{election.election_type}</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Voting as <span className="font-medium">{userEmail}</span>
+          Voting as <span className="font-medium">{user.email}</span>
         </p>
       </div>
 
       <BallotForm
         electionId={electionId}
         electionName={election.name}
+        studentId={studentId}
         positions={positionsWithCandidates}
       />
     </div>

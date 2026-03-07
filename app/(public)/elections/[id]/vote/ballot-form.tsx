@@ -11,8 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -40,17 +38,18 @@ interface PositionWithCandidates {
 interface BallotFormProps {
   electionId: string;
   electionName: string;
+  studentId: string;
   positions: PositionWithCandidates[];
 }
 
 export function BallotForm({
   electionId,
   electionName,
+  studentId,
   positions,
 }: BallotFormProps) {
   const router = useRouter();
   const [selections, setSelections] = useState<Record<string, string[]>>({});
-  const [studentId, setStudentId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -142,26 +141,6 @@ export function BallotForm({
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Voter Identification</CardTitle>
-          <CardDescription>
-            Enter your student ID to verify your eligibility to vote.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="student-id">Student ID</Label>
-            <Input
-              id="student-id"
-              placeholder="e.g. 20-1-01457"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {positions.map((position) => {
         const selected = selections[position.position_id] || [];
         return (
@@ -238,7 +217,7 @@ export function BallotForm({
         </p>
         <Button
           size="lg"
-          disabled={getTotalSelections() === 0 || !studentId.trim() || loading}
+          disabled={getTotalSelections() === 0 || loading}
           onClick={() => setConfirmOpen(true)}
         >
           Review & Submit Ballot
