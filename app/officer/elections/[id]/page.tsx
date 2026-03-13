@@ -23,7 +23,6 @@ import {
   Vote,
   BarChart3,
   ListChecks,
-  Trash2,
 } from "lucide-react";
 import { AddPositionForm } from "./add-position-form";
 import { CandidateActions } from "./candidate-actions";
@@ -133,15 +132,15 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       </div>
 
       {/* Election header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-end justify-between">
         <div>
+          {candidacyOpen && (
+            <Badge variant="default">Candidacy Filing Open</Badge>
+          )}
           <h1 className="text-2xl font-bold">{electionData.name}</h1>
           <p className="text-muted-foreground">{electionData.election_type}</p>
         </div>
         <div className="flex items-center gap-2">
-          {candidacyOpen && (
-            <Badge variant="default">Candidacy Filing Open</Badge>
-          )}
           <DeleteElectionButton
             electionId={electionId}
             electionName={electionData.name}

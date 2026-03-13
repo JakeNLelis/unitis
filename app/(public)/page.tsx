@@ -2,6 +2,8 @@
 import { Suspense } from "react";
 //import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 //import { Logo } from "@/components/logo";
 import { ElectionsList } from "@/components/elections-list";
 // { ChevronRight } from "lucide-react";
@@ -29,6 +31,9 @@ export default function Home() {
               Participate in ongoing or upcoming elections
             </p>
           </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/archive">View archive</Link>
+          </Button>
         </div>
         <Suspense
           fallback={

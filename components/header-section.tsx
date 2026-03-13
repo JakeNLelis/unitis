@@ -21,7 +21,10 @@ function HeaderSection() {
             <a href="#" className=" text-white/70 hover:text-white transition">
               Upcommings
             </a>
-            <a href="#" className=" text-white/70 hover:text-white transition">
+            <a
+              href="/archive"
+              className=" text-white/70 hover:text-white transition"
+            >
               Archive
             </a>
           </nav>
