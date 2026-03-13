@@ -29,7 +29,7 @@ export function Logo({
         height={sizeClasses.height}
       />
       <h1
-        className={`font-[family-name:var(--font-erica-one)] ${sizeClasses.fontSize} ${textColor} tracking-[-1px]`}
+        className={`font-(family-name:--font-erica-one) ${sizeClasses.fontSize} ${textColor} tracking-[-1px]`}
       >
         PLENUM
       </h1>

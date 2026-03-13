@@ -23,7 +23,7 @@ const features = [
 
 function FeatureSection() {
   return (
-    <section className="flex flex-col items-center py-16 px-4 relative overflow-hidden bg-gradient-to-b from-black to-transparent">
+    <section className="flex flex-col items-center py-16 px-4 relative overflow-hidden bg-linear-to-b from-black to-transparent">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-bold text-white">Why Plenum</h2>
         <p className="text-white/70 mt-2">

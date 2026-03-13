@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createElection } from "../actions";
 import { ELECTION_TYPES } from "@/lib/types/election";
+import { DateTimeRangePicker } from "./date-time-range-picker";
 
 export default function NewElectionPage() {
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function NewElectionPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <div className="mb-6">
         <Link
           href="/officer/elections"
@@ -54,7 +55,7 @@ export default function NewElectionPage() {
         </Link>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Create Election</CardTitle>
           <CardDescription>
@@ -72,7 +73,6 @@ export default function NewElectionPage() {
                 required
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="election_type">Election Type</Label>
               <Select name="election_type" required>
@@ -88,64 +88,28 @@ export default function NewElectionPage() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="border-t pt-4">
-              <h3 className="font-medium mb-3">Candidacy Filing Period</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Set when candidates can submit their application. The filing
-                deadline must be before the election starts.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="candidacy_start_date">Filing Opens</Label>
-                  <Input
-                    id="candidacy_start_date"
-                    name="candidacy_start_date"
-                    type="datetime-local"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="candidacy_end_date">Filing Deadline</Label>
-                  <Input
-                    id="candidacy_end_date"
-                    name="candidacy_end_date"
-                    type="datetime-local"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <h3 className="font-medium mb-3">Election Voting Period</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start_date">Voting Starts</Label>
-                  <Input
-                    id="start_date"
-                    name="start_date"
-                    type="datetime-local"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end_date">Voting Ends</Label>
-                  <Input
-                    id="end_date"
-                    name="end_date"
-                    type="datetime-local"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
+            <DateTimeRangePicker
+              title="Candidacy Filing Period"
+              description="Set when candidates can submit their application. The filing deadline must be before the election starts."
+              startLabel="Filing opens time"
+              endLabel="Filing deadline time"
+              startName="candidacy_start_date"
+              endName="candidacy_end_date"
+            />
+            <DateTimeRangePicker
+              title="Election Voting Period"
+              startLabel="Voting starts time"
+              endLabel="Voting ends time"
+              startName="start_date"
+              endName="end_date"
+              required
+            />
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2">
                 <AlertCircle className="size-4 text-destructive shrink-0" />
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
-
             <div className="flex gap-4">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Creating..." : "Create Election"}

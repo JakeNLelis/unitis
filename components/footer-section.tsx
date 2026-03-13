@@ -13,7 +13,7 @@ function FooterSection() {
           </p>
         </div>
         <div className="flex flex-col w-36 gap-2">
-          <h4 className="font-bold tracking-[0.1em]">ELECTION</h4>
+          <h4 className="font-bold tracking-widest">ELECTION</h4>
           <ul className="text-gray-600 space-y-1">
             <li>
               <Link href="/">Active Elections</Link>
@@ -30,7 +30,7 @@ function FooterSection() {
           </ul>
         </div>
         <div className="flex flex-col w-36 gap-2">
-          <h4 className="font-bold tracking-[0.1em]">GOVERNANCE</h4>
+          <h4 className="font-bold tracking-widest">GOVERNANCE</h4>
           <ul className="text-gray-600 space-y-1">
             <li>
               <Link href="/">Student Electoral Board</Link>
@@ -47,7 +47,7 @@ function FooterSection() {
           </ul>
         </div>
         <div className="flex flex-col w-36 gap-2">
-          <h4 className="font-bold tracking-[0.1em]">SUPPORT</h4>
+          <h4 className="font-bold tracking-widest">SUPPORT</h4>
           <ul className="text-gray-600 space-y-1">
             <li>
               <Link href="/">Help Center</Link>
