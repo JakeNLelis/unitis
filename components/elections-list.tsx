@@ -175,6 +175,12 @@ export async function ElectionsList() {
                   </Link>
                 </Button>
                 <Button asChild size="sm" variant="outline">
+                  <Link href={`/elections/${election.election_id}/candidates`}>
+                    <Users className="size-4" />
+                    Candidates
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
                   <Link
                     href={`/elections/${election.election_id}/check-eligibility`}
                   >

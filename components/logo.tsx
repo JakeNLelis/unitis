@@ -21,7 +21,7 @@ export function Logo({
   const sizeClasses = sizes[size];
 
   return (
-    <div className={`flex items-center gap-[2px] ${className}`}>
+    <div className={`flex items-center gap-0.5 ${className}`}>
       <Image
         src={`/${image}`}
         alt="Plenum Logo"

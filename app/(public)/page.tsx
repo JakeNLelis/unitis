@@ -1,22 +1,14 @@
-//import Link from "next/link";
 import { Suspense } from "react";
-//import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-//import { Logo } from "@/components/logo";
 import { ElectionsList } from "@/components/elections-list";
-// { ChevronRight } from "lucide-react";
 import HeroSection from "@/components/hero-section";
-import HeaderSection from "@/components/header-section";
 import FeatureSection from "@/components/feature-section";
-import FooterSection from "@/components/footer-section";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background">
-      {/* Header */}
-      <HeaderSection />
+    <main className="bg-background">
       {/* Hero */}
       <HeroSection />
       {/* Features */}
@@ -47,9 +39,6 @@ export default function Home() {
           <ElectionsList />
         </Suspense>
       </div>
-
-      {/* Footer */}
-      <FooterSection />
     </main>
   );
 }
