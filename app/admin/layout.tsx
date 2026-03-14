@@ -3,7 +3,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { NavLink } from "@/components/nav-link";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Shield } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 async function AdminNav() {
   const profile = await requireSystemAdmin();
@@ -14,12 +14,7 @@ async function AdminNav() {
         <div className="flex justify-between h-14 items-center">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="size-7 rounded-lg bg-primary flex items-center justify-center">
-                <Shield className="size-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold text-base tracking-tight">
-                Plenum
-              </span>
+              <Logo size="sm" color="blue" />
             </Link>
             <div className="flex gap-6">
               <NavLink href="/admin/officers">SEB Officers</NavLink>
@@ -55,12 +50,7 @@ export default function AdminLayout({
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between h-14 items-center">
                 <div className="flex items-center gap-2">
-                  <div className="size-7 rounded-lg bg-primary flex items-center justify-center">
-                    <Shield className="size-4 text-primary-foreground" />
-                  </div>
-                  <span className="font-semibold text-base tracking-tight">
-                    Plenum
-                  </span>
+                  <Logo size="sm" color="blue" />
                 </div>
               </div>
             </div>

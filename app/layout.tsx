@@ -40,12 +40,7 @@ export default function RootLayout({
       className={`${inter.variable} ${ericaOne.variable}`}
       suppressHydrationWarning
     >
-      <body className={`${inter.className} antialiased`}>
-        {children}
-        <footer className="fixed bottom-2 right-3 text-[10px] text-muted-foreground/40 select-none pointer-events-none z-50 tracking-wider font-medium">
-          UN.010.003
-        </footer>
-      </body>
+      <body className={`${inter.className} antialiased`}>{children}</body>
     </html>
   );
 }

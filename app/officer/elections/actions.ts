@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSEBOfficer } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 export async function createElection(formData: FormData) {
   const officer = await getSEBOfficer();
@@ -112,7 +113,8 @@ export async function createPosition(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect(`/officer/elections/${election_id}`);
+  revalidatePath(`/officer/elections/${election_id}`);
+  return { success: true };
 }
 
 export async function updateCandidateStatus(

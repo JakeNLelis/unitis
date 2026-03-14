@@ -21,7 +21,7 @@ export function Logo({
   const sizeClasses = sizes[size];
 
   return (
-    <div className={`flex items-center gap-[2px] ${className}`}>
+    <div className={`flex items-center gap-0.5 ${className}`}>
       <Image
         src={`/${image}`}
         alt="Plenum Logo"
@@ -29,7 +29,7 @@ export function Logo({
         height={sizeClasses.height}
       />
       <h1
-        className={`font-[family-name:var(--font-erica-one)] ${sizeClasses.fontSize} ${textColor} tracking-[-1px]`}
+        className={`font-(family-name:--font-erica-one) ${sizeClasses.fontSize} ${textColor} tracking-[-1px]`}
       >
         PLENUM
       </h1>

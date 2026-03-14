@@ -78,8 +78,8 @@ export interface PositionWithCandidates extends Position {
 
 export const ELECTION_TYPES = [
   "University-Wide",
-  "College-Based",
-  "Department-Based",
+  "Campus-Wide",
+  "Faculty-Wide",
 ] as const;
 
 export type ElectionType = (typeof ELECTION_TYPES)[number];

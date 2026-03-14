@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { submitCandidacyApplication } from "./actions";
 import { CandidacyFormData, CouncilType, CandidacyType } from "./types";
@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CalendarDays } from "lucide-react";
 
 // Dynamically import PDFPreview to avoid SSR issues
 const PDFPreview = dynamic(() => import("./pdf-preview"), {
@@ -42,6 +43,8 @@ interface Course {
   course_id: string;
   name: string;
   acronym: string | null;
+  department_name: string;
+  faculty_name: string;
 }
 
 interface Partylist {
@@ -104,10 +107,16 @@ export function ApplicationForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [credentials, setCredentials] = useState<{
-    email: string;
-    password: string;
-  } | null>(null);
+  const [debouncedPreviewData, setDebouncedPreviewData] =
+    useState<CandidacyFormData>(formData);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedPreviewData(formData);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData]);
 
   const update = useCallback(
     (field: keyof CandidacyFormData, value: string) => {
@@ -148,6 +157,18 @@ export function ApplicationForm({
         ...prev,
         candidacyType: "Political Party" as CandidacyType,
         partyName: pl ? `${pl.acronym} — ${pl.name}` : "",
+      }));
+    }
+  };
+
+  const handleCourseChange = (cid: string) => {
+    setCourseId(cid);
+    const selectedCourse = courses.find((course) => course.course_id === cid);
+    if (selectedCourse) {
+      setFormData((prev) => ({
+        ...prev,
+        faculty: selectedCourse.faculty_name,
+        department: selectedCourse.department_name,
       }));
     }
   };
@@ -227,9 +248,6 @@ export function ApplicationForm({
       setLoading(false);
     } else {
       setSuccess(true);
-      if (result.credentials) {
-        setCredentials(result.credentials);
-      }
       setLoading(false);
     }
   }
@@ -255,56 +273,22 @@ export function ApplicationForm({
         </Card>
 
         {/* PDF for download/print after submission */}
-        <div className="h-[70vh] min-h-[500px]">
+        <div className="h-[70vh] min-h-125">
           <PDFPreview data={formData} />
         </div>
 
-        {credentials && (
-          <Card className="border-primary">
-            <CardHeader>
-              <CardTitle className="text-lg">Your Login Credentials</CardTitle>
-              <CardDescription>
-                An account has been created for you. Save these credentials —
-                you&apos;ll use them to log in and track your application
-                status.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="bg-muted rounded-md p-4 space-y-2 font-mono text-sm">
-                <div>
-                  <span className="text-muted-foreground">Email: </span>
-                  <span className="font-semibold">{credentials.email}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Password: </span>
-                  <span className="font-semibold">{credentials.password}</span>
-                </div>
-              </div>
-              <div className="bg-accent border border-primary/20 rounded-md p-3 text-sm text-foreground">
-                <strong>Important:</strong> Please write down or screenshot
-                these credentials. You will not be able to see the password
-                again.
-              </div>
-              <Button asChild className="w-full">
-                <a href="/login">Go to Login</a>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {!credentials && (
-          <Card>
-            <CardContent className="pt-6 text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                You already have an account from a previous application. Log in
-                with your existing credentials to check your status.
-              </p>
-              <Button asChild>
-                <a href="/login">Go to Login</a>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardContent className="pt-6 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              You can track your candidacy status using your email and OTP code.
+            </p>
+            <Button asChild>
+              <a href={`/elections/${electionId}/status`}>
+                Check Application Status
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -497,12 +481,16 @@ export function ApplicationForm({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="birthday">Date of Birth *</Label>
-                  <Input
-                    id="birthday"
-                    type="date"
-                    value={formData.birthday}
-                    onChange={(e) => update("birthday", e.target.value)}
-                  />
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="birthday"
+                      type="date"
+                      value={formData.birthday}
+                      onChange={(e) => update("birthday", e.target.value)}
+                      className="h-11 pl-10 scheme-light [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="studentId">Student ID *</Label>
@@ -537,27 +525,6 @@ export function ApplicationForm({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="faculty">Faculty *</Label>
-                  <Input
-                    id="faculty"
-                    value={formData.faculty}
-                    onChange={(e) => update("faculty", e.target.value)}
-                    placeholder="e.g. College of Engineering"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department *</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => update("department", e.target.value)}
-                    placeholder="e.g. Computer Science"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
                   <Label htmlFor="email">Email Address *</Label>
                   <Input
                     id="email"
@@ -585,8 +552,8 @@ export function ApplicationForm({
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Course / Program *</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Select value={courseId} onValueChange={setCourseId}>
+            <CardContent className="space-y-4">
+              <Select value={courseId} onValueChange={handleCourseChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your course" />
                 </SelectTrigger>
@@ -600,6 +567,29 @@ export function ApplicationForm({
                   ))}
                 </SelectContent>
               </Select>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="faculty">Faculty</Label>
+                  <Input
+                    id="faculty"
+                    value={formData.faculty}
+                    readOnly
+                    placeholder="Auto-filled from selected course"
+                    className="bg-muted/60"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Input
+                    id="department"
+                    value={formData.department}
+                    readOnly
+                    placeholder="Auto-filled from selected course"
+                    className="bg-muted/60"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -655,11 +645,14 @@ export function ApplicationForm({
             <CardContent className="pt-6">
               <div className="space-y-2">
                 <Label>Date of Filing</Label>
-                <Input
-                  value={formData.date}
-                  readOnly
-                  className="bg-muted cursor-not-allowed"
-                />
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={formData.date}
+                    readOnly
+                    className="h-11 pl-10 bg-muted/70 cursor-not-allowed"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Automatically set to today&apos;s date
                 </p>
@@ -675,8 +668,8 @@ export function ApplicationForm({
       </div>
 
       {/* Right: PDF Preview */}
-      <div className="order-1 lg:order-2 lg:sticky lg:top-4 lg:self-start h-[85vh] min-h-[600px]">
-        <PDFPreview data={formData} />
+      <div className="order-1 lg:order-2 lg:sticky lg:top-4 lg:self-start h-[85vh] min-h-150">
+        <PDFPreview data={debouncedPreviewData} />
       </div>
     </div>
   );
