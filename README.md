@@ -8,6 +8,13 @@ An election management system designed to modernize student elections at Visayas
 | UN.010.002                                             | 2026-02-27    |
 | UN.010.003                                             | 2026-02-27    |
 | UN.010.004                                             | 2026-03-07    |
+| UN.010.005                                             | 2026-03-15    |
+
+## AB.010.004 Release Notes
+- Add nav, hero, feature, and footer page to the home page
+- Update dependencies and migrate to Tailwind CSS v4.2
+- Add archive page and link to it from the home page
+- Refactor candidacy application process, enhance application form, and add candidates page
 
 ## AB.010.004 Release Notes
 - Implement OTP verification with login flow and eligibility checker.

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createPosition } from "../actions";
 
@@ -10,6 +11,7 @@ export function AddPositionForm({ electionId }: { electionId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   if (!isOpen) {
     return (
@@ -24,14 +26,21 @@ export function AddPositionForm({ electionId }: { electionId: string }) {
     setIsLoading(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     formData.set("election_id", electionId);
 
     const result = await createPosition(formData);
     if (result?.error) {
       setError(result.error);
       setIsLoading(false);
+      return;
     }
+
+    form.reset();
+    // setIsOpen(false);
+    router.refresh();
+    setIsLoading(false);
   }
 
   return (

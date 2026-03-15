@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +17,17 @@ interface Election {
   is_archived: boolean;
 }
 
+interface CourseOption {
+  course_id: string;
+  name: string;
+  acronym: string | null;
+  department_name: string;
+  faculty_name: string;
+}
+
 async function ApplyPageContent({ electionId }: { electionId: string }) {
   const supabase = await createClient();
+  const adminSupabase = await createAdminClient();
 
   // Fetch election
   const { data: election, error: electionError } = await supabase
@@ -53,11 +63,28 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
     .eq("election_id", electionId)
     .order("created_at", { ascending: true });
 
-  // Fetch all courses for the dropdown
-  const { data: courses } = await supabase
+  // Fetch all courses for the dropdown with department/faculty metadata
+  const { data: courses } = await adminSupabase
     .from("courses")
-    .select("course_id, name, acronym")
+    .select("course_id, name, acronym, departments(name, faculties(name))")
     .order("name", { ascending: true });
+
+  const courseOptions: CourseOption[] = (courses || []).map((course) => {
+    const departmentObj = Array.isArray(course.departments)
+      ? course.departments[0]
+      : course.departments;
+    const facultyObj = Array.isArray(departmentObj?.faculties)
+      ? departmentObj?.faculties[0]
+      : departmentObj?.faculties;
+
+    return {
+      course_id: course.course_id,
+      name: course.name,
+      acronym: course.acronym,
+      department_name: departmentObj?.name || "",
+      faculty_name: facultyObj?.name || "",
+    };
+  });
 
   // Fetch partylists for this election
   const { data: partylists } = await supabase
@@ -107,7 +134,7 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
               electionName={electionData.name}
               electionType={electionData.election_type}
               positions={positions}
-              courses={courses || []}
+              courses={courseOptions}
               partylists={partylists || []}
             />
           ) : (
