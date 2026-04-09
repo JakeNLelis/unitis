@@ -32,6 +32,7 @@ import { EditElectionDates } from "./edit-election-dates";
 import { DeleteElectionButton } from "./delete-election-button";
 import { ElectionResults } from "./election-results";
 import { VoterMasterlist } from "./voter-masterlist";
+import { TurnoutAdjustmentForm } from "./turnout-adjustment-form";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -404,6 +405,9 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           <VoterMasterlist electionId={electionId} voters={votersData} />
         </CardContent>
       </Card>
+
+      {/* Turnout adjustments */}
+      <TurnoutAdjustmentForm electionId={electionId} />
     </div>
   );
 }

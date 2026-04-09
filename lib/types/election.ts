@@ -83,3 +83,32 @@ export const ELECTION_TYPES = [
 ] as const;
 
 export type ElectionType = (typeof ELECTION_TYPES)[number];
+
+// Turnout-related types
+
+export type ElectionState = "upcoming" | "active" | "ended";
+
+export interface TurnoutSnapshot {
+  election_id: string;
+  casted_votes: number;
+  expected_voters: number;
+  turnout_percentage: number;
+  last_updated_at: string;
+}
+
+export interface TurnoutAdjustment {
+  adjustment_id: string;
+  election_id: string;
+  seb_officer_id: string;
+  casted_votes_delta: number | null;
+  expected_voters_value: number | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface TurnoutAdjustmentInput {
+  election_id?: string;
+  casted_votes_delta?: number;
+  expected_voters_value?: number;
+  reason?: string;
+}

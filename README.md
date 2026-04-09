@@ -9,8 +9,19 @@ An election management system designed to modernize student elections at Visayas
 | UN.010.003                                             | 2026-02-27    |
 | UN.010.004                                             | 2026-03-07    |
 | UN.010.005                                             | 2026-03-15    |
+| UN.010.006                                             | 2026-04-02    |
 
-## AB.010.004 Release Notes
+## AB.010.006 Release Notes
+- Split the home page election area into Happening Now and Upcoming Election sections.
+- Add dedicated public event pages with state-based actions.
+- Add live turnout snapshots with realtime refresh for active elections.
+- Add archive detail pages with per-candidate totals and turnout summary metrics.
+- Add officer turnout adjustment controls with active-election validation and auto-adjust handling.
+- Add direct in-card `Check eligibility` action for upcoming elections while preserving card navigation to event pages.
+- Expand upcoming event pages with full pre-election action set beyond eligibility.
+- Refine hover feedback to border-emphasis style for cleaner visual cues.
+
+## AB.010.005 Release Notes
 - Add nav, hero, feature, and footer page to the home page
 - Update dependencies and migrate to Tailwind CSS v4.2
 - Add archive page and link to it from the home page

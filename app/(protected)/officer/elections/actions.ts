@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getSEBOfficer } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import type { TurnoutAdjustmentInput } from "@/lib/types/election";
+import { isElectionActive } from "@/lib/utils";
 
 export async function createElection(formData: FormData) {
   const officer = await getSEBOfficer();
@@ -425,4 +427,99 @@ export async function clearVoterMasterlist(electionId: string) {
   }
 
   return { success: true };
+}
+
+// Turnout mutation server actions (T009-T011)
+
+/**
+ * T009: Create or update a turnout adjustment for an active election
+ * T010: Includes input validation and auto-adjust rule handling
+ * T011: Triggers revalidation of landing/event/archive pages
+ *
+ * Constraints:
+ * - Officer auth required (enforced by getSEBOfficer)
+ * - Election must be active
+ * - At least one of casted_votes_delta or expected_voters_value required
+ * - Validated values must be non-negative
+ * - If casted_votes > expected_voters after adjustment, auto-adjust expected_voters = casted_votes
+ */
+export async function submitTurnoutAdjustment(
+  electionId: string,
+  input: TurnoutAdjustmentInput,
+) {
+  // T009: Auth check - return error instead of redirect per server-action contract
+  const officer = await getSEBOfficer();
+  if (!officer) {
+    return { error: "Unauthorized" };
+  }
+
+  // T010: Input validation
+  const { casted_votes_delta, expected_voters_value, reason } = input;
+
+  // Validate: at least one input provided
+  if (
+    (casted_votes_delta === undefined || casted_votes_delta === null) &&
+    (expected_voters_value === undefined || expected_voters_value === null)
+  ) {
+    return {
+      error:
+        "Must provide either casted votes adjustment or expected voters value",
+    };
+  }
+
+  // Validate: non-negative values
+  if (casted_votes_delta !== undefined && casted_votes_delta !== null) {
+    if (!Number.isInteger(casted_votes_delta) || casted_votes_delta < 0) {
+      return { error: "Casted votes adjustment must be non-negative integer" };
+    }
+  }
+
+  if (expected_voters_value !== undefined && expected_voters_value !== null) {
+    if (!Number.isInteger(expected_voters_value) || expected_voters_value < 0) {
+      return { error: "Expected voters must be non-negative integer" };
+    }
+  }
+
+  const supabase = await createAdminClient();
+
+  // Verify election exists and is active
+  const { data: election, error: electionError } = await supabase
+    .from("elections")
+    .select("start_date, end_date")
+    .eq("election_id", electionId)
+    .single();
+
+  if (electionError || !election) {
+    return { error: "Election not found" };
+  }
+
+  // T010: Check if election is active (required for turnout edits)
+  if (!isElectionActive(election.start_date, election.end_date)) {
+    return { error: "Turnout adjustments only allowed for active elections" };
+  }
+
+  // Insert turnout adjustment record
+  const { data: adjustment, error: insertError } = await supabase
+    .from("turnout_adjustments")
+    .insert({
+      election_id: electionId,
+      seb_officer_id: officer.seb_officer_id,
+      casted_votes_delta: casted_votes_delta || null,
+      expected_voters_value: expected_voters_value || null,
+      reason: reason || null,
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    return { error: insertError.message };
+  }
+
+  // T011: Revalidate affected paths so cached data updates
+  revalidatePath("/"); // Landing page (US1)
+  revalidatePath(`/elections/${electionId}`); // Event page (US2)
+  revalidatePath(`/elections/${electionId}/turnout`); // Live turnout (US3)
+  revalidatePath("/archive"); // Archive page (US3)
+
+  return { success: true, data: adjustment };
 }

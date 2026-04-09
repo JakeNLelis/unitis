@@ -52,3 +52,7 @@ next-env.d.ts
 
 # prettier
 .prettierignore
+
+#speckit
+/specs/
+.specify

@@ -1,6 +1,6 @@
 {
   "private": true,
-  "version": "UN.010.005",
+  "version": "UN.010.006",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
