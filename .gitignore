@@ -56,3 +56,7 @@ next-env.d.ts
 #speckit
 /specs/
 .specify
+
+#stitch
+skills-lock.json
+.agents/
