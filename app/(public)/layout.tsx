@@ -13,10 +13,12 @@ export default function PublicLayout({
   const headerColor = pathname === "/" ? "blue" : "white";
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <HeaderSection color={headerColor} />
 
-      {children}
+      <div className="flex-1">
+        {children}
+      </div>
 
       <FooterSection />
     </div>

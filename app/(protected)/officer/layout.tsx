@@ -4,31 +4,63 @@ import { NavLink } from "@/components/nav-link";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Logo } from "@/components/logo";
+import { ShieldCheck, LayoutDashboard, Database, UserCheck, Menu } from "lucide-react";
+import FooterSection from "@/components/footer-section";
+import { OfficerMobileNav } from "@/components/institutional/officer-mobile-nav";
 
 async function OfficerNav() {
   const { profile } = await requireSEBOfficer();
 
   return (
-    <nav className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur-lg">
+    <nav className="sticky top-0 z-50 border-b border-foreground/10 bg-background/95 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-14 items-center">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 group">
+        <div className="flex justify-between h-20 items-center">
+          <div className="flex items-center gap-10">
+            <Link href="/officer" className="flex items-center gap-2 group">
               <Logo size="sm" color="blue" />
             </Link>
-            <div className="flex gap-6">
-              <NavLink href="/officer/elections">Elections</NavLink>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-8">
+              <Link 
+                href="/officer" 
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-colors text-foreground"
+              >
+                <LayoutDashboard className="size-4" />
+                Overview
+              </Link>
+              <Link 
+                href="/officer/elections" 
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-colors text-foreground"
+              >
+                <Database className="size-4" />
+                Election Registry
+              </Link>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="size-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium uppercase">
-                {profile.display_name?.charAt(0) || "O"}
+
+          <div className="flex items-center gap-6">
+            <div className="hidden lg:flex flex-col items-end mr-2">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">
+                <ShieldCheck className="size-3" />
+                Officer Session
               </div>
-              <span>{profile.display_name}</span>
+              <span className="text-sm font-black uppercase tracking-tight tabular-nums">
+                {profile.display_name}
+              </span>
             </div>
-            <div className="h-4 w-px bg-border hidden sm:block" />
-            <LogoutButton />
+
+            <div className="h-10 w-px bg-foreground/10 hidden sm:block" />
+            
+            <div className="flex items-center gap-2">
+              <div className="hidden md:block">
+                <LogoutButton />
+              </div>
+              <OfficerMobileNav 
+                displayName={profile.display_name} 
+                logoutButton={<LogoutButton />} 
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -42,25 +74,24 @@ export default function OfficerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background font-sans">
       <Suspense
         fallback={
-          <nav className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur-lg">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between h-14 items-center">
-                <div className="flex items-center">
-                  <Logo size="sm" color="blue" />
-                </div>
-              </div>
+          <nav className="sticky top-0 z-50 border-b-4 border-foreground bg-background">
+            <div className="max-w-7xl mx-auto px-4 h-20 flex items-center">
+              <Logo size="sm" color="blue" />
             </div>
           </nav>
         }
       >
         <OfficerNav />
       </Suspense>
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         {children}
       </main>
+
+      <FooterSection />
     </div>
   );
 }

@@ -14,19 +14,7 @@ export default function Home() {
       {/* Features */}
       <FeatureSection />
 
-      {/* Elections: Split into Happening Now and Upcoming Election sections */}
       <div className="container max-w-4xl mx-auto px-4 py-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Elections</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Join your university&apos;s electoral process
-            </p>
-          </div>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/archive">View archive</Link>
-          </Button>
-        </div>
 
         <Suspense
           fallback={

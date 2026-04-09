@@ -60,3 +60,4 @@ next-env.d.ts
 #stitch
 skills-lock.json
 .agents/
+.stitch/

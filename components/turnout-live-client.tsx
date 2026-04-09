@@ -3,13 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   subscribeTurnoutDeltas,
   unsubscribeTurnoutDeltas,
 } from "@/lib/turnout/realtime";
@@ -25,6 +18,7 @@ export function TurnoutLiveClient({ electionId }: TurnoutLiveClientProps) {
 
   useEffect(() => {
     const channel = subscribeTurnoutDeltas(electionId, () => {
+      // Use startTransition or similar if needed, but refresh() is simple for now
       router.refresh();
     });
 
@@ -33,20 +27,6 @@ export function TurnoutLiveClient({ electionId }: TurnoutLiveClientProps) {
     };
   }, [electionId, router]);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Realtime updates</CardTitle>
-        <CardDescription>
-          This page refreshes automatically when turnout changes.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">
-          Live turnout updates are subscribed in the background for active
-          elections.
-        </p>
-      </CardContent>
-    </Card>
-  );
+  // Headless component: just logic
+  return null;
 }

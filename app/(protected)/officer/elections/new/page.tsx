@@ -1,13 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, ShieldCheck, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -45,86 +38,166 @@ export default function NewElectionPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
+    <div className="max-w-4xl mx-auto space-y-12">
+      {/* Back Navigation */}
+      <div>
         <Link
           href="/officer/elections"
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="group inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest hover:text-primary transition-colors"
         >
-          ← Back to Elections
+          <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Registry
         </Link>
       </div>
 
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Create Election</CardTitle>
-          <CardDescription>
-            Set up a new election with voting and candidacy filing periods.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Hero Header */}
+      <section className="pb-8 border-b-2 border-foreground">
+        <h1 className="text-6xl md:text-7xl font-black font-heading tracking-tighter uppercase leading-[0.8] mb-4">
+          Initialize<br />Election
+        </h1>
+        <div className="flex flex-col md:flex-row gap-6 md:items-center">
+          <p className="text-xl font-medium max-w-xl border-l-4 border-primary pl-4 py-1">
+            Establish a new electoral event. Ensure all filing and voting periods are strictly verified.
+          </p>
+          <div className="flex items-center gap-2 px-4 py-2 bg-surface-low border border-foreground/10 text-xs font-bold uppercase tracking-widest">
+            <ShieldCheck className="size-4 text-primary" />
+            Security Protocol Active
+          </div>
+        </div>
+      </section>
+
+      <form onSubmit={handleSubmit} className="space-y-12">
+        {/* Core Metadata Section */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Election Name</Label>
+              <Label 
+                htmlFor="name" 
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground"
+              >
+                Official Election Name
+              </Label>
               <Input
                 id="name"
                 name="name"
                 placeholder="e.g. SSC General Election 2026"
                 required
+                className="h-14 border-2 border-foreground rounded-none text-xl font-bold placeholder:font-medium placeholder:text-muted-foreground/30 focus-visible:ring-0 focus-visible:border-primary"
               />
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
+                This name will appear on all digital ballots and official reports.
+              </p>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="election_type">Election Type</Label>
+              <Label 
+                htmlFor="election_type"
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground"
+              >
+                Election Classification
+              </Label>
               <Select name="election_type" required>
-                <SelectTrigger>
+                <SelectTrigger className="h-14 border-2 border-foreground rounded-none text-lg font-bold focus:ring-0">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-2 border-foreground rounded-none">
                   {ELECTION_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
+                    <SelectItem key={type} value={type} className="font-bold py-3">
                       {type}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <DateTimeRangePicker
-              title="Candidacy Filing Period"
-              description="Set when candidates can submit their application. The filing deadline must be before the election starts."
-              startLabel="Filing opens time"
-              endLabel="Filing deadline time"
-              startName="candidacy_start_date"
-              endName="candidacy_end_date"
-            />
-            <DateTimeRangePicker
-              title="Election Voting Period"
-              startLabel="Voting starts time"
-              endLabel="Voting ends time"
-              startName="start_date"
-              endName="end_date"
-              required
-            />
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2">
-                <AlertCircle className="size-4 text-destructive shrink-0" />
-                <p className="text-sm text-destructive">{error}</p>
+          </div>
+
+          <div className="p-6 bg-surface-lowest border-2 border-foreground relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+               <Info className="size-20" />
+            </div>
+            <h4 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Info className="size-4" />
+              Institutional Guidance
+            </h4>
+            <ul className="space-y-3 text-sm font-medium">
+              <li className="flex gap-2">
+                <span className="text-primary font-bold">01</span>
+                Ensure names are accurate. Post-initialization changes require audit clearance.
+              </li>
+              <li className="flex gap-2">
+                <span className="text-primary font-bold">02</span>
+                Classification determines candidate eligibility rules and system constraints.
+              </li>
+              <li className="flex gap-2">
+                <span className="text-primary font-bold">03</span>
+                The filing period must conclude before the voting period begins.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Date/Time Configuration */}
+        <section className="space-y-12">
+          <DateTimeRangePicker
+            title="Candidacy Filing Range"
+            description="Operational window for candidate submission and vetting."
+            startLabel="Opening Timestamp"
+            endLabel="Deadline Timestamp"
+            startName="candidacy_start_date"
+            endName="candidacy_end_date"
+          />
+
+          <DateTimeRangePicker
+            title="Voting Operational window"
+            description="Active threshold for student participation and ballot casting."
+            startLabel="Live Start Time"
+            endLabel="Live End Time"
+            startName="start_date"
+            endName="end_date"
+            required
+          />
+        </section>
+
+        {/* Errors & Submission */}
+        <section className="pt-8 border-t-2 border-foreground">
+          {error && (
+            <div className="mb-8 p-6 bg-destructive/10 border-2 border-destructive text-destructive flex items-center gap-4">
+              <AlertCircle className="size-6 shrink-0" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest mb-1">Validation Error</p>
+                <p className="font-bold">{error}</p>
               </div>
-            )}
-            <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Election"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-low p-6 border-2 border-foreground">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full border-2 border-foreground flex items-center justify-center font-bold">!</div>
+              <p className="text-xs font-bold leading-tight max-w-xs uppercase">
+                By clicking "Initialize Registry", you confirm that all parameters meet university electoral bypass standards.
+              </p>
+            </div>
+            
+            <div className="flex gap-4 w-full sm:w-auto">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex-1 sm:flex-none h-14 px-8 border-2 border-foreground rounded-none font-black uppercase tracking-widest hover:bg-surface-lowest transition-colors"
                 onClick={() => router.push("/officer/elections")}
               >
-                Cancel
+                Discard
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="flex-1 sm:flex-none h-14 px-12 bg-foreground text-background rounded-none font-black uppercase tracking-widest hover:bg-primary transition-all disabled:opacity-50"
+              >
+                {isLoading ? "Synchronizing..." : "Initialize Registry"}
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </section>
+      </form>
     </div>
   );
 }
