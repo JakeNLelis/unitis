@@ -5,14 +5,17 @@ import { getElectionState, cn } from "@/lib/utils";
 import { EventActionPanel } from "@/components/event-action-panel";
 import type { ElectionState } from "@/lib/types/election";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Flag, Info, ArrowLeft, ClipboardList } from "lucide-react";
+import {
+  CalendarDays,
+  Flag,
+  Info,
+  ArrowLeft,
+  ClipboardList,
+} from "lucide-react";
 import { InstitutionalCountdown } from "@/components/institutional/countdown";
 import { CandidateRegistry } from "@/components/institutional/candidate-registry";
 import { archivo } from "@/lib/fonts";
-
-interface ElectionPageProps {
-  params: Promise<{ id: string }>;
-}
+import type { ElectionPageProps } from "@/lib/types/public";
 
 export default async function ElectionPage({ params }: ElectionPageProps) {
   const { id } = await params;
@@ -32,13 +35,15 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   // Fetch approved candidates with positions and partylists
   const { data: candidates, error: candidatesError } = await supabase
     .from("candidates")
-    .select(`
+    .select(
+      `
       candidate_id,
       full_name,
       photo,
       position:positions(title),
       partylist:partylists(name, acronym)
-    `)
+    `,
+    )
     .eq("election_id", id)
     .eq("application_status", "approved");
 
@@ -68,9 +73,12 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
   const stateVariant = state === "active" ? "default" : "secondary";
 
   // Countdown Config
-  const targetDate = state === "active" ? election.end_date : election.start_date;
-  const countdownLabel = state === "active" ? "Ballot Session Termination" : "Election Commencement";
-  const countdownExpiredLabel = state === "active" ? "Registry Concluded" : "Institutional Session Live";
+  const targetDate =
+    state === "active" ? election.end_date : election.start_date;
+  const countdownLabel =
+    state === "active" ? "Ballot Session Termination" : "Election Commencement";
+  const countdownExpiredLabel =
+    state === "active" ? "Registry Concluded" : "Institutional Session Live";
 
   return (
     <main className="container max-w-4xl mx-auto px-6 py-12 md:py-20">
@@ -89,14 +97,22 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           <div className="relative border-2 border-foreground p-8 md:p-12 overflow-hidden bg-background">
             {/* Decorative Corner */}
             <div className="absolute top-0 right-0 w-24 h-24 bg-foreground/5 rotate-45 translate-x-12 -translate-y-12" />
-            
+
             <div className="flex flex-col md:flex-row justify-between gap-12 relative z-10">
               <div className="space-y-6 flex-1">
                 <div className="space-y-2">
-                  <Badge variant={stateVariant} className="rounded-none font-black tracking-widest uppercase">
+                  <Badge
+                    variant={stateVariant}
+                    className="rounded-none font-black tracking-widest uppercase"
+                  >
                     {stateLabel}
                   </Badge>
-                  <h1 className={cn("text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.9]", archivo.className)}>
+                  <h1
+                    className={cn(
+                      "text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.9]",
+                      archivo.className,
+                    )}
+                  >
                     {election.name}
                   </h1>
                 </div>
@@ -127,13 +143,14 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
               <div className="md:w-px md:h-64 bg-foreground/10 hidden md:block" />
 
               <div className="md:w-72 flex flex-col justify-center">
-                <InstitutionalCountdown 
+                <InstitutionalCountdown
                   targetDate={targetDate}
                   label={countdownLabel}
                   expiredLabel={countdownExpiredLabel}
                 />
                 <p className="mt-6 text-[10px] leading-relaxed font-bold text-muted-foreground/60 uppercase tracking-wider">
-                  This session metadata is cryptographically synchronized with the plenum core registry.
+                  This session metadata is cryptographically synchronized with
+                  the plenum core registry.
                 </p>
               </div>
             </div>
@@ -142,12 +159,17 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="h-px w-8 bg-foreground/10" />
-              <h2 className={cn("text-xs font-black uppercase tracking-[0.3em] text-muted-foreground", archivo.className)}>
+              <h2
+                className={cn(
+                  "text-xs font-black uppercase tracking-[0.3em] text-muted-foreground",
+                  archivo.className,
+                )}
+              >
                 Quick Actions
               </h2>
               <div className="h-px flex-1 bg-foreground/10" />
             </div>
-            
+
             <EventActionPanel
               electionId={id}
               electionName={election.name}
@@ -160,7 +182,12 @@ export default async function ElectionPage({ params }: ElectionPageProps) {
         <div className="space-y-10">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-4">
-              <h2 className={cn("text-4xl font-black uppercase tracking-tighter", archivo.className)}>
+              <h2
+                className={cn(
+                  "text-4xl font-black uppercase tracking-tighter",
+                  archivo.className,
+                )}
+              >
                 Registry of Candidates
               </h2>
             </div>

@@ -1,10 +1,5 @@
 import Image from "next/image";
-
-interface LogoProps {
-  size?: "sm" | "lg";
-  color?: "blue" | "white";
-  className?: string;
-}
+import type { LogoProps } from "@/lib/types/components";
 
 export function Logo({
   size = "lg",

@@ -3,11 +3,7 @@
 import { useEffect } from "react";
 import { usePDF } from "@react-pdf/renderer";
 import CandidacyPDF from "./candidacy-pdf";
-import { CandidacyFormData } from "./types";
-
-interface PDFPreviewProps {
-  data: CandidacyFormData;
-}
+import type { PDFPreviewProps } from "@/lib/types/public";
 
 export default function PDFPreview({ data }: PDFPreviewProps) {
   const [instance, updateInstance] = usePDF({

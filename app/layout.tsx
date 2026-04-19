@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import "./main.css";
+import "./globals.css";
 import { inter, archivo, ericaOne } from "@/lib/fonts";
+import { Analytics } from "@vercel/analytics/next";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -27,8 +28,11 @@ export default function RootLayout({
       className={`${inter.variable} ${archivo.variable} ${ericaOne.variable}`}
       suppressHydrationWarning
     >
-      <body className={`${inter.className} font-sans antialiased text-foreground bg-background`}>
+      <body
+        className={`${inter.className} font-sans antialiased text-foreground bg-background`}
+      >
         {children}
+        <Analytics />
       </body>
     </html>
   );

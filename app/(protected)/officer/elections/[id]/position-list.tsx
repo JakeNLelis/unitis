@@ -7,20 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { updatePosition, deletePosition } from "../actions";
+import type {
+  PositionItemProps,
+  PositionListProps,
+} from "@/lib/types/officer-elections";
 
-interface Position {
-  position_id: string;
-  title: string;
-  max_votes: number;
-}
-
-function PositionItem({
-  position,
-  electionId,
-}: {
-  position: Position;
-  electionId: string;
-}) {
+function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -117,20 +109,24 @@ function PositionItem({
           </Badge>
         )}
       </div>
-      <div className="flex items-center gap-1">
-        <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
-          Edit
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-destructive hover:text-destructive"
-          onClick={handleDelete}
-          disabled={isDeleting}
-        >
-          {isDeleting ? "Deleting..." : "Delete"}
-        </Button>
-      </div>
+      {canEdit ? (
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
+      ) : (
+        <span className="text-xs text-muted-foreground">Read-only</span>
+      )}
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mt-2">
           <p className="text-sm text-destructive">{error}</p>
@@ -143,10 +139,8 @@ function PositionItem({
 export function PositionList({
   positions,
   electionId,
-}: {
-  positions: Position[];
-  electionId: string;
-}) {
+  canEdit,
+}: PositionListProps) {
   return (
     <div className="space-y-2">
       {positions.map((pos) => (
@@ -154,6 +148,7 @@ export function PositionList({
           key={pos.position_id}
           position={pos}
           electionId={electionId}
+          canEdit={canEdit}
         />
       ))}
     </div>

@@ -7,12 +7,16 @@ import { cn } from "@/lib/utils";
 export function NavLink({
   href,
   children,
+  exact = false,
 }: {
   href: string;
   children: React.ReactNode;
+  exact?: boolean;
 }) {
   const pathname = usePathname();
-  const isActive = pathname === href || pathname.startsWith(href + "/");
+  const isActive = exact
+    ? pathname === href
+    : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <Link

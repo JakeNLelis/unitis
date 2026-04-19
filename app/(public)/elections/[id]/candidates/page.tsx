@@ -8,38 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CalendarDays, Clock3, Search } from "lucide-react";
-
-interface ElectionMeta {
-  election_id: string;
-  name: string;
-  election_type: string;
-  start_date: string;
-  end_date: string;
-}
-
-interface PositionRow {
-  position_id: string;
-  title: string;
-}
-
-interface CandidateRow {
-  candidate_id: string;
-  position_id: string;
-  full_name: string;
-  photo: string | null;
-  partylists: { name: string; acronym: string; platform: string | null } | null;
-}
-
-interface CandidateRaw {
-  candidate_id: string;
-  position_id: string;
-  full_name: string;
-  photo: string | null;
-  partylists:
-    | { name: string; acronym: string; platform: string | null }
-    | Array<{ name: string; acronym: string; platform: string | null }>
-    | null;
-}
+import type {
+  CandidatesContentProps,
+  CandidatesElectionMeta,
+  CandidatesPageProps,
+  CandidatesPositionRow,
+  CandidatesRaw,
+  CandidatesRow,
+} from "@/lib/types/public";
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -70,10 +46,7 @@ function formatDisplayTimeRange(startIso: string, endIso: string) {
 async function CandidatesContent({
   electionId,
   query,
-}: {
-  electionId: string;
-  query: string;
-}) {
+}: CandidatesContentProps) {
   const supabase = await createClient();
   const adminSupabase = await createAdminClient();
 
@@ -87,7 +60,7 @@ async function CandidatesContent({
     notFound();
   }
 
-  const electionMeta = election as ElectionMeta;
+  const electionMeta = election as CandidatesElectionMeta;
 
   const { data: positions } = await supabase
     .from("positions")
@@ -104,7 +77,7 @@ async function CandidatesContent({
     .eq("application_status", "approved")
     .order("full_name", { ascending: true });
 
-  const candidatesNormalized: CandidateRow[] = (
+  const candidatesNormalized: CandidatesRow[] = (
     (candidates || []) as CandidateRaw[]
   ).map((candidate) => {
     const party = Array.isArray(candidate.partylists)
@@ -194,7 +167,7 @@ async function CandidatesContent({
           </Card>
         ) : (
           <div className="space-y-8">
-            {((positions || []) as PositionRow[]).map((position) => {
+            {((positions || []) as CandidatesPositionRow[]).map((position) => {
               const byPosition = positionMap.get(position.position_id) || [];
               if (byPosition.length === 0) return null;
 
@@ -271,10 +244,7 @@ async function CandidatesContent({
 export default function CandidatesPage({
   params,
   searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string }>;
-}) {
+}: CandidatesPageProps) {
   return (
     <Suspense
       fallback={
@@ -293,10 +263,7 @@ export default function CandidatesPage({
 async function CandidatesPageWrapper({
   params,
   searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string }>;
-}) {
+}: CandidatesPageProps) {
   const { id } = await params;
   const { q } = await searchParams;
   return <CandidatesContent electionId={id} query={q || ""} />;

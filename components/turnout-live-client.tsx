@@ -6,14 +6,11 @@ import {
   subscribeTurnoutDeltas,
   unsubscribeTurnoutDeltas,
 } from "@/lib/turnout/realtime";
-import type { TurnoutSnapshot } from "@/lib/types/election";
+import type { SharedTurnoutLiveClientProps } from "@/lib/types/components";
 
-interface TurnoutLiveClientProps {
-  electionId: string;
-  initialSnapshot: TurnoutSnapshot | null;
-}
-
-export function TurnoutLiveClient({ electionId }: TurnoutLiveClientProps) {
+export function TurnoutLiveClient({
+  electionId,
+}: SharedTurnoutLiveClientProps) {
   const router = useRouter();
 
   useEffect(() => {

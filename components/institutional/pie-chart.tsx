@@ -1,14 +1,6 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { archivo } from '@/lib/fonts';
-
-interface InstitutionalPieChartProps {
-  percentage: number;
-  label?: string;
-  size?: number;
-  strokeWidth?: number;
-  className?: string;
-}
+import { cn } from "@/lib/utils";
+import { archivo } from "@/lib/fonts";
+import type { InstitutionalPieChartProps } from "@/lib/types/institutional";
 
 export function InstitutionalPieChart({
   percentage,
@@ -49,10 +41,15 @@ export function InstitutionalPieChart({
             className="text-primary transition-all duration-1000 ease-in-out"
           />
         </svg>
-        
+
         {/* Center Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn("text-2xl font-black tabular-nums tracking-tighter", archivo.className)}>
+          <span
+            className={cn(
+              "text-2xl font-black tabular-nums tracking-tighter",
+              archivo.className,
+            )}
+          >
             {Math.round(percentage)}%
           </span>
           {label && (

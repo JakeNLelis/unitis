@@ -19,19 +19,13 @@ import {
   removeVoter,
   clearVoterMasterlist,
 } from "../actions";
+import type { VoterMasterlistProps } from "@/lib/types/officer-elections";
 
-interface Voter {
-  voter_id: string;
-  student_id: string;
-  is_voted: boolean;
-}
-
-interface VoterMasterlistProps {
-  electionId: string;
-  voters: Voter[];
-}
-
-export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
+export function VoterMasterlist({
+  electionId,
+  voters,
+  canEdit,
+}: VoterMasterlistProps) {
   const router = useRouter();
   const [rawText, setRawText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,6 +39,7 @@ export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
   const notVotedCount = totalVoters - votedCount;
 
   async function handleAdd() {
+    if (!canEdit) return;
     if (!rawText.trim()) return;
     setError(null);
     setSuccessMsg(null);
@@ -68,6 +63,7 @@ export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
   }
 
   async function handleRemove(voterId: string) {
+    if (!canEdit) return;
     const result = await removeVoter(voterId);
     if (result.error) {
       setError(result.error);
@@ -77,6 +73,7 @@ export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
   }
 
   async function handleClear() {
+    if (!canEdit) return;
     setClearLoading(true);
     const result = await clearVoterMasterlist(electionId);
     setClearLoading(false);
@@ -122,6 +119,7 @@ export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
           }}
           rows={4}
           className="font-mono text-sm"
+          readOnly={!canEdit}
         />
         {previewIds.length > 0 && (
           <p className="text-xs text-muted-foreground">
@@ -145,13 +143,13 @@ export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
       <div className="flex items-center gap-2">
         <Button
           onClick={handleAdd}
-          disabled={loading || previewIds.length === 0}
+          disabled={!canEdit || loading || previewIds.length === 0}
           size="sm"
         >
           {loading ? "Adding..." : "Add to Masterlist"}
         </Button>
 
-        {notVotedCount > 0 && (
+        {canEdit && notVotedCount > 0 && (
           <Dialog open={clearOpen} onOpenChange={setClearOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
@@ -209,7 +207,7 @@ export function VoterMasterlist({ electionId, voters }: VoterMasterlistProps) {
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    {!voter.is_voted && (
+                    {canEdit && !voter.is_voted && (
                       <Button
                         variant="ghost"
                         size="sm"

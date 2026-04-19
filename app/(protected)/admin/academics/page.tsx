@@ -1,35 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { AcademicsManager } from "./academics-manager";
 import { Suspense } from "react";
-
-interface Faculty {
-  faculty_id: string;
-  name: string;
-  acronym: string | null;
-  departments: Department[];
-}
-
-interface Department {
-  department_id: string;
-  name: string;
-  acronym: string | null;
-  faculty_id: string;
-  courses: Course[];
-}
-
-interface Course {
-  course_id: string;
-  name: string;
-  acronym: string | null;
-  department_id: string;
-}
+import type {
+  AcademicCampusWithFaculties,
+  AcademicDepartment,
+  AcademicFaculty,
+} from "@/lib/types/admin-academics";
 
 async function AcademicsContent() {
   const supabase = await createClient();
 
   const { data: faculties } = await supabase
     .from("faculties")
-    .select("faculty_id, name, acronym")
+    .select("faculty_id, campus_id, name, acronym")
     .order("name");
 
   const { data: departments } = await supabase
@@ -42,8 +25,13 @@ async function AcademicsContent() {
     .select("course_id, department_id, name, acronym")
     .order("name");
 
+  const { data: campusesRaw } = await supabase
+    .from("campuses")
+    .select("campus_id, name, created_at")
+    .order("name");
+
   // Nest: departments into faculties, courses into departments
-  const deptMap = new Map<string, Department>();
+  const deptMap = new Map<string, AcademicDepartment>();
   for (const d of departments || []) {
     deptMap.set(d.department_id, { ...d, courses: [] });
   }
@@ -51,14 +39,23 @@ async function AcademicsContent() {
     deptMap.get(c.department_id)?.courses.push(c);
   }
 
-  const facultyList: Faculty[] = (faculties || []).map((f) => ({
+  const facultyList: AcademicFaculty[] = (faculties || []).map((f) => ({
     ...f,
     departments: (departments || [])
       .filter((d) => d.faculty_id === f.faculty_id)
       .map((d) => deptMap.get(d.department_id)!),
   }));
 
-  return <AcademicsManager faculties={facultyList} />;
+  const campuses: AcademicCampusWithFaculties[] = (campusesRaw || []).map(
+    (campus) => ({
+      ...campus,
+      faculties: facultyList.filter(
+        (faculty) => faculty.campus_id === campus.campus_id,
+      ),
+    }),
+  );
+
+  return <AcademicsManager campuses={campuses} />;
 }
 
 export default function AcademicsPage() {
@@ -67,8 +64,7 @@ export default function AcademicsPage() {
       <div>
         <h1 className="text-2xl font-bold">Academics Management</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Manage faculties, departments, and courses/programs. These appear as
-          choices in the candidacy application form.
+          Manage faculties, campuses, departments, and courses/programs.
         </p>
       </div>
       <Suspense

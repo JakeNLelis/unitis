@@ -12,23 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getElectionResults } from "@/app/(public)/elections/[id]/vote/actions";
 
-interface CandidateResult {
-  candidate_id: string;
-  full_name: string;
-  partylist: { name: string; acronym: string } | null;
-  vote_count: number;
-}
-
-interface PositionResult {
-  position_id: string;
-  title: string;
-  max_votes: number;
-  candidates: CandidateResult[];
-}
-
-interface ElectionResultsProps {
-  electionId: string;
-}
+import type {
+  ElectionResultsProps,
+  OfficerPositionResult,
+} from "@/lib/types/officer-elections";
 
 /**
  * Client component for election results.
@@ -37,7 +24,7 @@ interface ElectionResultsProps {
  * by calling setResults / setTotalVoters directly.
  */
 export function ElectionResults({ electionId }: ElectionResultsProps) {
-  const [results, setResults] = useState<PositionResult[]>([]);
+  const [results, setResults] = useState<OfficerPositionResult[]>([]);
   const [totalVoters, setTotalVoters] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

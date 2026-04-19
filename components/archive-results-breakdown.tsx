@@ -5,21 +5,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { ArchiveResultsBreakdownProps } from "@/lib/types/components";
 
-export interface ArchiveCandidateResult {
-  candidate_id: string;
-  full_name: string;
-  position_title: string;
-  vote_total: number;
-}
-
-interface ArchiveResultsBreakdownProps {
-  electionName: string;
-  totalVotes: number;
-  expectedVoters: number;
-  turnoutPercentage: number;
-  candidateResults: ArchiveCandidateResult[];
-}
+export type { ArchiveCandidateResult } from "@/lib/types/components";
 
 export function ArchiveResultsBreakdown({
   electionName,

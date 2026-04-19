@@ -10,9 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, ArrowLeft, ShieldCheck, Info } from "lucide-react";
+import { AlertCircle, ArrowLeft, Info } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { createElection } from "../actions";
 import { ELECTION_TYPES } from "@/lib/types/election";
@@ -22,6 +22,11 @@ export default function NewElectionPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const registryPath = pathname.startsWith("/admin/elections")
+    ? "/admin/elections"
+    : "/officer/elections";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,7 +47,7 @@ export default function NewElectionPage() {
       {/* Back Navigation */}
       <div>
         <Link
-          href="/officer/elections"
+          href={registryPath}
           className="group inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest hover:text-primary transition-colors"
         >
           <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" />
@@ -53,26 +58,26 @@ export default function NewElectionPage() {
       {/* Hero Header */}
       <section className="pb-8 border-b-2 border-foreground">
         <h1 className="text-6xl md:text-7xl font-black font-heading tracking-tighter uppercase leading-[0.8] mb-4">
-          Initialize<br />Election
+          Initialize
+          <br />
+          Election
         </h1>
-        <div className="flex flex-col md:flex-row gap-6 md:items-center">
-          <p className="text-xl font-medium max-w-xl border-l-4 border-primary pl-4 py-1">
-            Establish a new electoral event. Ensure all filing and voting periods are strictly verified.
-          </p>
-          <div className="flex items-center gap-2 px-4 py-2 bg-surface-low border border-foreground/10 text-xs font-bold uppercase tracking-widest">
-            <ShieldCheck className="size-4 text-primary" />
-            Security Protocol Active
-          </div>
-        </div>
+
+        <p className="text-xl font-medium max-w-xl border-l-4 border-primary pl-4 py-1">
+          Establish a new electoral event. Ensure all filing and voting periods
+          are strictly verified.
+        </p>
       </section>
 
       <form onSubmit={handleSubmit} className="space-y-12">
+        <input type="hidden" name="redirect_base" value={registryPath} />
+
         {/* Core Metadata Section */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label 
-                htmlFor="name" 
+              <Label
+                htmlFor="name"
                 className="text-xs font-black uppercase tracking-widest text-muted-foreground"
               >
                 Official Election Name
@@ -85,12 +90,13 @@ export default function NewElectionPage() {
                 className="h-14 border-2 border-foreground rounded-none text-xl font-bold placeholder:font-medium placeholder:text-muted-foreground/30 focus-visible:ring-0 focus-visible:border-primary"
               />
               <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
-                This name will appear on all digital ballots and official reports.
+                This name will appear on all digital ballots and official
+                reports.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label 
+              <Label
                 htmlFor="election_type"
                 className="text-xs font-black uppercase tracking-widest text-muted-foreground"
               >
@@ -102,7 +108,11 @@ export default function NewElectionPage() {
                 </SelectTrigger>
                 <SelectContent className="border-2 border-foreground rounded-none">
                   {ELECTION_TYPES.map((type) => (
-                    <SelectItem key={type} value={type} className="font-bold py-3">
+                    <SelectItem
+                      key={type}
+                      value={type}
+                      className="font-bold py-3"
+                    >
                       {type}
                     </SelectItem>
                   ))}
@@ -113,7 +123,7 @@ export default function NewElectionPage() {
 
           <div className="p-6 bg-surface-lowest border-2 border-foreground relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-               <Info className="size-20" />
+              <Info className="size-20" />
             </div>
             <h4 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2">
               <Info className="size-4" />
@@ -122,11 +132,13 @@ export default function NewElectionPage() {
             <ul className="space-y-3 text-sm font-medium">
               <li className="flex gap-2">
                 <span className="text-primary font-bold">01</span>
-                Ensure names are accurate. Post-initialization changes require audit clearance.
+                Ensure names are accurate. Post-initialization changes require
+                audit clearance.
               </li>
               <li className="flex gap-2">
                 <span className="text-primary font-bold">02</span>
-                Classification determines candidate eligibility rules and system constraints.
+                Classification determines candidate eligibility rules and system
+                constraints.
               </li>
               <li className="flex gap-2">
                 <span className="text-primary font-bold">03</span>
@@ -164,7 +176,9 @@ export default function NewElectionPage() {
             <div className="mb-8 p-6 bg-destructive/10 border-2 border-destructive text-destructive flex items-center gap-4">
               <AlertCircle className="size-6 shrink-0" />
               <div>
-                <p className="text-xs font-black uppercase tracking-widest mb-1">Validation Error</p>
+                <p className="text-xs font-black uppercase tracking-widest mb-1">
+                  Validation Error
+                </p>
                 <p className="font-bold">{error}</p>
               </div>
             </div>
@@ -172,23 +186,26 @@ export default function NewElectionPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-low p-6 border-2 border-foreground">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full border-2 border-foreground flex items-center justify-center font-bold">!</div>
+              <div className="size-10 rounded-full border-2 border-foreground flex items-center justify-center font-bold">
+                !
+              </div>
               <p className="text-xs font-bold leading-tight max-w-xs uppercase">
-                By clicking "Initialize Registry", you confirm that all parameters meet university electoral bypass standards.
+                By clicking &ldquo;Initialize Registry&rdquo;, you confirm that
+                all parameters meet university electoral bypass standards.
               </p>
             </div>
-            
+
             <div className="flex gap-4 w-full sm:w-auto">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="flex-1 sm:flex-none h-14 px-8 border-2 border-foreground rounded-none font-black uppercase tracking-widest hover:bg-surface-lowest transition-colors"
-                onClick={() => router.push("/officer/elections")}
+                onClick={() => router.push(registryPath)}
               >
                 Discard
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading}
                 className="flex-1 sm:flex-none h-14 px-12 bg-foreground text-background rounded-none font-black uppercase tracking-widest hover:bg-primary transition-all disabled:opacity-50"
               >

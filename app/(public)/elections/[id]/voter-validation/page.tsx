@@ -3,12 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound, redirect } from "next/navigation";
 import { VoterValidationForm } from "./voter-validation-form";
 import Link from "next/link";
+import type { VoterValidationPageProps } from "@/lib/types/public";
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
-
-export default async function VoterValidationPage({ params }: Props) {
+export default async function VoterValidationPage({
+  params,
+}: VoterValidationPageProps) {
   const { id: electionId } = await params;
 
   const adminSupabase = await createAdminClient();

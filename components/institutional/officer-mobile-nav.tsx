@@ -1,17 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { Menu, X, LayoutDashboard, Database, ShieldCheck, LogOut } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { archivo } from '@/lib/fonts';
+import { useState } from "react";
+import Link from "next/link";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Database,
+  ShieldCheck,
+  LogOut,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { archivo } from "@/lib/fonts";
+import type { OfficerMobileNavProps } from "@/lib/types/institutional";
 
-interface OfficerMobileNavProps {
-  displayName?: string | null;
-  logoutButton: React.ReactNode;
-}
-
-export function OfficerMobileNav({ displayName, logoutButton }: OfficerMobileNavProps) {
+export function OfficerMobileNav({
+  displayName,
+  logoutButton,
+}: OfficerMobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
@@ -33,7 +39,9 @@ export function OfficerMobileNav({ displayName, logoutButton }: OfficerMobileNav
       <div
         className={cn(
           "fixed inset-0 z-40 bg-background transition-all duration-300 md:hidden",
-          isOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full pointer-events-none"
+          isOpen
+            ? "opacity-100 translate-x-0"
+            : "opacity-0 translate-x-full pointer-events-none",
         )}
       >
         <div className="flex flex-col h-full pt-24 px-8 pb-12">
@@ -43,7 +51,12 @@ export function OfficerMobileNav({ displayName, logoutButton }: OfficerMobileNav
               <ShieldCheck className="size-3" />
               Authenticated Session
             </div>
-            <h2 className={cn("text-2xl font-black uppercase tracking-tight", archivo.className)}>
+            <h2
+              className={cn(
+                "text-2xl font-black uppercase tracking-tight",
+                archivo.className,
+              )}
+            >
               {displayName || "Officer Access"}
             </h2>
           </div>
@@ -59,7 +72,12 @@ export function OfficerMobileNav({ displayName, logoutButton }: OfficerMobileNav
               >
                 <div className="flex items-center gap-4">
                   <link.icon className="size-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className={cn("text-xl font-black uppercase tracking-tighter", archivo.className)}>
+                  <span
+                    className={cn(
+                      "text-xl font-black uppercase tracking-tighter",
+                      archivo.className,
+                    )}
+                  >
                     {link.label}
                   </span>
                 </div>
@@ -71,8 +89,12 @@ export function OfficerMobileNav({ displayName, logoutButton }: OfficerMobileNav
           {/* Bottom Actions */}
           <div className="mt-auto pt-8 border-t border-border flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Registry Access</span>
-              <span className="text-sm font-bold italic text-foreground opacity-60">Session Ver. 26.4.9</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Registry Access
+              </span>
+              <span className="text-sm font-bold italic text-foreground opacity-60">
+                Session Ver. 26.4.9
+              </span>
             </div>
             {logoutButton}
           </div>

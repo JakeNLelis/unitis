@@ -8,22 +8,19 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { archivo } from "@/lib/fonts";
 import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
-
-interface ElectionCardProps {
-  election: {
-    election_id: string;
-    name: string;
-    election_type: string;
-    start_date: string;
-    end_date: string;
-  };
-}
+import type {
+  UpcomingElectionCardProps,
+  UpcomingElectionSectionProps,
+} from "@/lib/types/components";
 
 // T017: Election card with full clickability
 // T018: Accessibility labels and focus states
-function ElectionCard({ election }: ElectionCardProps) {
+function ElectionCard({ election }: UpcomingElectionCardProps) {
   const router = useRouter();
-  const [isHovered, setIsHovered] = useState(false);
+  const [isCardHovered, setIsCardHovered] = useState(false);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
+
+  const showCardHover = isCardHovered && !isButtonHovered;
 
   return (
     <div
@@ -31,8 +28,9 @@ function ElectionCard({ election }: ElectionCardProps) {
       tabIndex={0}
       aria-label={`Open ${election.name} election details`}
       className={cn(
-        "group cursor-pointer transition-all duration-200 border-b border-border py-6 px-4 hover:bg-surface-low rounded-lg",
-        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+        "group cursor-pointer transition-all duration-200 border-b border-border py-6 px-4 rounded-lg",
+        showCardHover ? "bg-surface-low" : "bg-transparent",
+        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
       )}
       onClick={() => router.push(`/elections/${election.election_id}`)}
       onKeyDown={(event) => {
@@ -41,31 +39,49 @@ function ElectionCard({ election }: ElectionCardProps) {
           router.push(`/elections/${election.election_id}`);
         }
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => setIsCardHovered(true)}
+      onMouseLeave={() => {
+        setIsCardHovered(false);
+        setIsButtonHovered(false);
+      }}
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h3 className={cn("text-xl font-black uppercase tracking-tight", archivo.className)}>
+            <h3
+              className={cn(
+                "text-xl font-black uppercase tracking-tight",
+                archivo.className,
+              )}
+            >
               {election.name}
             </h3>
-            <Badge variant="secondary" className="text-[10px] font-black tracking-widest uppercase">Upcoming</Badge>
+            <Badge
+              variant="secondary"
+              className="text-[10px] font-black tracking-widest uppercase"
+            >
+              Upcoming
+            </Badge>
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{election.election_type}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {election.election_type}
+          </p>
           <p className="text-sm font-medium text-foreground/60 inline-flex items-center gap-1.5 pt-1">
             <CalendarDays className="size-4 text-primary" />
-            Registration opens {new Date(election.start_date).toLocaleDateString()}
+            Registration opens{" "}
+            {new Date(election.start_date).toLocaleDateString()}
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 min-w-[200px]">
+        <div className="flex flex-col gap-3 min-w-50">
           <Button
             asChild
-            variant={isHovered ? "default" : "outline"}
+            variant={isButtonHovered ? "default" : "outline"}
             size="sm"
             className="w-full justify-between font-black uppercase tracking-widest transition-all"
             onClick={(event) => event.stopPropagation()}
+            onMouseEnter={() => setIsButtonHovered(true)}
+            onMouseLeave={() => setIsButtonHovered(false)}
           >
             <Link href={`/elections/${election.election_id}/check-eligibility`}>
               Check eligibility
@@ -81,16 +97,6 @@ function ElectionCard({ election }: ElectionCardProps) {
       </div>
     </div>
   );
-}
-
-export interface UpcomingElectionSectionProps {
-  elections: Array<{
-    election_id: string;
-    name: string;
-    election_type: string;
-    start_date: string;
-    end_date: string;
-  }>;
 }
 
 // T014: Upcoming Election section UI behavior with exact empty-state message

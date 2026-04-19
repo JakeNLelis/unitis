@@ -16,15 +16,14 @@ import {
   checkEligibilityAndSendOtp,
   verifyEligibilityOtp,
 } from "@/app/(public)/elections/[id]/check-eligibility/actions";
-
-interface Props {
-  electionId: string;
-  electionName: string;
-}
+import type { EligibilityCheckProps } from "@/lib/types/components";
 
 type Step = "id-entry" | "otp-entry" | "verified";
 
-export function EligibilityCheck({ electionId, electionName }: Props) {
+export function EligibilityCheck({
+  electionId,
+  electionName,
+}: EligibilityCheckProps) {
   const [step, setStep] = useState<Step>("id-entry");
   const [studentId, setStudentId] = useState("");
   const [otp, setOtp] = useState("");

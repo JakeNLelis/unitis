@@ -15,14 +15,7 @@ import {
   Users,
   ClipboardList,
 } from "lucide-react";
-import type { ElectionState } from "@/lib/types/election";
-
-interface EventActionPanelProps {
-  electionId: string;
-  electionName: string;
-  state: ElectionState;
-  variant?: "default" | "compact";
-}
+import type { EventActionPanelProps } from "@/lib/types/components";
 
 export function EventActionPanel({
   electionId,

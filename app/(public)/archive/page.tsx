@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTodayStr } from "@/lib/utils";
+import { getElectionState } from "@/lib/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Card,
@@ -11,33 +11,27 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getElectionResults } from "../elections/[id]/vote/actions";
-
-interface ConcludedElection {
-  election_id: string;
-  name: string;
-  election_type: string;
-  start_date: string;
-  end_date: string;
-  is_archived: boolean;
-}
+import type { ConcludedElection } from "@/lib/types/public";
 
 export default async function ArchivePage() {
   const adminSupabase = await createAdminClient();
-  const today = getTodayStr();
 
   const { data: elections, error } = await adminSupabase
     .from("elections")
     .select(
       "election_id, name, election_type, start_date, end_date, is_archived",
     )
-    .or(`is_archived.eq.true,end_date.lt.${today}`)
     .order("end_date", { ascending: false });
 
   if (error) {
     notFound();
   }
 
-  const concluded = (elections || []) as ConcludedElection[];
+  const concluded = ((elections || []) as ConcludedElection[]).filter(
+    (election) =>
+      election.is_archived ||
+      getElectionState(election.start_date, election.end_date) === "ended",
+  );
 
   const resultsByElection = await Promise.all(
     concluded.map(async (election) => {

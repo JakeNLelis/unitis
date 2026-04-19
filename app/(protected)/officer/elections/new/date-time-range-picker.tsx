@@ -7,6 +7,7 @@ import { Clock3, Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { DateTimeRangePickerProps } from "@/lib/types/officer-elections";
 
 function toDateInputValue(date: Date): string {
   const year = date.getFullYear();
@@ -20,16 +21,6 @@ function buildDateTimeLocalValue(date?: Date, time?: string): string {
   const datePart = toDateInputValue(date);
   const normalizedTime = time.length === 5 ? `${time}:00` : time;
   return `${datePart}T${normalizedTime}`;
-}
-
-interface DateTimeRangePickerProps {
-  title: string;
-  description?: string;
-  startLabel: string;
-  endLabel: string;
-  startName: string;
-  endName: string;
-  required?: boolean;
 }
 
 export function DateTimeRangePicker({
@@ -64,7 +55,9 @@ export function DateTimeRangePicker({
             {title}
           </h3>
           {description && (
-            <p className="text-sm font-medium text-muted-foreground italic pl-7">{description}</p>
+            <p className="text-sm font-medium text-muted-foreground italic pl-7">
+              {description}
+            </p>
           )}
         </div>
       </div>
@@ -85,7 +78,7 @@ export function DateTimeRangePicker({
         <div className="lg:col-span-4 space-y-4">
           <div className="p-5 border-2 border-foreground bg-surface-low space-y-4">
             <div className="space-y-2">
-              <Label 
+              <Label
                 htmlFor={`${startName}_time`}
                 className="text-xs font-black uppercase tracking-widest text-muted-foreground"
               >
@@ -106,7 +99,7 @@ export function DateTimeRangePicker({
             </div>
 
             <div className="space-y-2">
-              <Label 
+              <Label
                 htmlFor={`${endName}_time`}
                 className="text-xs font-black uppercase tracking-widest text-muted-foreground"
               >
@@ -125,11 +118,14 @@ export function DateTimeRangePicker({
                 <Clock3 className="size-5 text-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
-            
+
             <div className="pt-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-primary/60 mb-1">Status Overlay</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-primary/60 mb-1">
+                Status Overlay
+              </div>
               <div className="bg-white border border-foreground/10 px-3 py-2 text-xs font-mono">
-                {range?.from ? range.from.toLocaleDateString() : 'SELECT DATE'} ➔ {range?.to ? range.to.toLocaleDateString() : '...'}
+                {range?.from ? range.from.toLocaleDateString() : "SELECT DATE"}{" "}
+                ➔ {range?.to ? range.to.toLocaleDateString() : "..."}
               </div>
             </div>
           </div>

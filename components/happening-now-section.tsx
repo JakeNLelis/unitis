@@ -11,20 +11,14 @@ import {
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Activity, ArrowRight, CalendarDays, Vote } from "lucide-react";
-
-interface ElectionCardProps {
-  election: {
-    election_id: string;
-    name: string;
-    election_type: string;
-    start_date: string;
-    end_date: string;
-  };
-}
+import type {
+  HappeningNowElectionCardProps,
+  HappeningNowSectionProps,
+} from "@/lib/types/components";
 
 // T017: Election card with full clickability
 // T018: Accessibility labels and focus states
-function ElectionCard({ election }: ElectionCardProps) {
+function ElectionCard({ election }: HappeningNowElectionCardProps) {
   const router = useRouter();
 
   return (
@@ -68,7 +62,7 @@ function ElectionCard({ election }: ElectionCardProps) {
               <Button
                 size="sm"
                 variant="default"
-                className="h-9 px-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-none border-2 border-primary hover:bg-black hover:text-white hover:border-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                className="h-9 px-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-none border-2 border-primary hover:bg-black hover:text-white hover:border-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
                 onClick={(e) => {
                   e.stopPropagation();
                   router.push(`/elections/${election.election_id}/vote`);
@@ -80,7 +74,7 @@ function ElectionCard({ election }: ElectionCardProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 px-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-none border-2 border-foreground hover:bg-black hover:text-gray-700 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                className="h-9 px-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-none border-2 border-foreground hover:bg-black hover:text-gray-700 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
                 onClick={(e) => {
                   e.stopPropagation();
                   router.push(`/elections/${election.election_id}/turnout`);
@@ -99,16 +93,6 @@ function ElectionCard({ election }: ElectionCardProps) {
       </Card>
     </div>
   );
-}
-
-export interface HappeningNowSectionProps {
-  elections: Array<{
-    election_id: string;
-    name: string;
-    election_type: string;
-    start_date: string;
-    end_date: string;
-  }>;
 }
 
 // T013: Happening Now section UI behavior

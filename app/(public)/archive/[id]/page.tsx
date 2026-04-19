@@ -7,10 +7,7 @@ import {
   type ArchiveCandidateResult,
 } from "@/components/archive-results-breakdown";
 import { getElectionState } from "@/lib/utils";
-
-interface ArchiveDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+import type { ArchiveDetailPageProps } from "@/lib/types/public";
 
 export default async function ArchiveDetailPage({
   params,

@@ -1,10 +1,5 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-
-interface InstitutionalDataTableProps extends React.TableHTMLAttributes<HTMLTableElement> {
-  headers: string[];
-  data: Array<Record<string, React.ReactNode>>;
-}
+import { cn } from "@/lib/utils";
+import type { InstitutionalDataTableProps } from "@/lib/types/institutional";
 
 export function InstitutionalDataTable({
   headers,

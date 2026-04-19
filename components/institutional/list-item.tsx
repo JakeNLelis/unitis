@@ -1,20 +1,6 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
-
-interface InstitutionalListItemProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  subtitle?: string;
-  value?: string | number;
-  status?: string;
-  timestamp?: string;
-  action?: React.ReactNode;
-  href?: string;
-  trend?: {
-    label: string;
-    isPositive: boolean;
-  };
-}
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+import type { InstitutionalListItemProps } from "@/lib/types/institutional";
 
 export function InstitutionalListItem({
   title,
@@ -25,6 +11,7 @@ export function InstitutionalListItem({
   action,
   href,
   trend,
+  children,
   className,
   ...props
 }: InstitutionalListItemProps) {
@@ -34,7 +21,7 @@ export function InstitutionalListItem({
         "group relative flex items-center justify-between py-5 px-6",
         "bg-background hover:bg-surface-low transition-colors duration-200",
         "border-b border-border last:border-0",
-        className
+        className,
       )}
       {...props}
     >
@@ -60,30 +47,38 @@ export function InstitutionalListItem({
       </div>
 
       <div className="flex items-center gap-8">
+        {children && <div className="w-full md:w-auto">{children}</div>}
+
         {status && (
           <div className="hidden sm:block">
-            <span className={cn(
-              "px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-foreground/10",
-              status === 'approved' ? "bg-green-100 text-green-800" : 
-              status === 'pending' ? "bg-amber-100 text-amber-800" : 
-              "bg-red-100 text-red-800"
-            )}>
+            <span
+              className={cn(
+                "px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-foreground/10",
+                status === "approved"
+                  ? "bg-green-100 text-green-800"
+                  : status === "pending"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-red-100 text-red-800",
+              )}
+            >
               {status}
             </span>
           </div>
         )}
-        
+
         {value !== undefined && (
           <div className="flex flex-col items-end">
             <span className="font-heading text-2xl font-black tabular-nums text-primary">
               {value}
             </span>
             {trend && (
-              <span className={cn(
-                "text-[10px] font-bold uppercase tracking-widest",
-                trend.isPositive ? "text-green-600" : "text-destructive"
-              )}>
-                {trend.isPositive ? '↑' : '↓'} {trend.label}
+              <span
+                className={cn(
+                  "text-[10px] font-bold uppercase tracking-widest",
+                  trend.isPositive ? "text-green-600" : "text-destructive",
+                )}
+              >
+                {trend.isPositive ? "↑" : "↓"} {trend.label}
               </span>
             )}
           </div>

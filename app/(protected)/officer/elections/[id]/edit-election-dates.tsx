@@ -15,14 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { updateElectionDates } from "../actions";
-
-interface EditElectionDatesProps {
-  electionId: string;
-  candidacyStartDate: string | null;
-  candidacyEndDate: string | null;
-  startDate: string;
-  endDate: string;
-}
+import type { EditElectionDatesProps } from "@/lib/types/officer-elections";
 
 function toDatetimeLocal(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -42,6 +35,7 @@ export function EditElectionDates({
   candidacyEndDate,
   startDate,
   endDate,
+  canEdit,
 }: EditElectionDatesProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -100,113 +94,147 @@ export function EditElectionDates({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-md font-medium text-muted-foreground">
             Candidacy Filing Period
           </CardTitle>
         </CardHeader>
         <CardContent>
           {candidacyStartDate && candidacyEndDate ? (
-            <p className="font-medium">
-              {new Date(candidacyStartDate).toLocaleString()} –{" "}
-              {new Date(candidacyEndDate).toLocaleString()}
-            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                  Start
+                </p>
+                <p className="text-sm font-bold">
+                  {new Date(candidacyStartDate).toLocaleString()}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">
+                  End
+                </p>
+                <p className="text-sm font-bold text-right">
+                  {new Date(candidacyEndDate).toLocaleString()}
+                </p>
+              </div>
+            </div>
           ) : (
-            <p className="text-muted-foreground">Not set</p>
+            <p className="text-sm text-muted-foreground italic">
+              Temporal parameters not initialized.
+            </p>
           )}
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-md font-medium text-muted-foreground">
             Voting Period
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="font-medium">
-            {new Date(startDate).toLocaleString()} –{" "}
-            {new Date(endDate).toLocaleString()}
-          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                Start
+              </p>
+              <p className="text-sm font-bold">
+                {new Date(startDate).toLocaleString()}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">
+                End
+              </p>
+              <p className="text-sm font-bold text-right">
+                {new Date(endDate).toLocaleString()}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
       <div className="md:col-span-2">
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              Edit Dates
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Election Dates</DialogTitle>
-              <DialogDescription>
-                Update the candidacy filing and voting periods.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">
-                  {error}
-                </p>
-              )}
+        {canEdit ? (
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                Edit Dates
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Edit Election Dates</DialogTitle>
+                <DialogDescription>
+                  Update the candidacy filing and voting periods.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded p-2">
+                    {error}
+                  </p>
+                )}
 
-              <div className="space-y-2">
-                <Label htmlFor="cand_start">Candidacy Start</Label>
-                <Input
-                  id="cand_start"
-                  type="datetime-local"
-                  value={candStart}
-                  onChange={(e) => setCandStart(e.target.value)}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cand_start">Candidacy Start</Label>
+                  <Input
+                    id="cand_start"
+                    type="datetime-local"
+                    value={candStart}
+                    onChange={(e) => setCandStart(e.target.value)}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="cand_end">Candidacy End</Label>
-                <Input
-                  id="cand_end"
-                  type="datetime-local"
-                  value={candEnd}
-                  onChange={(e) => setCandEnd(e.target.value)}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cand_end">Candidacy End</Label>
+                  <Input
+                    id="cand_end"
+                    type="datetime-local"
+                    value={candEnd}
+                    onChange={(e) => setCandEnd(e.target.value)}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="voting_start">Voting Start</Label>
-                <Input
-                  id="voting_start"
-                  type="datetime-local"
-                  value={votingStart}
-                  onChange={(e) => setVotingStart(e.target.value)}
-                  required
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="voting_start">Voting Start</Label>
+                  <Input
+                    id="voting_start"
+                    type="datetime-local"
+                    value={votingStart}
+                    onChange={(e) => setVotingStart(e.target.value)}
+                    required
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="voting_end">Voting End</Label>
-                <Input
-                  id="voting_end"
-                  type="datetime-local"
-                  value={votingEnd}
-                  onChange={(e) => setVotingEnd(e.target.value)}
-                  required
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="voting_end">Voting End</Label>
+                  <Input
+                    id="voting_end"
+                    type="datetime-local"
+                    value={votingEnd}
+                    onChange={(e) => setVotingEnd(e.target.value)}
+                    required
+                  />
+                </div>
 
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save Dates"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Saving..." : "Save Dates"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        ) : (
+          <p className="text-xs text-muted-foreground">Read-only access.</p>
+        )}
       </div>
     </div>
   );

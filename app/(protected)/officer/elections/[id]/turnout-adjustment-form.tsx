@@ -13,13 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitTurnoutAdjustment } from "../actions";
-
-interface TurnoutAdjustmentFormProps {
-  electionId: string;
-}
+import type { TurnoutAdjustmentFormProps } from "@/lib/types/officer-elections";
 
 export function TurnoutAdjustmentForm({
   electionId,
+  canEdit,
 }: TurnoutAdjustmentFormProps) {
   const [castedVotesDelta, setCastedVotesDelta] = useState("");
   const [expectedVotersValue, setExpectedVotersValue] = useState("");
@@ -30,6 +28,8 @@ export function TurnoutAdjustmentForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!canEdit) return;
+
     setError(null);
     setSuccess(false);
     setIsSubmitting(true);
@@ -77,6 +77,7 @@ export function TurnoutAdjustmentForm({
               value={castedVotesDelta}
               onChange={(e) => setCastedVotesDelta(e.target.value)}
               placeholder="e.g. 5"
+              disabled={!canEdit || isSubmitting}
             />
           </div>
 
@@ -90,6 +91,7 @@ export function TurnoutAdjustmentForm({
               value={expectedVotersValue}
               onChange={(e) => setExpectedVotersValue(e.target.value)}
               placeholder="e.g. 120"
+              disabled={!canEdit || isSubmitting}
             />
           </div>
 
@@ -100,6 +102,7 @@ export function TurnoutAdjustmentForm({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Corrected offline ballot tally"
+              disabled={!canEdit || isSubmitting}
             />
           </div>
 
@@ -115,7 +118,7 @@ export function TurnoutAdjustmentForm({
             </div>
           ) : null}
 
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={!canEdit || isSubmitting}>
             {isSubmitting ? "Saving..." : "Save turnout adjustment"}
           </Button>
         </form>
