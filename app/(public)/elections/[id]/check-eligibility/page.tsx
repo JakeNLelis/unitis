@@ -2,12 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { EligibilityCheck } from "@/components/eligibility-check";
 import Link from "next/link";
+import type { CheckEligibilityPageProps } from "@/lib/types/public";
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
-
-export default async function CheckEligibilityPage({ params }: Props) {
+export default async function CheckEligibilityPage({
+  params,
+}: CheckEligibilityPageProps) {
   const { id: electionId } = await params;
 
   const supabase = await createClient();

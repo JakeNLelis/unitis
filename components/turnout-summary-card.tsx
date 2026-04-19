@@ -7,17 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { TurnoutSummaryCardProps } from "@/lib/types/components";
 
-export interface TurnoutData {
-  casted_votes: number;
-  expected_voters: number;
-  turnout_percentage: number;
-}
-
-export interface TurnoutSummaryCardProps {
-  data: TurnoutData | null;
-  isLoading?: boolean;
-}
+export type { TurnoutData } from "@/lib/types/components";
 
 export function TurnoutSummaryCard({
   data,

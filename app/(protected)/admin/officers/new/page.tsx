@@ -1,40 +1,70 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { createSEBOfficer } from "../actions";
+import { NewOfficerForm } from "@/app/(protected)/admin/officers/new/new-officer-form";
+import type { FacultyOption } from "@/lib/types/admin-officers";
 
-export default function NewOfficerPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+async function getOfficerFormOptions(): Promise<{
+  facultyOptionsByCampus: Record<string, FacultyOption[]>;
+  campuses: string[];
+}> {
+  const supabase = await createClient();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  const { data: faculties } = await supabase
+    .from("faculties")
+    .select("name, acronym, campuses(name)")
+    .order("name");
 
-    const formData = new FormData(e.currentTarget);
-    const result = await createSEBOfficer(formData);
+  const { data: campuses } = await supabase
+    .from("campuses")
+    .select("name")
+    .order("name");
 
-    if (result?.error) {
-      setError(result.error);
-      setIsLoading(false);
+  const facultyOptionsByCampus: Record<string, FacultyOption[]> = {};
+
+  for (const faculty of faculties || []) {
+    const rawCode = faculty.acronym?.trim();
+    if (!rawCode) continue;
+
+    const campusesRel = faculty.campuses as
+      | { name: string }
+      | { name: string }[]
+      | null;
+    const campusName = Array.isArray(campusesRel)
+      ? campusesRel[0]?.name
+      : campusesRel?.name;
+
+    if (!campusName) continue;
+
+    if (!facultyOptionsByCampus[campusName]) {
+      facultyOptionsByCampus[campusName] = [];
     }
-    // If successful, the action redirects to /admin/officers
+
+    const code = rawCode.toUpperCase();
+    const options = facultyOptionsByCampus[campusName];
+    if (!options.find((option) => option.code === code)) {
+      options.push({
+        code,
+        label: `${code} — ${faculty.name}`,
+      });
+    }
   }
+
+  for (const campusName of Object.keys(facultyOptionsByCampus)) {
+    facultyOptionsByCampus[campusName].sort((a, b) =>
+      a.code.localeCompare(b.code),
+    );
+  }
+
+  return {
+    facultyOptionsByCampus,
+    campuses: (campuses || [])
+      .map((campus) => campus.name)
+      .filter((name): name is string => Boolean(name?.trim())),
+  };
+}
+
+export default async function NewOfficerPage() {
+  const { facultyOptionsByCampus, campuses } = await getOfficerFormOptions();
 
   return (
     <div className="max-w-lg">
@@ -46,71 +76,10 @@ export default function NewOfficerPage() {
           ← Back to SEB Officers
         </Link>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Create SEB Officer</CardTitle>
-          <CardDescription>
-            Add a new SEB Officer to manage elections.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Juan Dela Cruz"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="juan@example.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
-            </div>
-
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-2">
-                <AlertCircle className="size-4 text-destructive shrink-0" />
-                <p className="text-sm text-destructive">{error}</p>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Officer"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/admin/officers")}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <NewOfficerForm
+        facultyOptionsByCampus={facultyOptionsByCampus}
+        campuses={campuses}
+      />
     </div>
   );
 }

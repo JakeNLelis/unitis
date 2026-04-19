@@ -7,7 +7,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createPosition } from "../actions";
 
-export function AddPositionForm({ electionId }: { electionId: string }) {
+export function AddPositionForm({
+  electionId,
+  canEdit,
+}: {
+  electionId: string;
+  canEdit: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -15,7 +21,12 @@ export function AddPositionForm({ electionId }: { electionId: string }) {
 
   if (!isOpen) {
     return (
-      <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsOpen(true)}
+        disabled={!canEdit}
+      >
         + Add Position
       </Button>
     );

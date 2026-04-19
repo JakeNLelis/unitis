@@ -7,7 +7,7 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
-import { CandidacyFormData } from "./types";
+import type { CandidacyPDFProps } from "@/lib/types/public";
 
 const styles = StyleSheet.create({
   page: {
@@ -272,10 +272,6 @@ const POSITIONS_LIST = [
   "Board of Director",
   "Year Level Representative",
 ];
-
-interface CandidacyPDFProps {
-  data: CandidacyFormData;
-}
 
 const CandidacyPDF: React.FC<CandidacyPDFProps> = ({ data }) => (
   <Document>

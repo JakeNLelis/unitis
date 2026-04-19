@@ -18,9 +18,11 @@ import { updateCandidateStatus } from "../actions";
 export function CandidateActions({
   candidateId,
   currentStatus,
+  canApprove,
 }: {
   candidateId: string;
   currentStatus: string;
+  canApprove: boolean;
   electionId?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +70,10 @@ export function CandidateActions({
         {currentStatus}
       </span>
     );
+  }
+
+  if (!canApprove) {
+    return <span className="text-xs text-muted-foreground">Pending</span>;
   }
 
   return (

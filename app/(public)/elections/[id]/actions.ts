@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getTodayStr } from "@/lib/utils";
+import { getDateTimeWindowStatus } from "@/lib/utils";
 
 export async function registerPartylist(formData: FormData) {
   const election_id = formData.get("election_id") as string;
@@ -41,11 +41,11 @@ export async function registerPartylist(formData: FormData) {
     return { error: "This election has been archived." };
   }
 
-  // Use string-based date comparison to avoid UTC timezone mismatch
-  const today = getTodayStr();
-  const candStart = election.candidacy_start_date?.slice(0, 10) ?? null;
-  const candEnd = election.candidacy_end_date?.slice(0, 10) ?? null;
-  if (!candStart || !candEnd || today < candStart || today > candEnd) {
+  const candidacyStatus = getDateTimeWindowStatus(
+    election.candidacy_start_date,
+    election.candidacy_end_date,
+  );
+  if (candidacyStatus !== "open") {
     return {
       error:
         "Partylist registration is only available during the candidacy filing period.",

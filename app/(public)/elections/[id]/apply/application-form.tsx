@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays } from "lucide-react";
+import type { ApplicationFormProps } from "@/lib/types/public";
 
 // Dynamically import PDFPreview to avoid SSR issues
 const PDFPreview = dynamic(() => import("./pdf-preview"), {
@@ -34,25 +35,6 @@ const PDFPreview = dynamic(() => import("./pdf-preview"), {
   ),
 });
 
-interface Position {
-  position_id: string;
-  title: string;
-}
-
-interface Course {
-  course_id: string;
-  name: string;
-  acronym: string | null;
-  department_name: string;
-  faculty_name: string;
-}
-
-interface Partylist {
-  partylist_id: string;
-  name: string;
-  acronym: string;
-}
-
 export function ApplicationForm({
   electionId,
   electionName,
@@ -60,14 +42,7 @@ export function ApplicationForm({
   positions,
   courses,
   partylists,
-}: {
-  electionId: string;
-  electionName: string;
-  electionType: string;
-  positions: Position[];
-  courses: Course[];
-  partylists: Partylist[];
-}) {
+}: ApplicationFormProps) {
   // Determine default council type from election type
   const defaultCouncil: CouncilType =
     electionType === "University-Wide" ? "USSC" : "FSSC";

@@ -1,6 +1,5 @@
-@import 'tailwindcss';
-
-@plugin 'tailwindcss-animate';
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
 
 @theme {
   --color-background: hsl(var(--background));
@@ -37,19 +36,23 @@
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
 
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-heading: var(--font-heading), sans-serif;
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
   *,
   ::after,
@@ -64,33 +67,43 @@
   text-wrap: balance;
 }
 
+@utility animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
 @layer base {
   :root {
-    --background: 220 20% 98%;
+    --background: 220 20% 100%;
     --foreground: 220 20% 10%;
+
+    --surface-low: 220 20% 97%;
+    --surface-lowest: 220 20% 94%;
+
     --card: 0 0% 100%;
     --card-foreground: 220 20% 10%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 10%;
+
     --primary: 220 85% 45%;
     --primary-foreground: 0 0% 100%;
+
     --secondary: 220 20% 95%;
     --secondary-foreground: 220 85% 45%;
+
     --muted: 220 15% 95%;
     --muted-foreground: 220 10% 45%;
+
     --accent: 220 75% 92%;
     --accent-foreground: 220 85% 35%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+
     --border: 220 15% 88%;
     --input: 220 15% 88%;
     --ring: 220 85% 45%;
-    --sidebar-background: 0 0% 100%;
-    --chart-1: 220 85% 45%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+
     --radius: 0.5rem;
   }
 }

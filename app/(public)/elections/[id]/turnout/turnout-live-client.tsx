@@ -13,12 +13,7 @@ import {
   subscribeTurnoutDeltas,
   unsubscribeTurnoutDeltas,
 } from "@/lib/turnout/realtime";
-import type { TurnoutSnapshot } from "@/lib/types/election";
-
-interface TurnoutLiveClientProps {
-  electionId: string;
-  initialSnapshot: TurnoutSnapshot | null;
-}
+import type { TurnoutLiveClientProps } from "@/lib/types/public";
 
 export function TurnoutLiveClient({ electionId }: TurnoutLiveClientProps) {
   const router = useRouter();

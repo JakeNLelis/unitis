@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getElectionState, getTodayStr } from "@/lib/utils";
+import { getElectionState } from "@/lib/utils";
 import { Election } from "@/lib/types/election";
 import { HappeningNowSection } from "@/components/happening-now-section";
 import { UpcomingElectionSection } from "@/components/upcoming-election-section";
@@ -17,7 +17,6 @@ import { Vote } from "lucide-react";
  */
 export async function ElectionsList() {
   const supabase = await createClient();
-  const today = getTodayStr();
 
   // Query all non-archived elections
   const { data: elections, error } = await supabase
@@ -43,20 +42,12 @@ export async function ElectionsList() {
 
   // Partition elections into active (happening now) and upcoming
   const activeElections = allElections.filter((election) => {
-    const state = getElectionState(
-      election.start_date,
-      election.end_date,
-      today,
-    );
+    const state = getElectionState(election.start_date, election.end_date);
     return state === "active";
   });
 
   const upcomingElections = allElections.filter((election) => {
-    const state = getElectionState(
-      election.start_date,
-      election.end_date,
-      today,
-    );
+    const state = getElectionState(election.start_date, election.end_date);
     return state === "upcoming";
   });
 

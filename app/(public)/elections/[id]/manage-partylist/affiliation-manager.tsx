@@ -14,24 +14,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface Candidate {
-  candidate_id: string;
-  full_name: string;
-  student_id: string;
-  email: string;
-  affiliation_status: string;
-  positions: { title: string } | null;
-  courses: { name: string; acronym: string | null } | null;
-}
-
-interface Partylist {
-  partylist_id: string;
-  name: string;
-  acronym: string;
-  registered_by_email: string;
-  registered_by_name: string;
-}
+import type {
+  AffiliationCandidate,
+  AffiliationManagerProps,
+  AffiliationPartylist,
+} from "@/lib/types/public";
 
 function affiliationBadge(status: string) {
   switch (status) {
@@ -49,15 +36,13 @@ export function AffiliationManager({
   electionId,
   electionName,
   partylists,
-}: {
-  electionId: string;
-  electionName: string;
-  partylists: Partylist[];
-}) {
+}: AffiliationManagerProps) {
   const [email, setEmail] = useState("");
   const [verified, setVerified] = useState(false);
-  const [myPartylist, setMyPartylist] = useState<Partylist | null>(null);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [myPartylist, setMyPartylist] = useState<AffiliationPartylist | null>(
+    null,
+  );
+  const [candidates, setCandidates] = useState<AffiliationCandidate[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

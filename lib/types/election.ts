@@ -1,6 +1,11 @@
 export interface Election {
   election_id: string;
   name: string;
+  created_by: string | null;
+  created_by_admin_id: string | null;
+  owner_campus: string | null;
+  owner_faculty_code: string | null;
+  access_policy_locked: boolean;
   start_date: string;
   end_date: string;
   candidacy_start_date: string | null;
@@ -58,6 +63,10 @@ export interface Candidate {
   user_id: string | null;
   created_at: string;
   updated_at: string;
+  approved_by_user_id: string | null;
+  approved_by_role: "seb-officer" | "system-admin" | null;
+  approved_by_display: string | null;
+  approved_at: string | null;
 }
 
 export interface CandidateWithPosition extends Candidate {
@@ -99,7 +108,7 @@ export interface TurnoutSnapshot {
 export interface TurnoutAdjustment {
   adjustment_id: string;
   election_id: string;
-  seb_officer_id: string;
+  seb_officer_id: string | null;
   casted_votes_delta: number | null;
   expected_voters_value: number | null;
   reason: string | null;
