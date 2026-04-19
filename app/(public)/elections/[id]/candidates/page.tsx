@@ -78,7 +78,7 @@ async function CandidatesContent({
     .order("full_name", { ascending: true });
 
   const candidatesNormalized: CandidatesRow[] = (
-    (candidates || []) as CandidateRaw[]
+    (candidates || []) as CandidatesRaw[]
   ).map((candidate) => {
     const party = Array.isArray(candidate.partylists)
       ? candidate.partylists[0] || null
@@ -106,7 +106,7 @@ async function CandidatesContent({
     );
   });
 
-  const positionMap = new Map<string, CandidateRow[]>();
+  const positionMap = new Map<string, CandidatesRow[]>();
   for (const candidate of filtered) {
     const list = positionMap.get(candidate.position_id) || [];
     list.push(candidate);
