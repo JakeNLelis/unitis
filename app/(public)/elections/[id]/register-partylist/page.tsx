@@ -5,21 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PartylistRegistrationForm } from "./partylist-form";
 import Link from "next/link";
-
-interface Election {
-  election_id: string;
-  name: string;
-  election_type: string;
-  candidacy_start_date: string | null;
-  candidacy_end_date: string | null;
-  is_archived: boolean;
-}
+import { isDateTimeWindowOpen } from "@/lib/utils";
+import type {
+  RegisterPartylistContentProps,
+  RegisterPartylistElection,
+} from "@/lib/types/public";
 
 async function RegisterPartylistContent({
   electionId,
-}: {
-  electionId: string;
-}) {
+}: RegisterPartylistContentProps) {
   const supabase = await createClient();
 
   const { data: election, error } = await supabase
@@ -32,16 +26,12 @@ async function RegisterPartylistContent({
     notFound();
   }
 
-  const electionData = election as Election;
+  const electionData = election as RegisterPartylistElection;
 
-  // Use date-string comparison to avoid UTC-vs-local timezone issues
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const candidacyOpen =
-    electionData.candidacy_start_date &&
-    electionData.candidacy_end_date &&
-    today >= electionData.candidacy_start_date.slice(0, 10) &&
-    today <= electionData.candidacy_end_date.slice(0, 10);
+  const candidacyOpen = isDateTimeWindowOpen(
+    electionData.candidacy_start_date,
+    electionData.candidacy_end_date,
+  );
 
   // Fetch existing partylists
   const { data: partylists } = await supabase

@@ -21,27 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { submitBallot } from "./actions";
 import { createClient } from "@/lib/supabase/client";
-
-interface CandidateOption {
-  candidate_id: string;
-  full_name: string;
-  position_id: string;
-  partylist: { name: string; acronym: string } | null;
-}
-
-interface PositionWithCandidates {
-  position_id: string;
-  title: string;
-  max_votes: number;
-  candidates: CandidateOption[];
-}
-
-interface BallotFormProps {
-  electionId: string;
-  electionName: string;
-  studentId: string;
-  positions: PositionWithCandidates[];
-}
+import type { BallotFormProps } from "@/lib/types/public";
 
 export function BallotForm({
   electionId,

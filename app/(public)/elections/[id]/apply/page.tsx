@@ -5,27 +5,15 @@ import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApplicationForm } from "./application-form";
+import { getDateTimeWindowStatus } from "@/lib/utils";
+import type {
+  ApplyPageContentProps,
+  ApplyPageElection,
+  ApplyPageProps,
+  CourseOption,
+} from "@/lib/types/public";
 
-interface Election {
-  election_id: string;
-  name: string;
-  election_type: string;
-  start_date: string;
-  end_date: string;
-  candidacy_start_date: string | null;
-  candidacy_end_date: string | null;
-  is_archived: boolean;
-}
-
-interface CourseOption {
-  course_id: string;
-  name: string;
-  acronym: string | null;
-  department_name: string;
-  faculty_name: string;
-}
-
-async function ApplyPageContent({ electionId }: { electionId: string }) {
+async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
   const supabase = await createClient();
   const adminSupabase = await createAdminClient();
 
@@ -40,21 +28,16 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
     notFound();
   }
 
-  const electionData = election as Election;
+  const electionData = election as ApplyPageElection;
 
-  // Check if candidacy period is open
-  // Use date-string comparison to avoid UTC-vs-local timezone issues
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const candStart = electionData.candidacy_start_date?.slice(0, 10) ?? null;
-  const candEnd = electionData.candidacy_end_date?.slice(0, 10) ?? null;
-
-  const candidacyOpen =
-    candStart && candEnd && today >= candStart && today <= candEnd;
-
-  const candidacyNotStarted = candStart && today < candStart;
-
-  const candidacyEnded = candEnd && today > candEnd;
+  // Check if candidacy period is open using full timestamp boundaries.
+  const candidacyStatus = getDateTimeWindowStatus(
+    electionData.candidacy_start_date,
+    electionData.candidacy_end_date,
+  );
+  const candidacyOpen = candidacyStatus === "open";
+  const candidacyNotStarted = candidacyStatus === "not_started";
+  const candidacyEnded = candidacyStatus === "ended";
 
   // Fetch positions for this election
   const { data: positions } = await supabase
@@ -176,7 +159,9 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
                   </p>
                 </>
               )}
-              {!electionData.candidacy_start_date && (
+              {(candidacyStatus === "not_configured" ||
+                !electionData.candidacy_start_date ||
+                !electionData.candidacy_end_date) && (
                 <p className="text-muted-foreground">
                   Candidacy filing is not available for this election.
                 </p>
@@ -189,11 +174,7 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
   );
 }
 
-export default function ApplyPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function ApplyPage({ params }: ApplyPageProps) {
   return (
     <Suspense
       fallback={
