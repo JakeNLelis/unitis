@@ -14,15 +14,14 @@ import {
 } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { sendVoterOtp, verifyVoterOtp } from "./actions";
-
-interface Props {
-  electionId: string;
-  electionName: string;
-}
+import type { VoterValidationFormProps } from "@/lib/types/public";
 
 type Step = "id-entry" | "otp-entry";
 
-export function VoterValidationForm({ electionId, electionName }: Props) {
+export function VoterValidationForm({
+  electionId,
+  electionName,
+}: VoterValidationFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("id-entry");
   const [studentId, setStudentId] = useState("");

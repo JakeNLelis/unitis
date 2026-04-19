@@ -2,22 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getTodayStr } from "@/lib/utils";
-import crypto from "crypto";
-
-function generatePassword(): string {
-  // Generate a readable 12-char password: 8 random chars + 4 digits
-  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz";
-  const digits = "23456789";
-  let password = "";
-  for (let i = 0; i < 8; i++) {
-    password += chars[crypto.randomInt(chars.length)];
-  }
-  for (let i = 0; i < 4; i++) {
-    password += digits[crypto.randomInt(digits.length)];
-  }
-  return password;
-}
+import { getDateTimeWindowStatus } from "@/lib/utils";
 
 export async function submitCandidacyApplication(formData: FormData) {
   const election_id = formData.get("election_id") as string;
@@ -78,11 +63,11 @@ export async function submitCandidacyApplication(formData: FormData) {
     return { error: "This election has been archived." };
   }
 
-  // Use string-based date comparison to avoid UTC timezone mismatch
-  const today = getTodayStr();
-  const candStart = election.candidacy_start_date?.slice(0, 10) ?? null;
-  const candEnd = election.candidacy_end_date?.slice(0, 10) ?? null;
-  if (!candStart || !candEnd || today < candStart || today > candEnd) {
+  const candidacyStatus = getDateTimeWindowStatus(
+    election.candidacy_start_date,
+    election.candidacy_end_date,
+  );
+  if (candidacyStatus !== "open") {
     return { error: "The candidacy filing period is not currently open." };
   }
 
@@ -98,58 +83,6 @@ export async function submitCandidacyApplication(formData: FormData) {
     return {
       error: "You have already submitted an application for this position.",
     };
-  }
-
-  // Generate a password for the candidate's account
-  const tempPassword = generatePassword();
-
-  // Check if an auth account already exists for this email
-  let userId: string | null = null;
-  let isExistingAccount = false;
-
-  // Look up existing user by email directly (avoid loading all users)
-  const { data: existingUserLookup } = await adminSupabase
-    .from("candidates")
-    .select("user_id")
-    .eq("email", email.toLowerCase())
-    .limit(1)
-    .maybeSingle();
-
-  let existingUser: { id: string } | null = null;
-  if (existingUserLookup?.user_id) {
-    const { data: userById } = await adminSupabase.auth.admin.getUserById(
-      existingUserLookup.user_id,
-    );
-    existingUser = userById?.user ?? null;
-  }
-
-  if (existingUser) {
-    // Reuse existing auth account (candidate applying to another position/election)
-    userId = existingUser.id;
-    isExistingAccount = true;
-  } else {
-    // Create a new Supabase auth account for the candidate
-    const { data: newUser, error: createUserError } =
-      await adminSupabase.auth.admin.createUser({
-        email,
-        password: tempPassword,
-        email_confirm: true, // Skip email verification
-        user_metadata: {
-          full_name,
-          student_id,
-          role: "candidate",
-        },
-      });
-
-    if (createUserError) {
-      console.error("Create user error:", createUserError);
-      return {
-        error:
-          "Failed to create your account. Please try again or contact support.",
-      };
-    }
-
-    userId = newUser.user.id;
   }
 
   // Submit the application
@@ -171,7 +104,7 @@ export async function submitCandidacyApplication(formData: FormData) {
     application_status: "pending",
     partylist_id: hasPartylist ? partylist_id : null,
     affiliation_status: hasPartylist ? "pending" : null,
-    user_id: userId,
+    user_id: null,
     photo: photo || null,
     contact_number: contact_number || null,
     faculty: faculty || null,
@@ -188,6 +121,5 @@ export async function submitCandidacyApplication(formData: FormData) {
 
   return {
     success: true,
-    credentials: isExistingAccount ? null : { email, password: tempPassword },
   };
 }

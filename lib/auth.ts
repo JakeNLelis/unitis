@@ -60,7 +60,7 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
       id: user.id,
       email: sebOfficer.email,
       role: "seb-officer",
-      display_name: sebOfficer.name,
+      display_name: `${sebOfficer.faculty_code} (${sebOfficer.campus})`,
     };
   }
 
@@ -163,4 +163,32 @@ export async function requireSEBOfficer() {
   }
 
   return { profile, officer };
+}
+
+export async function requireElectionManager() {
+  const profile = await getCurrentProfile();
+
+  if (!profile) {
+    redirect("/login");
+  }
+
+  if (profile.role !== "seb-officer" && profile.role !== "system-admin") {
+    redirect("/unauthorized");
+  }
+
+  if (profile.role === "seb-officer") {
+    const officer = await getSEBOfficer();
+    if (!officer) {
+      redirect("/unauthorized");
+    }
+
+    return { profile, officer, systemAdmin: null };
+  }
+
+  const systemAdmin = await getSystemAdmin();
+  if (!systemAdmin) {
+    redirect("/unauthorized");
+  }
+
+  return { profile, officer: null, systemAdmin };
 }

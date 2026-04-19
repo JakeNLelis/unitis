@@ -55,6 +55,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/update-password") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/elections") &&
+    !request.nextUrl.pathname.startsWith("/archive") &&
     !request.nextUrl.pathname.startsWith("/unauthorized")
   ) {
     // no user, potentially respond by redirecting the user to the login page

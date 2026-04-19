@@ -49,3 +49,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prettier
+.prettierignore
+
+#speckit
+/specs/
+.specify
+
+#stitch
+skills-lock.json
+.agents/
+.stitch/

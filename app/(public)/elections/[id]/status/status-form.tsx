@@ -13,29 +13,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface CandidateResult {
-  candidate_id: string;
-  full_name: string;
-  student_id: string;
-  email: string;
-  application_status: string;
-  rejection_reason: string | null;
-  affiliation_status: string | null;
-  cog_link: string | null;
-  cor_link: string | null;
-  good_moral_link: string | null;
-  created_at: string;
-  positions: { title: string }[] | { title: string } | null;
-  courses:
-    | { name: string; acronym: string | null }[]
-    | { name: string; acronym: string | null }
-    | null;
-  partylists:
-    | { name: string; acronym: string }[]
-    | { name: string; acronym: string }
-    | null;
-}
+import type {
+  StatusCandidateResult,
+  StatusLookupFormProps,
+} from "@/lib/types/public";
 
 function statusBadge(status: string) {
   switch (status) {
@@ -77,14 +58,13 @@ function unwrap<T>(val: T[] | T | null): T | null {
 export function StatusLookupForm({
   electionId,
   electionName,
-}: {
-  electionId: string;
-  electionName: string;
-}) {
+}: StatusLookupFormProps) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [candidates, setCandidates] = useState<CandidateResult[] | null>(null);
+  const [candidates, setCandidates] = useState<StatusCandidateResult[] | null>(
+    null,
+  );
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
@@ -97,7 +77,7 @@ export function StatusLookupForm({
     if (result.error) {
       setError(result.error);
     } else if (result.candidates) {
-      setCandidates(result.candidates as unknown as CandidateResult[]);
+      setCandidates(result.candidates as unknown as StatusCandidateResult[]);
     }
     setLoading(false);
   }

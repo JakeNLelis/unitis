@@ -1,23 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApplicationForm } from "./application-form";
+import { getDateTimeWindowStatus } from "@/lib/utils";
+import type {
+  ApplyPageContentProps,
+  ApplyPageElection,
+  ApplyPageProps,
+  CourseOption,
+} from "@/lib/types/public";
 
-interface Election {
-  election_id: string;
-  name: string;
-  election_type: string;
-  start_date: string;
-  end_date: string;
-  candidacy_start_date: string | null;
-  candidacy_end_date: string | null;
-  is_archived: boolean;
-}
-
-async function ApplyPageContent({ electionId }: { electionId: string }) {
+async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
   const supabase = await createClient();
+  const adminSupabase = await createAdminClient();
 
   // Fetch election
   const { data: election, error: electionError } = await supabase
@@ -30,21 +28,16 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
     notFound();
   }
 
-  const electionData = election as Election;
+  const electionData = election as ApplyPageElection;
 
-  // Check if candidacy period is open
-  // Use date-string comparison to avoid UTC-vs-local timezone issues
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const candStart = electionData.candidacy_start_date?.slice(0, 10) ?? null;
-  const candEnd = electionData.candidacy_end_date?.slice(0, 10) ?? null;
-
-  const candidacyOpen =
-    candStart && candEnd && today >= candStart && today <= candEnd;
-
-  const candidacyNotStarted = candStart && today < candStart;
-
-  const candidacyEnded = candEnd && today > candEnd;
+  // Check if candidacy period is open using full timestamp boundaries.
+  const candidacyStatus = getDateTimeWindowStatus(
+    electionData.candidacy_start_date,
+    electionData.candidacy_end_date,
+  );
+  const candidacyOpen = candidacyStatus === "open";
+  const candidacyNotStarted = candidacyStatus === "not_started";
+  const candidacyEnded = candidacyStatus === "ended";
 
   // Fetch positions for this election
   const { data: positions } = await supabase
@@ -53,11 +46,28 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
     .eq("election_id", electionId)
     .order("created_at", { ascending: true });
 
-  // Fetch all courses for the dropdown
-  const { data: courses } = await supabase
+  // Fetch all courses for the dropdown with department/faculty metadata
+  const { data: courses } = await adminSupabase
     .from("courses")
-    .select("course_id, name, acronym")
+    .select("course_id, name, acronym, departments(name, faculties(name))")
     .order("name", { ascending: true });
+
+  const courseOptions: CourseOption[] = (courses || []).map((course) => {
+    const departmentObj = Array.isArray(course.departments)
+      ? course.departments[0]
+      : course.departments;
+    const facultyObj = Array.isArray(departmentObj?.faculties)
+      ? departmentObj?.faculties[0]
+      : departmentObj?.faculties;
+
+    return {
+      course_id: course.course_id,
+      name: course.name,
+      acronym: course.acronym,
+      department_name: departmentObj?.name || "",
+      faculty_name: facultyObj?.name || "",
+    };
+  });
 
   // Fetch partylists for this election
   const { data: partylists } = await supabase
@@ -107,7 +117,7 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
               electionName={electionData.name}
               electionType={electionData.election_type}
               positions={positions}
-              courses={courses || []}
+              courses={courseOptions}
               partylists={partylists || []}
             />
           ) : (
@@ -149,7 +159,9 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
                   </p>
                 </>
               )}
-              {!electionData.candidacy_start_date && (
+              {(candidacyStatus === "not_configured" ||
+                !electionData.candidacy_start_date ||
+                !electionData.candidacy_end_date) && (
                 <p className="text-muted-foreground">
                   Candidacy filing is not available for this election.
                 </p>
@@ -162,11 +174,7 @@ async function ApplyPageContent({ electionId }: { electionId: string }) {
   );
 }
 
-export default function ApplyPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function ApplyPage({ params }: ApplyPageProps) {
   return (
     <Suspense
       fallback={

@@ -2,14 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getTodayStr } from "@/lib/utils";
-
-interface BallotSubmission {
-  electionId: string;
-  studentId: string;
-  /** Map of positionId → array of selected candidateIds */
-  selections: Record<string, string[]>;
-}
+import { isDateTimeWindowOpen } from "@/lib/utils";
+import type { BallotSubmission } from "@/lib/types/public";
 
 export async function submitBallot(data: BallotSubmission) {
   const { electionId, studentId, selections } = data;
@@ -49,12 +43,7 @@ export async function submitBallot(data: BallotSubmission) {
     return { error: "This election has been archived." };
   }
 
-  // Use string-based date comparison to avoid UTC timezone mismatch
-  const today = getTodayStr();
-  const start = election.start_date.slice(0, 10);
-  const end = election.end_date.slice(0, 10);
-
-  if (today < start || today > end) {
+  if (!isDateTimeWindowOpen(election.start_date, election.end_date)) {
     return { error: "Voting is not currently open for this election." };
   }
 
