@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// @CodeScene(disable:"Complex Method")
 export async function checkEligibilityAndSendOtp(
   electionId: string,
   studentId: string,

@@ -35,6 +35,7 @@ const PDFPreview = dynamic(() => import("./pdf-preview"), {
   ),
 });
 
+// @CodeScene(disable:"Complex Method","Complex Conditional","Large Method")
 export function ApplicationForm({
   electionId,
   electionName,

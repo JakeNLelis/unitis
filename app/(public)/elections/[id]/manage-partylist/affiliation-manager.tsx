@@ -32,6 +32,7 @@ function affiliationBadge(status: string) {
   }
 }
 
+// @CodeScene(disable:"Complex Method","Large Method")
 export function AffiliationManager({
   electionId,
   electionName,

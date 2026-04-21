@@ -16,18 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { updateElectionDates } from "../actions";
 import type { EditElectionDatesProps } from "@/lib/types/officer-elections";
-
-function toDatetimeLocal(dateStr: string | null): string {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  // Format as YYYY-MM-DDTHH:mm for datetime-local input
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
+import { toDatetimeLocal } from "@/app/_helpers/datetime";
 
 export function EditElectionDates({
   electionId,

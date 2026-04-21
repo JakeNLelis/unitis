@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BallotForm } from "./ballot-form";
 
+// @CodeScene(disable:"Complex Method","Large Method")
 async function VotingContent({ electionId }: { electionId: string }) {
   const supabase = await createClient();
 

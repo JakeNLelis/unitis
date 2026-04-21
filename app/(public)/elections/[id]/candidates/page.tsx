@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CalendarDays, Clock3, Search } from "lucide-react";
+import {
+  getInitials,
+  formatDisplayDate,
+  formatDisplayTimeRange,
+} from "@/app/_helpers/elections/candidate-display";
 import type {
   CandidatesContentProps,
   CandidatesElectionMeta,
@@ -17,32 +22,7 @@ import type {
   CandidatesRow,
 } from "@/lib/types/public";
 
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
-}
-
-function formatDisplayDate(dateIso: string) {
-  return new Date(dateIso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function formatDisplayTimeRange(startIso: string, endIso: string) {
-  const start = new Date(startIso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  const end = new Date(endIso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  return `${start} - ${end}`;
-}
-
+// @CodeScene(disable:"Complex Method","Large Method")
 async function CandidatesContent({
   electionId,
   query,

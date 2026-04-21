@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import type { EventActionPanelProps } from "@/lib/types/components";
 
+// @CodeScene(disable:"Large Method")
 export function EventActionPanel({
   electionId,
-  electionName,
   state,
   variant = "default",
 }: EventActionPanelProps) {

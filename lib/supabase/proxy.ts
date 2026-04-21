@@ -2,6 +2,24 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
 
+const PUBLIC_PATH_PREFIXES = [
+  "/login",
+  "/forgot-password",
+  "/update-password",
+  "/auth",
+  "/elections",
+  "/archive",
+  "/unauthorized",
+] as const;
+
+function isPublicPath(pathname: string): boolean {
+  if (pathname === "/") {
+    return true;
+  }
+
+  return PUBLIC_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -47,17 +65,8 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/forgot-password") &&
-    !request.nextUrl.pathname.startsWith("/update-password") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/elections") &&
-    !request.nextUrl.pathname.startsWith("/archive") &&
-    !request.nextUrl.pathname.startsWith("/unauthorized")
-  ) {
+  const pathname = request.nextUrl.pathname;
+  if (!user && !isPublicPath(pathname)) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/login";

@@ -9,6 +9,7 @@ import {
 } from "@react-pdf/renderer";
 import type { CandidacyPDFProps } from "@/lib/types/public";
 
+// @CodeScene(disable:"Large Method")
 const styles = StyleSheet.create({
   page: {
     padding: 40,

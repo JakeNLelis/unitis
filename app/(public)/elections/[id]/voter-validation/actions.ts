@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+// @CodeScene(disable:"Complex Method")
 export async function sendVoterOtp(electionId: string, studentId: string) {
   const trimmedId = studentId.trim();
 

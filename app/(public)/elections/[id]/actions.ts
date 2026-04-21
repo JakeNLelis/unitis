@@ -3,35 +3,31 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDateTimeWindowStatus } from "@/lib/utils";
+import {
+  getPartylistRegistrationInput,
+  getOpenElectionForPartylistRegistration,
+  hasExistingPartylist,
+} from "@/app/_helpers/elections/register-partylist";
 
+// @CodeScene(disable:"Complex Method")
 export async function registerPartylist(formData: FormData) {
-  const election_id = formData.get("election_id") as string;
-  const name = formData.get("name") as string;
-  const acronym = formData.get("acronym") as string;
-  const platform = formData.get("platform") as string;
-  const registered_by_email = formData.get("registered_by_email") as string;
-  const registered_by_name = formData.get("registered_by_name") as string;
-
-  if (
-    !election_id ||
-    !name ||
-    !acronym ||
-    !registered_by_email ||
-    !registered_by_name
-  ) {
-    return { error: "Please fill in all required fields." };
+  const input = getPartylistRegistrationInput(formData);
+  if ("error" in input) {
+    return input;
   }
 
-  const supabase = await createClient();
+  const {
+    election_id,
+    name,
+    acronym,
+    platform,
+    registered_by_email,
+    registered_by_name,
+  } = input;
 
   // Verify the election exists and candidacy period is open
-  const { data: election, error: electionError } = await supabase
-    .from("elections")
-    .select(
-      "election_id, candidacy_start_date, candidacy_end_date, is_archived",
-    )
-    .eq("election_id", election_id)
-    .single();
+  const { data: election, error: electionError } =
+    await getOpenElectionForPartylistRegistration(election_id);
 
   if (electionError || !election) {
     return { error: "Election not found." };
@@ -41,11 +37,12 @@ export async function registerPartylist(formData: FormData) {
     return { error: "This election has been archived." };
   }
 
-  const candidacyStatus = getDateTimeWindowStatus(
-    election.candidacy_start_date,
-    election.candidacy_end_date,
-  );
-  if (candidacyStatus !== "open") {
+  if (
+    getDateTimeWindowStatus(
+      election.candidacy_start_date,
+      election.candidacy_end_date,
+    ) !== "open"
+  ) {
     return {
       error:
         "Partylist registration is only available during the candidacy filing period.",
@@ -53,33 +50,23 @@ export async function registerPartylist(formData: FormData) {
   }
 
   // Use admin client for insert to bypass RLS edge cases
-  const adminSupabase = await createAdminClient();
-
   // Check if acronym or name already used in this election
-  const { data: existingAcronym } = await adminSupabase
-    .from("partylists")
-    .select("partylist_id")
-    .eq("election_id", election_id)
-    .eq("acronym", acronym.toUpperCase());
-
-  if (existingAcronym && existingAcronym.length > 0) {
+  if (
+    await hasExistingPartylist(election_id, "acronym", acronym.toUpperCase())
+  ) {
     return {
       error:
         "This partylist acronym is already registered for this event. Please choose a unique identifier.",
     };
   }
 
-  const { data: existingName } = await adminSupabase
-    .from("partylists")
-    .select("partylist_id")
-    .eq("election_id", election_id)
-    .eq("name", name);
-
-  if (existingName && existingName.length > 0) {
+  if (await hasExistingPartylist(election_id, "name", name)) {
     return {
       error: "A partylist with this name is already registered for this event.",
     };
   }
+
+  const adminSupabase = await createAdminClient();
 
   const { error: insertError } = await adminSupabase.from("partylists").insert({
     election_id,

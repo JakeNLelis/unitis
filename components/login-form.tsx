@@ -13,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AlertCircle } from "lucide-react";
 
@@ -29,7 +28,6 @@ export function LoginForm({
   const [step, setStep] = useState<Step>("credentials");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,17 +75,12 @@ export function LoginForm({
       });
       if (verifyError) throw verifyError;
 
-      // Route based on user role stored in metadata
-      const role = data.user?.user_metadata?.role;
-      if (role === "system-admin") {
-        router.push("/admin");
-      } else if (role === "seb-officer") {
-        router.push("/officer");
-      } else if (role === "candidate") {
-        router.push("/candidate");
-      } else {
-        router.push("/");
+      if (!data.user) {
+        throw new Error("Unable to start a session. Please try again.");
       }
+
+      // Let the server-side login gate resolve role from database records.
+      window.location.assign("/login");
     } catch (error: unknown) {
       setError(
         error instanceof Error ? error.message : "Invalid or expired OTP.",

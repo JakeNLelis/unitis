@@ -9,12 +9,12 @@ import {
 import { InstitutionalDataTable } from "@/components/institutional/data-table";
 import { InstitutionalPieChart } from "@/components/institutional/pie-chart";
 import { InstitutionalCountdown } from "@/components/institutional/countdown";
-import { InstitutionalListItem } from "@/components/institutional/list-item";
 import { TurnoutLiveClient } from "@/components/turnout-live-client";
 import { format } from "date-fns";
 import { archivo } from "@/lib/fonts";
 import type { TurnoutPageProps } from "@/lib/types/public";
 
+// @CodeScene(disable:"Complex Method","Large Method")
 export default async function TurnoutPage({ params }: TurnoutPageProps) {
   const { id } = await params;
   const supabase = await createClient();

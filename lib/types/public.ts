@@ -107,6 +107,15 @@ export interface ElectionPageProps {
   params: Promise<{ id: string }>;
 }
 
+export type NormalizedCandidate = {
+  candidate_id: string;
+  full_name: string;
+  photo: string | null;
+  position_title: string;
+  partylist_name: string | null;
+  partylist_acronym: string | null;
+};
+
 export interface CandidatesElectionMeta {
   election_id: string;
   name: string;

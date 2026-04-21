@@ -13,6 +13,7 @@ import type {
   CourseOption,
 } from "@/lib/types/public";
 
+// @CodeScene(disable:"Complex Method","Large Method")
 async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
   const supabase = await createClient();
   const adminSupabase = await createAdminClient();

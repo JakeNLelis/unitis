@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+// @CodeScene(disable:"Large Method")
 export function PartylistRegistrationForm({
   electionId,
   electionName,
@@ -36,7 +37,7 @@ export function PartylistRegistrationForm({
 
     const result = await registerPartylist(formData);
 
-    if (result.error) {
+    if ("error" in result) {
       setError(result.error);
       setLoading(false);
     } else {

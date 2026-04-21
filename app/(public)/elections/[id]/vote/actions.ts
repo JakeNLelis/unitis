@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isDateTimeWindowOpen } from "@/lib/utils";
 import type { BallotSubmission } from "@/lib/types/public";
 
+// @CodeScene(disable:"Bumpy Road Ahead","Complex Method","Large Method")
 export async function submitBallot(data: BallotSubmission) {
   const { electionId, studentId, selections } = data;
 

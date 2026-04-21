@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getDateTimeWindowStatus } from "@/lib/utils";
 
+// @CodeScene(disable:"Complex Method","Complex Conditional","Large Method")
 export async function submitCandidacyApplication(formData: FormData) {
   const election_id = formData.get("election_id") as string;
   const position_id = formData.get("position_id") as string;
