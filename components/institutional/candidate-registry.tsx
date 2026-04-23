@@ -1,6 +1,7 @@
 import { archivo } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { User, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type {
   CandidateRegistryProps,
   InstitutionalCandidate,
@@ -37,16 +38,19 @@ export function CandidateRegistry({ candidates }: CandidateRegistryProps) {
             <div className="flex items-center gap-4">
               <h3
                 className={cn(
-                  "text-3xl font-black uppercase tracking-tighter",
+                  "text-xl font-black capitalize tracking-tighter",
                   archivo.className,
                 )}
               >
                 {position}
               </h3>
-              <div className="h-px flex-1 bg-foreground/20" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                {positionCandidates.length} Registered
-              </span>
+
+              <Badge
+                variant="outline"
+                className="rounded-none border-foreground/20 bg-transparent px-2 py-1 text-[10px] font-black text-muted-foreground"
+              >
+                {positionCandidates.length} registered
+              </Badge>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -87,14 +91,6 @@ export function CandidateRegistry({ candidates }: CandidateRegistryProps) {
                         >
                           {candidate.full_name}
                         </h4>
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-2">
-                        <div className="h-1 w-8 bg-primary" />
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                          ID: {candidate.candidate_id.split("-")[0]} //
-                          Validated
-                        </p>
                       </div>
                     </div>
                   </div>

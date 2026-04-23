@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { AffiliationManager } from "./affiliation-manager";
+import { AffiliationManagerContent as AffiliationManager } from "@/app/_helpers/elections/affiliation-manager";
 import Link from "next/link";
 
 async function ManagePartylistContent({ electionId }: { electionId: string }) {

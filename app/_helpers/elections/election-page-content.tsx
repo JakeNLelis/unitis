@@ -32,9 +32,7 @@ function ElectionHeroSection({
   countdownExpiredLabel: string;
 }) {
   return (
-    <div className="relative border-2 border-foreground p-8 md:p-12 overflow-hidden bg-background">
-      <div className="absolute top-0 right-0 w-24 h-24 bg-foreground/5 rotate-45 translate-x-12 -translate-y-12" />
-
+    <div className="relative overflow-hidden bg-background">
       <div className="flex flex-col md:flex-row justify-between gap-12 relative z-10">
         <div className="space-y-6 flex-1">
           <div className="space-y-2">
@@ -106,19 +104,6 @@ function ElectionQuickActionsSection({
 }) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="h-px w-8 bg-foreground/10" />
-        <h2
-          className={cn(
-            "text-xs font-black uppercase tracking-[0.3em] text-muted-foreground",
-            archivo.className,
-          )}
-        >
-          Quick Actions
-        </h2>
-        <div className="h-px flex-1 bg-foreground/10" />
-      </div>
-
       <EventActionPanel
         electionId={electionId}
         electionName={electionName}
@@ -137,7 +122,7 @@ function ElectionCandidatesSection({
   return (
     <div className="space-y-10">
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-4">
+        <div>
           <h2
             className={cn(
               "text-4xl font-black uppercase tracking-tighter",
@@ -147,9 +132,6 @@ function ElectionCandidatesSection({
             Registry of Candidates
           </h2>
         </div>
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground max-w-2xl">
-          Official audit of qualified candidates for this election.
-        </p>
       </div>
 
       <CandidateRegistry candidates={candidates} />
@@ -189,14 +171,23 @@ export async function ElectionPageContent({ id }: { id: string }) {
   }
 
   const normalizedCandidates: NormalizedCandidate[] = (candidates || []).map(
-    (candidate) => ({
-      candidate_id: candidate.candidate_id,
-      full_name: candidate.full_name,
-      photo: candidate.photo,
-      position_title: candidate.position?.[0]?.title || "Unknown Position",
-      partylist_name: candidate.partylist?.[0]?.name || null,
-      partylist_acronym: candidate.partylist?.[0]?.acronym || null,
-    }),
+    (candidate) => {
+      const position = Array.isArray(candidate.position)
+        ? candidate.position[0]
+        : candidate.position;
+      const partylist = Array.isArray(candidate.partylist)
+        ? candidate.partylist[0]
+        : candidate.partylist;
+
+      return {
+        candidate_id: candidate.candidate_id,
+        full_name: candidate.full_name,
+        photo: candidate.photo,
+        position_title: position?.title || "Unknown Position",
+        partylist_name: partylist?.name || null,
+        partylist_acronym: partylist?.acronym || null,
+      };
+    },
   );
 
   const state = getElectionState(

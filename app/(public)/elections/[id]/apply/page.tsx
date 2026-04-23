@@ -1,10 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ApplicationForm } from "./application-form";
 import { getDateTimeWindowStatus } from "@/lib/utils";
 import type {
   ApplyPageContentProps,
@@ -12,13 +7,20 @@ import type {
   ApplyPageProps,
   CourseOption,
 } from "@/lib/types/public";
+import {
+  ApplyFormCard,
+  ApplyPageHeader,
+  ApplyStatusCard,
+  FilingWindowCard,
+  NoPositionsCard,
+} from "@/app/_helpers/elections/apply-page";
 
-// @CodeScene(disable:"Complex Method","Large Method")
 async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
+  const { createClient } = await import("@/lib/supabase/server");
+  const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = await createClient();
   const adminSupabase = await createAdminClient();
 
-  // Fetch election
   const { data: election, error: electionError } = await supabase
     .from("elections")
     .select("*")
@@ -30,24 +32,18 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
   }
 
   const electionData = election as ApplyPageElection;
-
-  // Check if candidacy period is open using full timestamp boundaries.
   const candidacyStatus = getDateTimeWindowStatus(
     electionData.candidacy_start_date,
     electionData.candidacy_end_date,
   );
   const candidacyOpen = candidacyStatus === "open";
-  const candidacyNotStarted = candidacyStatus === "not_started";
-  const candidacyEnded = candidacyStatus === "ended";
 
-  // Fetch positions for this election
   const { data: positions } = await supabase
     .from("positions")
     .select("position_id, title")
     .eq("election_id", electionId)
     .order("created_at", { ascending: true });
 
-  // Fetch all courses for the dropdown with department/faculty metadata
   const { data: courses } = await adminSupabase
     .from("courses")
     .select("course_id, name, acronym, departments(name, faculties(name))")
@@ -70,7 +66,6 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
     };
   });
 
-  // Fetch partylists for this election
   const { data: partylists } = await supabase
     .from("partylists")
     .select("partylist_id, name, acronym")
@@ -80,40 +75,23 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-7xl mx-auto py-10 px-4 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Candidacy Application</h1>
-          <p className="text-lg text-muted-foreground">{electionData.name}</p>
-          <Badge variant="outline">{electionData.election_type}</Badge>
-        </div>
+        <ApplyPageHeader
+          electionName={electionData.name}
+          electionType={electionData.election_type}
+        />
 
-        {/* Candidacy period info */}
         {electionData.candidacy_start_date &&
           electionData.candidacy_end_date && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Filing Period
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="font-medium">
-                  {new Date(electionData.candidacy_start_date).toLocaleString()}{" "}
-                  – {new Date(electionData.candidacy_end_date).toLocaleString()}
-                </p>
-                {candidacyOpen && (
-                  <Badge className="mt-2 bg-green-600">
-                    Filing is currently open
-                  </Badge>
-                )}
-              </CardContent>
-            </Card>
+            <FilingWindowCard
+              startDate={electionData.candidacy_start_date}
+              endDate={electionData.candidacy_end_date}
+              open={candidacyOpen}
+            />
           )}
 
-        {/* Show form or status message */}
         {candidacyOpen ? (
           positions && positions.length > 0 ? (
-            <ApplicationForm
+            <ApplyFormCard
               electionId={electionId}
               electionName={electionData.name}
               electionType={electionData.election_type}
@@ -122,53 +100,14 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
               partylists={partylists || []}
             />
           ) : (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground">
-                  No positions have been defined for this election yet. Please
-                  check back later.
-                </p>
-              </CardContent>
-            </Card>
+            <NoPositionsCard />
           )
         ) : (
-          <Card>
-            <CardContent className="pt-6 text-center space-y-2">
-              {candidacyNotStarted && (
-                <>
-                  <p className="text-lg font-medium">
-                    Candidacy filing has not started yet
-                  </p>
-                  <p className="text-muted-foreground">
-                    Filing opens on{" "}
-                    {new Date(
-                      electionData.candidacy_start_date!,
-                    ).toLocaleString()}
-                  </p>
-                </>
-              )}
-              {candidacyEnded && (
-                <>
-                  <p className="text-lg font-medium">
-                    Candidacy filing period has ended
-                  </p>
-                  <p className="text-muted-foreground">
-                    The deadline was{" "}
-                    {new Date(
-                      electionData.candidacy_end_date!,
-                    ).toLocaleString()}
-                  </p>
-                </>
-              )}
-              {(candidacyStatus === "not_configured" ||
-                !electionData.candidacy_start_date ||
-                !electionData.candidacy_end_date) && (
-                <p className="text-muted-foreground">
-                  Candidacy filing is not available for this election.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <ApplyStatusCard
+            status={candidacyStatus}
+            startDate={electionData.candidacy_start_date}
+            endDate={electionData.candidacy_end_date}
+          />
         )}
       </div>
     </div>

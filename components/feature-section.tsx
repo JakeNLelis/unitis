@@ -34,9 +34,9 @@ function FeatureSection() {
         {features.map(({ icon: Icon, title, description }) => (
           <div
             key={title}
-            className="flex flex-col items-center text-center bg-card border border-border rounded-xl p-6 space-y-3"
+            className="flex flex-col items-center text-center bg-card border border-border p-6 space-y-3"
           >
-            <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="size-12 bg-primary/10 flex items-center justify-center">
               <Icon className="size-6 text-primary" />
             </div>
             <p className="font-semibold text-foreground">{title}</p>
