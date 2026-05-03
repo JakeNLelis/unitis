@@ -1,21 +1,8 @@
 import { LoginForm } from "@/components/login-form";
 import { getCurrentUser, getCurrentProfile } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { redirectByRole } from "@/app/_helpers/auth";
 import { Suspense } from "react";
 import { Logo } from "@/components/logo";
-
-function redirectByRole(role: string | undefined) {
-  switch (role) {
-    case "system-admin":
-      redirect("/admin");
-    case "seb-officer":
-      redirect("/officer");
-    case "candidate":
-      redirect("/candidate");
-    default:
-      redirect("/");
-  }
-}
 
 async function LoginGate() {
   const user = await getCurrentUser();

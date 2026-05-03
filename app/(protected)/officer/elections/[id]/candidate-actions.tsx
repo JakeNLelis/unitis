@@ -27,16 +27,39 @@ export function CandidateActions({
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  function handleConflict(result: unknown) {
+    if (!result || typeof result !== "object") {
+      return false;
+    }
+    const code = (result as { code?: string }).code;
+    if (code !== "candidate_already_processed") {
+      return false;
+    }
+    const message =
+      (result as { error?: string }).error ||
+      "This candidate was already processed by someone else.";
+    setConflictMessage(message);
+    setShowConflictModal(true);
+    router.refresh();
+    return true;
+  }
 
   async function handleApprove() {
     setIsLoading(true);
     setError(null);
     const result = await updateCandidateStatus(candidateId, "approved");
-    if (result?.error) {
-      setError(result.error);
+    if (handleConflict(result)) {
+      setIsLoading(false);
+      return;
+    }
+    if (!result || (typeof result === "object" && "error" in result)) {
+      setError((result as { error?: string })?.error ?? "Unknown error");
     }
     setIsLoading(false);
     router.refresh();
@@ -54,8 +77,12 @@ export function CandidateActions({
       "rejected",
       rejectionReason.trim(),
     );
-    if (result?.error) {
-      setError(result.error);
+    if (handleConflict(result)) {
+      setIsLoading(false);
+      return;
+    }
+    if (!result || (typeof result === "object" && "error" in result)) {
+      setError((result as { error?: string })?.error ?? "Unknown error");
     } else {
       setShowRejectModal(false);
       setRejectionReason("");
@@ -144,6 +171,21 @@ export function CandidateActions({
             >
               {isLoading ? "Rejecting..." : "Confirm Rejection"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showConflictModal} onOpenChange={setShowConflictModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Already Processed</DialogTitle>
+            <DialogDescription>
+              {conflictMessage ||
+                "This candidate was already processed by someone else."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowConflictModal(false)}>Got it</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

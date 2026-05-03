@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { StatusLookupForm } from "./status-form";
+import { StatusLookupForm } from "@/app/_helpers/elections/status-form";
 import Link from "next/link";
 
 async function StatusPageContent({ electionId }: { electionId: string }) {

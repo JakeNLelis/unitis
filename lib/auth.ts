@@ -7,6 +7,27 @@ import {
 } from "@/lib/types/auth";
 import { redirect } from "next/navigation";
 
+async function getCurrentRoleRecord<T>(
+  table: "system_administrators" | "seb_officers",
+): Promise<T | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const { data } = await supabase
+    .from(table)
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  return data as T | null;
+}
+
 export async function getCurrentUser() {
   const supabase = await createClient();
   const {
@@ -85,37 +106,11 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
 }
 
 export async function getSystemAdmin(): Promise<SystemAdministrator | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  const { data } = await supabase
-    .from("system_administrators")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  return data as SystemAdministrator | null;
+  return getCurrentRoleRecord<SystemAdministrator>("system_administrators");
 }
 
 export async function getSEBOfficer(): Promise<SEBOfficer | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  const { data } = await supabase
-    .from("seb_officers")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  return data as SEBOfficer | null;
+  return getCurrentRoleRecord<SEBOfficer>("seb_officers");
 }
 
 export async function requireAuth() {

@@ -21,6 +21,7 @@ export interface Position {
   election_id: string;
   title: string;
   max_votes: number;
+  required_for_partylist: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -85,11 +86,7 @@ export interface PositionWithCandidates extends Position {
   candidates: Candidate[];
 }
 
-export const ELECTION_TYPES = [
-  "University-Wide",
-  "Campus-Wide",
-  "Faculty-Wide",
-] as const;
+export const ELECTION_TYPES = ["University-Wide", "Faculty-Wide"] as const;
 
 export type ElectionType = (typeof ELECTION_TYPES)[number];
 

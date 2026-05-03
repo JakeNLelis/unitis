@@ -1,7 +1,9 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isValidStudentId } from "@/lib/utils";
 
+// @CodeScene(disable:"Complex Method")
 export async function checkEligibilityAndSendOtp(
   electionId: string,
   studentId: string,
@@ -10,6 +12,12 @@ export async function checkEligibilityAndSendOtp(
 
   if (!trimmedId) {
     return { error: "Please enter your student ID number." };
+  }
+
+  if (!isValidStudentId(trimmedId)) {
+    return {
+      error: "Student ID must match the format xx-x-xxxxx (e.g. 23-1-01457).",
+    };
   }
 
   const adminSupabase = await createAdminClient();

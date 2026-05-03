@@ -48,6 +48,43 @@ export interface RegisterPartylistContentProps {
   electionId: string;
 }
 
+export interface PartylistRegistrationPosition {
+  position_id: string;
+  title: string;
+  required_for_partylist: boolean;
+}
+
+export interface PartylistRegistrationCandidateDraft {
+  position_id: string;
+  course_id: string;
+  full_name: string;
+  student_id: string;
+  email: string;
+  age: string;
+  birth_date: string;
+  current_address: string;
+  permanent_address: string;
+  contact_number: string;
+  photo: string;
+  cog_link: string;
+  cor_link: string;
+  good_moral_link: string;
+  faculty: string;
+  department: string;
+}
+
+export interface PartylistRegistrationPDFProps {
+  electionName: string;
+  partylistName: string;
+  managerName: string;
+  candidates: Array<{
+    position: string;
+    fullName: string;
+    degreeProgram: string;
+    formData: CandidacyFormData;
+  }>;
+}
+
 export interface ApplyPageElection {
   election_id: string;
   name: string;
@@ -107,50 +144,14 @@ export interface ElectionPageProps {
   params: Promise<{ id: string }>;
 }
 
-export interface CandidatesElectionMeta {
-  election_id: string;
-  name: string;
-  election_type: string;
-  start_date: string;
-  end_date: string;
-}
-
-export interface CandidatesPositionRow {
-  position_id: string;
-  title: string;
-}
-
-export interface CandidatePartylistInfo {
-  name: string;
-  acronym: string;
-  platform: string | null;
-}
-
-export interface CandidatesRow {
+export type NormalizedCandidate = {
   candidate_id: string;
-  position_id: string;
   full_name: string;
   photo: string | null;
-  partylists: CandidatePartylistInfo | null;
-}
-
-export interface CandidatesRaw {
-  candidate_id: string;
-  position_id: string;
-  full_name: string;
-  photo: string | null;
-  partylists: CandidatePartylistInfo | CandidatePartylistInfo[] | null;
-}
-
-export interface CandidatesContentProps {
-  electionId: string;
-  query: string;
-}
-
-export interface CandidatesPageProps {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string }>;
-}
+  position_title: string;
+  partylist_name: string | null;
+  partylist_acronym: string | null;
+};
 
 export interface CandidateOption {
   candidate_id: string;

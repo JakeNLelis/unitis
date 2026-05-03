@@ -1,6 +1,83 @@
 import { createClient } from "@/lib/supabase/server";
 import type { TurnoutSnapshot } from "@/lib/types/election";
 
+type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type TurnoutAdjustmentRow = {
+  casted_votes_delta: number | null;
+  expected_voters_value: number | null;
+};
+
+async function getBaseVoteCount(
+  supabase: ServerSupabaseClient,
+  electionId: string,
+): Promise<number | null> {
+  const { count, error } = await supabase
+    .from("voters")
+    .select("*", { count: "exact", head: true })
+    .eq("election_id", electionId)
+    .eq("is_voted", true);
+
+  if (error) {
+    console.error("Error fetching vote count:", error);
+    return null;
+  }
+
+  return count ?? 0;
+}
+
+async function getTurnoutAdjustmentRows(
+  supabase: ServerSupabaseClient,
+  electionId: string,
+): Promise<TurnoutAdjustmentRow[] | null> {
+  const { data, error } = await supabase
+    .from("turnout_adjustments")
+    .select("casted_votes_delta, expected_voters_value")
+    .eq("election_id", electionId);
+
+  if (error) {
+    console.error("Error fetching adjustments:", error);
+    return null;
+  }
+
+  return data || [];
+}
+
+function applyAdjustments(
+  baseVoteCount: number,
+  adjustments: TurnoutAdjustmentRow[],
+): { castedVotes: number; expectedVoters: number | null } {
+  let castedVotes = baseVoteCount;
+  let expectedVoters: number | null = null;
+
+  for (const adjustment of adjustments) {
+    if (adjustment.casted_votes_delta !== null) {
+      castedVotes += adjustment.casted_votes_delta;
+    }
+
+    if (adjustment.expected_voters_value !== null) {
+      expectedVoters = adjustment.expected_voters_value;
+    }
+  }
+
+  return { castedVotes, expectedVoters };
+}
+
+async function getExpectedVoterCount(
+  supabase: ServerSupabaseClient,
+  electionId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("voters")
+    .select("*", { count: "exact", head: true })
+    .eq("election_id", electionId);
+
+  if (error) {
+    console.error("Error fetching expected voter count:", error);
+  }
+
+  return count ?? 0;
+}
+
 /**
  * Server-side turnout read model
  * Aggregates current turnout data by:
@@ -10,70 +87,28 @@ import type { TurnoutSnapshot } from "@/lib/types/election";
  * 4. Calculating turnout percentage
  * 5. Returning complete TurnoutSnapshot
  */
-
 export async function getTurnoutSnapshot(
   electionId: string,
 ): Promise<TurnoutSnapshot | null> {
   const supabase = await createClient();
 
-  const { count: voteCount, error: voteError } = await supabase
-    .from("voters")
-    .select("*", { count: "exact", head: true })
-    .eq("election_id", electionId)
-    .eq("is_voted", true);
-
-  if (voteError) {
-    console.error("Error fetching vote count:", voteError);
+  const baseVoteCount = await getBaseVoteCount(supabase, electionId);
+  if (baseVoteCount === null) {
     return null;
   }
 
-  const baseVoteCount = voteCount ?? 0;
-
-  // Get sum of casted_votes_delta adjustments
-  const { data: adjustments, error: adjustmentError } = await supabase
-    .from("turnout_adjustments")
-    .select("casted_votes_delta, expected_voters_value")
-    .eq("election_id", electionId);
-
-  if (adjustmentError) {
-    console.error("Error fetching adjustments:", adjustmentError);
+  const adjustments = await getTurnoutAdjustmentRows(supabase, electionId);
+  if (adjustments === null) {
     return null;
   }
 
-  // Step 2: Apply adjustment deltas
-  let totalCastedVotes = baseVoteCount;
-  let expectedVoters: number | null = null;
-
-  if (adjustments && adjustments.length > 0) {
-    for (const adj of adjustments) {
-      // Sum up all casted_votes_delta
-      if (adj.casted_votes_delta !== null) {
-        totalCastedVotes += adj.casted_votes_delta;
-      }
-      // Use the LATEST expected_voters_value (most recent takes precedence)
-      if (adj.expected_voters_value !== null) {
-        expectedVoters = adj.expected_voters_value;
-      }
-    }
-  }
-
-  // Step 3: If no explicit expected_voters adjustment, use database value
-  if (expectedVoters === null) {
-    const { count: expectedCount, error: expectedError } = await supabase
-      .from("voters")
-      .select("*", { count: "exact", head: true })
-      .eq("election_id", electionId);
-
-    if (expectedError) {
-      console.error("Error fetching expected voter count:", expectedError);
-    }
-
-    expectedVoters = expectedCount ?? 0;
-  }
-
-  // Ensure non-negative values
-  totalCastedVotes = Math.max(0, totalCastedVotes);
-  expectedVoters = Math.max(0, expectedVoters ?? 0);
+  const adjusted = applyAdjustments(baseVoteCount, adjustments);
+  const expectedVoters = Math.max(
+    0,
+    adjusted.expectedVoters ??
+      (await getExpectedVoterCount(supabase, electionId)),
+  );
+  const totalCastedVotes = Math.max(0, adjusted.castedVotes);
 
   // Step 4: Calculate turnout percentage
   // When expected_voters is 0, percentage is undefined (handled in display as "—")

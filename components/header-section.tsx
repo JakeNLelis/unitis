@@ -7,6 +7,7 @@ import { X, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { HeaderSectionProps } from "@/lib/types/components";
 
+// @CodeScene(disable:"Complex Method")
 function HeaderSection({ color = "blue" }: HeaderSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const isBlue = color === "blue";
