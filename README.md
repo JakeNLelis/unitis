@@ -11,8 +11,21 @@ An election management system designed to modernize student elections at Visayas
 | UN.010.005                                             | 2026-03-15    |
 | UN.010.006                                             | 2026-04-02    |
 | UN.010.007                                             | 2026-04-19    |
+| UN.010.008                                             | 2026-04-26    |
+| UN.010.009                                             | 2026-05-03    |
 
-## UN.010.007 Release Notes
+## UN.010.009 Release Notes
+- Implemented age calculation from birth date during candidate application insertion.
+- Updated partylist registration to include candidate slate validation and age calculation.
+- Removed candidates page component as part of refactoring.
+- Improved voting user verification to ensure email format compliance.
+- Enhanced real-time turnout updates to include voter status changes.
+- Updated election permissions to simplify role checks for creating election types.
+- Refactored data table component for responsive design.
+- Introduced new feature components for better UI representation of election features.
+- Added utility functions for student ID validation and age calculation from birth date.
+
+## UN.010.008 Release Notes
 - Updated TurnoutLiveClient to use SharedTurnoutLiveClientProps for props.
 - Refactored TurnoutSummaryCard to utilize a shared TurnoutData type.
 - Enhanced Badge component by separating BadgeProps into a dedicated type.
@@ -21,6 +34,10 @@ An election management system designed to modernize student elections at Visayas
 - Updated getCurrentProfile to include more detailed display_name for SEB Officers.
 - Added requireElectionManager function for role-based access control.
 - Created election-permissions.ts to manage election access policies and permissions.
+- Enhanced candidacy and partylist registration with validation and age calculation
+- Added validation for student ID format and birth date in candidacy form.
+
+## UN.010.007 Release Notes
 - Added new types for academic entities and officer management.
 - Enhanced auth types to include additional fields for SEB Officers.
 - Introduced candidacy types and form data structure.
