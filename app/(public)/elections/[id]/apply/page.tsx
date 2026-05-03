@@ -66,12 +66,6 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
     };
   });
 
-  const { data: partylists } = await supabase
-    .from("partylists")
-    .select("partylist_id, name, acronym")
-    .eq("election_id", electionId)
-    .order("name", { ascending: true });
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-7xl mx-auto py-10 px-4 space-y-6">
@@ -97,7 +91,7 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
               electionType={electionData.election_type}
               positions={positions}
               courses={courseOptions}
-              partylists={partylists || []}
+              partylists={[]}
             />
           ) : (
             <NoPositionsCard />

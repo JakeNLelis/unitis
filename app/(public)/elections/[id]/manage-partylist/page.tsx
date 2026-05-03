@@ -22,7 +22,7 @@ async function ManagePartylistContent({ electionId }: { electionId: string }) {
   const { data: partylists } = await supabase
     .from("partylists")
     .select(
-      "partylist_id, name, acronym, registered_by_email, registered_by_name",
+      "partylist_id, name, acronym, registered_by_email:representative_email, registered_by_name:representative_name",
     )
     .eq("election_id", electionId)
     .order("name", { ascending: true });

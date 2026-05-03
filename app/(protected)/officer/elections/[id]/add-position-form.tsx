@@ -42,8 +42,8 @@ export function AddPositionForm({
     formData.set("election_id", electionId);
 
     const result = await createPosition(formData);
-    if (result?.error) {
-      setError(result.error);
+    if (!result || (typeof result === "object" && "error" in result)) {
+      setError((result as any)?.error ?? "Unknown error");
       setIsLoading(false);
       return;
     }

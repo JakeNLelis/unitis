@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateAffiliationStatus } from "@/app/(public)/elections/[id]/manage-partylist/actions";
+import { updateAffiliationStatus } from "@/app/(public)/elections/[id]/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

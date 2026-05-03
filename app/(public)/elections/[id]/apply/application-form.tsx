@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { pdf } from "@react-pdf/renderer";
 import { submitCandidacyApplication } from "./actions";
-import { CandidacyFormData, CouncilType, CandidacyType } from "./types";
+import { CandidacyFormData, CouncilType } from "./types";
 import type { ApplicationFormProps } from "@/lib/types/public";
+import CandidacyPDF from "./candidacy-pdf";
 import {
   ApplicationFormLayout,
   ApplicationSuccessCard,
 } from "@/app/_helpers/elections/application-form";
+import { calculateAgeFromBirthDate } from "@/lib/utils";
 
 export function ApplicationForm({
   electionId,
@@ -15,7 +18,6 @@ export function ApplicationForm({
   electionType,
   positions,
   courses,
-  partylists,
 }: ApplicationFormProps) {
   const defaultCouncil: CouncilType =
     electionType === "University-Wide" ? "USSC" : "FSSC";
@@ -46,27 +48,76 @@ export function ApplicationForm({
 
   const [positionId, setPositionId] = useState("");
   const [courseId, setCourseId] = useState("");
-  const [partylistId, setPartylistId] = useState("independent");
   const [cogLink, setCogLink] = useState("");
   const [corLink, setCorLink] = useState("");
   const [goodMoralLink, setGoodMoralLink] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [debouncedPreviewData, setDebouncedPreviewData] =
-    useState<CandidacyFormData>(formData);
+  const [pdfPayload, setPdfPayload] = useState<CandidacyFormData | null>(null);
+  const [downloadState, setDownloadState] = useState<
+    "idle" | "generating" | "done" | "failed"
+  >("idle");
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setDebouncedPreviewData(formData);
-    }, 300);
+    setFormData((previous) => ({
+      ...previous,
+      councilType: defaultCouncil,
+    }));
+  }, [defaultCouncil]);
 
-    return () => clearTimeout(timeoutId);
-  }, [formData]);
+  useEffect(() => {
+    if (!pdfPayload) {
+      return;
+    }
+
+    const payload = pdfPayload;
+    let revokedUrl = "";
+
+    async function generateAndDownload() {
+      setDownloadState("generating");
+      try {
+        const blob = await pdf(<CandidacyPDF data={payload} />).toBlob();
+
+        const objectUrl = URL.createObjectURL(blob);
+        revokedUrl = objectUrl;
+
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = `candidacy-application-${payload.fullName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+
+        setDownloadState("done");
+      } catch (downloadError) {
+        console.error(downloadError);
+        setDownloadState("failed");
+      }
+    }
+
+    generateAndDownload();
+
+    return () => {
+      if (revokedUrl) {
+        URL.revokeObjectURL(revokedUrl);
+      }
+    };
+  }, [pdfPayload]);
 
   const update = useCallback(
     (field: keyof CandidacyFormData, value: string) => {
-      setFormData((previous) => ({ ...previous, [field]: value }));
+      setFormData((previous) => {
+        if (field === "birthday") {
+          return {
+            ...previous,
+            birthday: value,
+            age: calculateAgeFromBirthDate(value),
+          };
+        }
+
+        return { ...previous, [field]: value };
+      });
     },
     [],
   );
@@ -92,29 +143,6 @@ export function ApplicationForm({
     }
   };
 
-  const handlePartylistChange = (selectedPartylistId: string) => {
-    setPartylistId(selectedPartylistId);
-    if (selectedPartylistId === "independent") {
-      setFormData((previous) => ({
-        ...previous,
-        candidacyType: "Independent" as CandidacyType,
-        partyName: "",
-      }));
-      return;
-    }
-
-    const selectedPartylist = partylists.find(
-      (partylist) => partylist.partylist_id === selectedPartylistId,
-    );
-    setFormData((previous) => ({
-      ...previous,
-      candidacyType: "Political Party" as CandidacyType,
-      partyName: selectedPartylist
-        ? `${selectedPartylist.acronym} — ${selectedPartylist.name}`
-        : "",
-    }));
-  };
-
   const handleCourseChange = (selectedCourseId: string) => {
     setCourseId(selectedCourseId);
     const selectedCourse = courses.find(
@@ -137,7 +165,6 @@ export function ApplicationForm({
       !formData.fullName.trim() ||
       !formData.studentId.trim() ||
       !formData.email.trim() ||
-      !formData.age.trim() ||
       !formData.birthday.trim() ||
       !formData.currentAddress.trim() ||
       !formData.permanentAddress.trim() ||
@@ -147,6 +174,12 @@ export function ApplicationForm({
       !formData.photo
     ) {
       setError("Please fill in all required fields and upload your 1x1 photo.");
+      return;
+    }
+
+    const computedAge = calculateAgeFromBirthDate(formData.birthday);
+    if (!computedAge) {
+      setError("Please provide a valid birthday.");
       return;
     }
 
@@ -165,14 +198,6 @@ export function ApplicationForm({
       return;
     }
 
-    if (
-      formData.candidacyType === "Political Party" &&
-      !formData.campaignManager.trim()
-    ) {
-      setError("Please enter the campaign manager name for your party.");
-      return;
-    }
-
     setLoading(true);
 
     const fd = new FormData();
@@ -182,7 +207,7 @@ export function ApplicationForm({
     fd.set("full_name", formData.fullName);
     fd.set("student_id", formData.studentId);
     fd.set("email", formData.email);
-    fd.set("age", formData.age);
+    fd.set("age", computedAge);
     fd.set("birth_date", formData.birthday);
     fd.set("current_address", formData.currentAddress);
     fd.set("permanent_address", formData.permanentAddress);
@@ -190,8 +215,8 @@ export function ApplicationForm({
     fd.set("department", formData.department);
     fd.set("contact_number", formData.contactNumber);
     fd.set("photo", formData.photo);
-    fd.set("campaign_manager", formData.campaignManager);
-    fd.set("partylist_id", partylistId);
+    fd.set("campaign_manager", "");
+    fd.set("partylist_id", "independent");
     fd.set("cog_link", cogLink);
     fd.set("cor_link", corLink);
     fd.set("good_moral_link", goodMoralLink);
@@ -204,6 +229,7 @@ export function ApplicationForm({
     }
 
     setSuccess(true);
+    setPdfPayload(formData);
     setLoading(false);
   }
 
@@ -212,23 +238,18 @@ export function ApplicationForm({
       <ApplicationSuccessCard
         electionId={electionId}
         electionName={electionName}
-        previewData={debouncedPreviewData}
       />
     );
   }
 
   return (
     <ApplicationFormLayout
-      electionId={electionId}
-      electionName={electionName}
       electionType={electionType}
       positions={positions}
       courses={courses}
-      partylists={partylists}
       formData={formData}
       positionId={positionId}
       courseId={courseId}
-      partylistId={partylistId}
       cogLink={cogLink}
       corLink={corLink}
       goodMoralLink={goodMoralLink}
@@ -238,7 +259,6 @@ export function ApplicationForm({
       onPhotoUpload={handlePhotoUpload}
       onUpdate={update}
       onPositionChange={handlePositionChange}
-      onPartylistChange={handlePartylistChange}
       onCourseChange={handleCourseChange}
       onRemovePhoto={() => update("photo", "")}
       setCogLink={setCogLink}

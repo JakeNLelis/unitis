@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { TurnoutAdjustmentInput } from "@/lib/types/election";
-import { isElectionActive } from "@/lib/utils";
+import { isElectionActive, isValidStudentId } from "@/lib/utils";
 import {
   canActorCreateElectionType,
   getElectionPermissionsForActor,
@@ -17,6 +17,7 @@ import type {
 } from "@/lib/types/auth";
 import {
   requireActionActor,
+  getElectionContextForActor,
   requireEditableElectionContext,
   validateTurnoutAdjustmentInput,
   insertTurnoutAdjustmentRecord,
@@ -61,7 +62,7 @@ export async function createElection(formData: FormData) {
       error:
         actor.role === "system-admin"
           ? "System administrators can only create university-wide elections."
-          : "SEB officers can only create campus-wide or faculty-wide elections.",
+          : "SEB officers can only create faculty-wide elections.",
     };
   }
 
@@ -203,12 +204,30 @@ export async function updateCandidateStatus(
 
   const { data: candidateRow, error: candidateFetchError } = await supabase
     .from("candidates")
-    .select("candidate_id, election_id")
+    .select(
+      "candidate_id, election_id, application_status, approved_by_display, approved_at",
+    )
     .eq("candidate_id", candidateId)
     .single();
 
   if (candidateFetchError || !candidateRow) {
     return { error: "Candidate not found" };
+  }
+
+  if (candidateRow.application_status !== "pending") {
+    const approvedBy = candidateRow.approved_by_display
+      ? ` by ${candidateRow.approved_by_display}`
+      : "";
+    const approvedAt = candidateRow.approved_at
+      ? ` on ${new Date(candidateRow.approved_at).toLocaleString()}`
+      : "";
+    return {
+      error: `Candidate already ${candidateRow.application_status}${approvedBy}${approvedAt}.`,
+      code: "candidate_already_processed",
+      currentStatus: candidateRow.application_status,
+      approvedByDisplay: candidateRow.approved_by_display,
+      approvedAt: candidateRow.approved_at,
+    };
   }
 
   const permissionContext = await getElectionContextForActor(
@@ -244,13 +263,37 @@ export async function updateCandidateStatus(
     updateData.approved_at = new Date().toISOString();
   }
 
-  const { error } = await supabase
+  const { data: updatedRows, error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("candidate_id", candidateId);
+    .eq("candidate_id", candidateId)
+    .eq("application_status", "pending")
+    .select("candidate_id");
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (!updatedRows || updatedRows.length === 0) {
+    const { data: latest } = await supabase
+      .from("candidates")
+      .select("application_status, approved_by_display, approved_at")
+      .eq("candidate_id", candidateId)
+      .single();
+
+    const approvedBy = latest?.approved_by_display
+      ? ` by ${latest.approved_by_display}`
+      : "";
+    const approvedAt = latest?.approved_at
+      ? ` on ${new Date(latest.approved_at).toLocaleString()}`
+      : "";
+    return {
+      error: `Candidate already ${latest?.application_status ?? "processed"}${approvedBy}${approvedAt}.`,
+      code: "candidate_already_processed",
+      currentStatus: latest?.application_status,
+      approvedByDisplay: latest?.approved_by_display,
+      approvedAt: latest?.approved_at,
+    };
   }
 
   return { success: true };
@@ -277,7 +320,7 @@ export async function updatePosition(
 
   const supabase = await createAdminClient();
 
-  const positionResult = await getPositionById(supabase, positionId);
+  const positionResult = await getPositionById(positionId);
   if ("error" in positionResult) {
     return positionResult;
   }
@@ -315,7 +358,7 @@ export async function deletePosition(positionId: string) {
 
   const supabase = await createAdminClient();
 
-  const positionResult = await getPositionById(supabase, positionId);
+  const positionResult = await getPositionById(positionId);
   if ("error" in positionResult) {
     return positionResult;
   }
@@ -339,6 +382,72 @@ export async function deletePosition(positionId: string) {
     return { error: error.message };
   }
 
+  return { success: true };
+}
+
+export async function updatePartylistRequiredPositions(
+  electionId: string,
+  requiredPositionIds: string[],
+) {
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
+  }
+
+  const permissionContext = await requireEditableElectionContext(
+    electionId,
+    actorResult,
+    { requireUpcoming: true },
+  );
+  if ("error" in permissionContext) {
+    return permissionContext;
+  }
+
+  const supabase = await createAdminClient();
+  const distinctRequiredIds = [...new Set(requiredPositionIds)];
+
+  const { data: electionPositions, error: positionsError } = await supabase
+    .from("positions")
+    .select("position_id")
+    .eq("election_id", electionId);
+
+  if (positionsError) {
+    return { error: positionsError.message };
+  }
+
+  const validPositionIds = new Set(
+    (electionPositions || []).map((item) => item.position_id),
+  );
+
+  const hasInvalidPositionId = distinctRequiredIds.some(
+    (positionId) => !validPositionIds.has(positionId),
+  );
+
+  if (hasInvalidPositionId) {
+    return { error: "One or more selected positions are invalid." };
+  }
+
+  const { error: resetError } = await supabase
+    .from("positions")
+    .update({ required_for_partylist: false })
+    .eq("election_id", electionId);
+
+  if (resetError) {
+    return { error: resetError.message };
+  }
+
+  if (distinctRequiredIds.length > 0) {
+    const { error: markError } = await supabase
+      .from("positions")
+      .update({ required_for_partylist: true })
+      .in("position_id", distinctRequiredIds);
+
+    if (markError) {
+      return { error: markError.message };
+    }
+  }
+
+  revalidateElectionManagementPaths(electionId);
   return { success: true };
 }
 
@@ -444,35 +553,25 @@ export async function deleteElection(electionId: string) {
 
   const supabase = await createAdminClient();
 
-  const dependencyIdsResult = await getElectionDependencyIds(
-    supabase,
-    electionId,
-  );
+  const dependencyIdsResult = await getElectionDependencyIds(electionId);
   if ("error" in dependencyIdsResult) {
     return { error: dependencyIdsResult.error };
   }
 
   const candidateSelectionsDeleteError =
-    await deleteVoteSelectionsForCandidates(
-      supabase,
-      dependencyIdsResult.candidateIds,
-    );
+    await deleteVoteSelectionsForCandidates(dependencyIdsResult.candidateIds);
   if (candidateSelectionsDeleteError) {
     return { error: candidateSelectionsDeleteError };
   }
 
   const voterVotesDeleteError = await deleteVotesAndSelectionsForVoters(
-    supabase,
     dependencyIdsResult.voterIds,
   );
   if (voterVotesDeleteError) {
     return { error: voterVotesDeleteError };
   }
 
-  const scopedRowsDeleteError = await deleteElectionScopedRows(
-    supabase,
-    electionId,
-  );
+  const scopedRowsDeleteError = await deleteElectionScopedRows(electionId);
   if (scopedRowsDeleteError) {
     return { error: scopedRowsDeleteError };
   }
@@ -530,6 +629,15 @@ export async function addVoterMasterlist(electionId: string, rawText: string) {
   // Remove duplicates
   const uniqueIds = [...new Set(studentIds)];
 
+  const invalidIds = uniqueIds.filter((id) => !isValidStudentId(id));
+  if (invalidIds.length > 0) {
+    return {
+      error:
+        `Invalid student ID format for: ${invalidIds.slice(0, 5).join(", ")}` +
+        `${invalidIds.length > 5 ? " ..." : ""}. Use xx-x-xxxxx (e.g. 23-1-01457).`,
+    };
+  }
+
   const supabase = await createAdminClient();
 
   // Get existing student IDs for this election to skip duplicates
@@ -577,7 +685,7 @@ export async function removeVoter(voterId: string) {
 
   const supabase = await createAdminClient();
 
-  const voterResult = await getVoterById(supabase, voterId);
+  const voterResult = await getVoterById(voterId);
   if ("error" in voterResult) {
     return voterResult;
   }
@@ -685,12 +793,7 @@ export async function submitTurnoutAdjustment(
 
   // Insert turnout adjustment record
   const { data: adjustment, error: insertError } =
-    await insertTurnoutAdjustmentRecord(
-      supabase,
-      electionId,
-      actorResult,
-      input,
-    );
+    await insertTurnoutAdjustmentRecord(electionId, actorResult, input);
 
   if (insertError) {
     return { error: insertError.message };

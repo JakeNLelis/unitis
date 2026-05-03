@@ -7,6 +7,35 @@ export const hasEnvVars = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 );
 
+export const STUDENT_ID_PATTERN = /^\d{2}-\d-\d{5}$/;
+
+export function isValidStudentId(studentId: string): boolean {
+  return STUDENT_ID_PATTERN.test(studentId.trim());
+}
+
+export function calculateAgeFromBirthDate(
+  birthDate: string,
+  now: Date = new Date(),
+): string {
+  if (!birthDate) {
+    return "";
+  }
+
+  const parsed = new Date(birthDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  let age = now.getFullYear() - parsed.getFullYear();
+  const monthDiff = now.getMonth() - parsed.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < parsed.getDate())) {
+    age -= 1;
+  }
+
+  return age >= 0 ? String(age) : "";
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

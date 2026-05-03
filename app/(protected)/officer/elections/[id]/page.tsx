@@ -5,7 +5,6 @@ import { getDateTimeWindowStatus, isDateTimeWindowOpen, cn } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { Suspense } from "react";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ExternalLink, Users, BarChart3 } from "lucide-react";
 import { AddPositionForm } from "./add-position-form";
@@ -17,6 +16,7 @@ import { DeleteElectionButton } from "./delete-election-button";
 import { ElectionResults } from "./election-results";
 import { VoterMasterlist } from "./voter-masterlist";
 import { TurnoutAdjustmentForm } from "./turnout-adjustment-form";
+import { PartylistRequiredSettings } from "./partylist-required-settings";
 import { archivo } from "@/lib/fonts";
 import { InstitutionalDataTable } from "@/components/institutional/data-table";
 import { InstitutionalListItem } from "@/components/institutional/list-item";
@@ -233,6 +233,43 @@ function PositionsSection({
             canEdit={permissions.canEdit}
           />
         </div>
+      </div>
+    </section>
+  );
+}
+
+function PartylistSettingsSection({
+  electionId,
+  positionsData,
+  permissions,
+}: {
+  electionId: string;
+  positionsData: Position[];
+  permissions: ElectionPermissions;
+}) {
+  return (
+    <section>
+      <div className="mb-8 flex items-baseline justify-between group">
+        <h2
+          className={cn(
+            "text-2xl font-black uppercase tracking-tight",
+            archivo.className,
+          )}
+        >
+          Partylist Requirements
+        </h2>
+        <div className="h-px flex-1 mx-6 bg-border/60 group-hover:bg-primary/30 transition-colors duration-500" />
+        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+          Registration Gate
+        </span>
+      </div>
+
+      <div className="bg-surface-low border border-border p-8 ring-1 ring-border shadow-sm">
+        <PartylistRequiredSettings
+          electionId={electionId}
+          positions={positionsData}
+          canEdit={permissions.canEdit}
+        />
       </div>
     </section>
   );
@@ -561,6 +598,12 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
         />
 
         <PositionsSection
+          electionId={electionId}
+          positionsData={positionsData}
+          permissions={permissions}
+        />
+
+        <PartylistSettingsSection
           electionId={electionId}
           positionsData={positionsData}
           permissions={permissions}

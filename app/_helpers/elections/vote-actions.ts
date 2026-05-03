@@ -33,21 +33,23 @@ type VotingCandidate = {
   application_status: string;
 };
 
-export async function getVotingUser() {
+export async function getVotingUser(): Promise<VotingUser | { error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
 
-  if (error || !user?.email?.endsWith("@vsu.edu.ph")) {
+  const emailRaw = user?.email;
+  const email = emailRaw?.toLowerCase();
+  if (error || !email || !email.endsWith("@vsu.edu.ph")) {
     return {
       error:
         "Voter identity could not be verified. Please complete voter verification first.",
     };
   }
 
-  return { email: user.email } satisfies VotingUser;
+  return { email: emailRaw } satisfies VotingUser;
 }
 
 export async function getVotingElection(electionId: string) {
@@ -169,11 +171,18 @@ export async function getApprovedVotingCandidates(electionId: string) {
   const adminSupabase = await createAdminClient();
   const { data: candidates } = await adminSupabase
     .from("candidates")
-    .select("candidate_id, full_name, position_id, partylists(name, acronym)")
+    .select(
+      "candidate_id, full_name, position_id, application_status, partylists(name, acronym)",
+    )
     .eq("election_id", electionId)
     .eq("application_status", "approved");
 
-  return (candidates || []) as Array<
+  return (candidates || []).map((c: any) => ({
+    ...c,
+    partylists: Array.isArray(c.partylists)
+      ? c.partylists[0] || null
+      : c.partylists,
+  })) as Array<
     VotingCandidate & {
       partylists: { name: string; acronym: string } | null;
     }

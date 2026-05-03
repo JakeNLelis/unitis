@@ -9,6 +9,9 @@ import {
 } from "@/app/_helpers/elections/apply-actions";
 
 export async function submitCandidacyApplication(formData: FormData) {
+  formData.set("partylist_id", "independent");
+  formData.set("campaign_manager", "");
+
   const values = readCandidacyFormValues(formData);
   const validation = validateCandidacyFormValues(values);
   if ("error" in validation) {

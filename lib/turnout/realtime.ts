@@ -26,6 +26,7 @@ export interface TurnoutDeltaCallback {
 
 /**
  * Subscribe to realtime turnout adjustment updates for an active election
+ * and voter status changes that affect turnout.
  * Returns the channel instance for manual unsubscribe if needed
  */
 export function subscribeTurnoutDeltas(
@@ -46,6 +47,21 @@ export function subscribeTurnoutDeltas(
       },
       (payload) => {
         // Payload contains the new adjustment record
+        if (payload.new) {
+          onUpdate(payload.new);
+        }
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "voters",
+        filter: `election_id=eq.${electionId}`,
+      },
+      (payload) => {
+        // Voter status changes impact turnout counts
         if (payload.new) {
           onUpdate(payload.new);
         }

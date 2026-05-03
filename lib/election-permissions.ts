@@ -47,9 +47,7 @@ export function canActorCreateElectionType(
   }
 
   if (role === "seb-officer") {
-    return (
-      normalizedType === "campus-wide" || normalizedType === "faculty-wide"
-    );
+    return normalizedType === "faculty-wide";
   }
 
   return false;
@@ -72,19 +70,10 @@ export function getElectionPermissionsForActor(
   }
 
   const isCreator = election.created_by === actor.officer.seb_officer_id;
-  const sameCampus =
-    !!election.owner_campus && election.owner_campus === actor.officer.campus;
 
   const type = normalizeElectionType(election.election_type);
 
   switch (type) {
-    case "campus-wide":
-      return {
-        canView: isCreator || sameCampus,
-        canEdit: isCreator,
-        canDelete: isCreator,
-        canApprove: isCreator || sameCampus,
-      };
     case "faculty-wide":
       return creatorOnlyPermissions(isCreator);
     case "university-wide":

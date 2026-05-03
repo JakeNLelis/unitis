@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getDateTimeWindowStatus } from "@/lib/utils";
+import { calculateAgeFromBirthDate, isValidStudentId } from "@/lib/utils";
 
 type CandidacyFormValues = {
   election_id: string;
@@ -91,6 +92,16 @@ export function validateCandidacyFormValues(values: CandidacyFormValues) {
     return { error: "Please enter a valid email address." };
   }
 
+  if (!isValidStudentId(values.student_id)) {
+    return {
+      error: "Student ID must match the format xx-x-xxxxx (e.g. 23-1-01457).",
+    };
+  }
+
+  if (!values.birth_date) {
+    return { error: "Please provide your date of birth." };
+  }
+
   return { values };
 }
 
@@ -146,6 +157,7 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
   const adminSupabase = await createAdminClient();
   const hasPartylist =
     values.partylist_id && values.partylist_id !== "independent";
+  const computedAge = calculateAgeFromBirthDate(values.birth_date);
 
   const application: CandidateApplication = {
     election_id: values.election_id,
@@ -154,7 +166,7 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
     full_name: values.full_name,
     student_id: values.student_id,
     email: values.email,
-    age: values.age ? parseInt(values.age, 10) : null,
+    age: computedAge ? parseInt(computedAge, 10) : null,
     birth_date: values.birth_date || null,
     current_address: values.current_address || null,
     permanent_address: values.permanent_address || null,

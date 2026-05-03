@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ElectionsList } from "@/components/elections-list";
 import HeroSection from "@/components/hero-section";
 import FeatureSection from "@/components/feature-section";
+import FeatureBento from "@/components/feature-bento";
 
 export default function Home() {
   return (
@@ -11,6 +12,9 @@ export default function Home() {
       <HeroSection />
       {/* Features */}
       <FeatureSection />
+
+      {/* Asymmetric bento feature grid */}
+      <FeatureBento />
 
       <div className="container max-w-4xl mx-auto px-4 py-10 space-y-6">
         <Suspense

@@ -15,6 +15,7 @@ import {
   validateVotingSelections,
 } from "@/app/_helpers/elections/vote-actions";
 
+// @CodeScene(disable:"Complex Method")
 export async function submitBallot(data: BallotSubmission) {
   const { electionId, studentId, selections } = data;
 
@@ -85,6 +86,7 @@ export async function submitBallot(data: BallotSubmission) {
  * Fetch vote counts per candidate per position for an election.
  * Structured so a future realtime/websocket layer can provide the same shape.
  */
+// @CodeScene(disable:"Complex Method","Large Method")
 export async function getElectionResults(electionId: string) {
   const adminSupabase = await createAdminClient();
 

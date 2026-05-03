@@ -30,8 +30,8 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
       title,
       maxVotes,
     );
-    if (result?.error) {
-      setError(result.error);
+    if (result && typeof result === "object" && "error" in result) {
+      setError((result as any).error);
     } else {
       setIsEditing(false);
       router.refresh();
@@ -43,8 +43,8 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
     setIsDeleting(true);
     setError(null);
     const result = await deletePosition(position.position_id);
-    if (result?.error) {
-      setError(result.error);
+    if (result && typeof result === "object" && "error" in result) {
+      setError((result as any).error);
       setIsDeleting(false);
     } else {
       router.refresh();
@@ -103,6 +103,11 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
     <div className="flex items-center justify-between border rounded-lg px-3 py-2">
       <div className="flex items-center gap-2">
         <span className="font-medium">{position.title}</span>
+        {position.required_for_partylist && (
+          <Badge variant="outline" className="text-xs">
+            required for partylist
+          </Badge>
+        )}
         {position.max_votes > 1 && (
           <Badge variant="secondary" className="text-xs">
             max {position.max_votes} votes

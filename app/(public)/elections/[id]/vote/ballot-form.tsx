@@ -50,7 +50,6 @@ export function BallotForm({
 
     return () => {
       window.removeEventListener("beforeunload", clearVoterSession);
-      clearVoterSession();
     };
   }, []);
 
