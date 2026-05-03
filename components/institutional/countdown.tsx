@@ -12,11 +12,18 @@ export function InstitutionalCountdown({
   className,
 }: InstitutionalCountdownProps) {
   const [timeLeft, setTimeLeft] = useState<{
+    days: string;
     hours: string;
     minutes: string;
     seconds: string;
     isExpired: boolean;
-  }>({ hours: "00", minutes: "00", seconds: "00", isExpired: false });
+  }>({
+    days: "00",
+    hours: "00",
+    minutes: "00",
+    seconds: "00",
+    isExpired: false,
+  });
 
   useEffect(() => {
     const target = new Date(targetDate).getTime();
@@ -27,6 +34,7 @@ export function InstitutionalCountdown({
 
       if (distance < 0) {
         setTimeLeft({
+          days: "00",
           hours: "00",
           minutes: "00",
           seconds: "00",
@@ -35,6 +43,7 @@ export function InstitutionalCountdown({
         return;
       }
 
+      const d = Math.floor(distance / (1000 * 60 * 60 * 24));
       const h = Math.floor(
         (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
       );
@@ -42,6 +51,7 @@ export function InstitutionalCountdown({
       const s = Math.floor((distance % (1000 * 60)) / 1000);
 
       setTimeLeft({
+        days: d.toString().padStart(2, "0"),
         hours: h.toString().padStart(2, "0"),
         minutes: m.toString().padStart(2, "0"),
         seconds: s.toString().padStart(2, "0"),
@@ -56,16 +66,30 @@ export function InstitutionalCountdown({
   }, [targetDate]);
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
-      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground italic">
+    <div className={cn("flex w-full flex-col gap-2", className)}>
+      <p className="text-[9px] font-black uppercase tracking-[0.16em] text-muted-foreground italic sm:text-[10px] sm:tracking-[0.25em]">
         {timeLeft.isExpired ? expiredLabel : label}
       </p>
 
-      <div className="flex items-baseline gap-3">
+      <div className="grid w-full grid-cols-4 gap-4">
         <div className="flex flex-col items-center">
           <span
             className={cn(
-              "text-4xl font-black tabular-nums tracking-tighter",
+              "text-3xl font-black tabular-nums tracking-tighter sm:text-4xl",
+              archivo.className,
+            )}
+          >
+            {timeLeft.days}
+          </span>
+          <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground -mt-1">
+            Days
+          </span>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <span
+            className={cn(
+              "text-3xl font-black tabular-nums tracking-tighter sm:text-4xl",
               archivo.className,
             )}
           >
@@ -76,14 +100,10 @@ export function InstitutionalCountdown({
           </span>
         </div>
 
-        <span className="text-2xl font-black text-foreground/20 self-start mt-1">
-          :
-        </span>
-
         <div className="flex flex-col items-center">
           <span
             className={cn(
-              "text-4xl font-black tabular-nums tracking-tighter",
+              "text-3xl font-black tabular-nums tracking-tighter sm:text-4xl",
               archivo.className,
             )}
           >
@@ -94,14 +114,10 @@ export function InstitutionalCountdown({
           </span>
         </div>
 
-        <span className="text-2xl font-black text-foreground/20 self-start mt-1">
-          :
-        </span>
-
         <div className="flex flex-col items-center">
           <span
             className={cn(
-              "text-4xl font-black tabular-nums tracking-tighter text-primary",
+              "text-3xl font-black tabular-nums tracking-tighter text-primary sm:text-4xl",
               archivo.className,
             )}
           >

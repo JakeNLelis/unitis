@@ -35,6 +35,7 @@ export interface OfficerPositionSummary {
   position_id: string;
   title: string;
   max_votes: number;
+  required_for_partylist: boolean;
 }
 
 export interface PositionItemProps {

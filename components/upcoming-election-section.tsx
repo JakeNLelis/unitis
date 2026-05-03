@@ -2,19 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { archivo } from "@/lib/fonts";
-import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
+import { ArrowRight, CalendarDays } from "lucide-react";
 import type {
   UpcomingElectionCardProps,
   UpcomingElectionSectionProps,
 } from "@/lib/types/components";
 
-// T017: Election card with full clickability
-// T018: Accessibility labels and focus states
 function ElectionCard({ election }: UpcomingElectionCardProps) {
   const router = useRouter();
   const [isCardHovered, setIsCardHovered] = useState(false);
@@ -28,8 +25,8 @@ function ElectionCard({ election }: UpcomingElectionCardProps) {
       tabIndex={0}
       aria-label={`Open ${election.name} election details`}
       className={cn(
-        "group cursor-pointer transition-all duration-200 border-b border-border py-6 px-4 rounded-lg",
-        showCardHover ? "bg-surface-low" : "bg-transparent",
+        "group cursor-pointer transition-all duration-200 py-6 px-4",
+        showCardHover ? "shadow-lg" : "bg-transparent",
         "focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
       )}
       onClick={() => router.push(`/elections/${election.election_id}`)}
@@ -47,7 +44,7 @@ function ElectionCard({ election }: UpcomingElectionCardProps) {
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-3">
+          <div>
             <h3
               className={cn(
                 "text-xl font-black uppercase tracking-tight",
@@ -56,12 +53,6 @@ function ElectionCard({ election }: UpcomingElectionCardProps) {
             >
               {election.name}
             </h3>
-            <Badge
-              variant="secondary"
-              className="text-[10px] font-black tracking-widest uppercase"
-            >
-              Upcoming
-            </Badge>
           </div>
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
             {election.election_type}
@@ -73,27 +64,20 @@ function ElectionCard({ election }: UpcomingElectionCardProps) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 min-w-50">
-          <Button
-            asChild
-            variant={isButtonHovered ? "default" : "outline"}
-            size="sm"
-            className="w-full justify-between font-black uppercase tracking-widest transition-all"
-            onClick={(event) => event.stopPropagation()}
-            onMouseEnter={() => setIsButtonHovered(true)}
-            onMouseLeave={() => setIsButtonHovered(false)}
-          >
-            <Link href={`/elections/${election.election_id}/check-eligibility`}>
-              Check eligibility
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground inline-flex items-center gap-2 opacity-60">
-            <Clock3 className="size-3" />
-            Registry Locked
-          </p>
-        </div>
+        <Button
+          asChild
+          variant={isButtonHovered ? "default" : "outline"}
+          size="sm"
+          className="min-w-50 justify-between font-black uppercase tracking-widest transition-all"
+          onClick={(event) => event.stopPropagation()}
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => setIsButtonHovered(false)}
+        >
+          <Link href={`/elections/${election.election_id}/check-eligibility`}>
+            Check eligibility
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
       </div>
     </div>
   );

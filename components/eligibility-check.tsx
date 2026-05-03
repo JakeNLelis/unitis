@@ -108,9 +108,11 @@ export function EligibilityCheck({
               <Label htmlFor="student-id">Student ID number</Label>
               <Input
                 id="student-id"
-                placeholder="e.g. 20-1-01457"
+                placeholder="e.g. 23-1-01457"
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
+                pattern="^\d{2}-\d-\d{5}$"
+                title="Use format xx-x-xxxxx, e.g. 23-1-01457"
                 required
               />
               <p className="text-xs text-muted-foreground">

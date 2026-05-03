@@ -16,18 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { updateElectionDates } from "../actions";
 import type { EditElectionDatesProps } from "@/lib/types/officer-elections";
-
-function toDatetimeLocal(dateStr: string | null): string {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  // Format as YYYY-MM-DDTHH:mm for datetime-local input
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
+import { toDatetimeLocal } from "@/app/_helpers/datetime";
 
 export function EditElectionDates({
   electionId,
@@ -54,28 +43,77 @@ export function EditElectionDates({
     setError(null);
     setLoading(true);
 
+    const votingStartDate = new Date(votingStart);
+    const votingEndDate = new Date(votingEnd);
+
+    if (
+      Number.isNaN(votingStartDate.getTime()) ||
+      Number.isNaN(votingEndDate.getTime())
+    ) {
+      setError("Please provide valid voting dates.");
+      setLoading(false);
+      return;
+    }
+
+    if (votingEndDate <= votingStartDate) {
+      setError("Voting end date must be after voting start date.");
+      setLoading(false);
+      return;
+    }
+
+    if (candStart && candEnd) {
+      const candStartDate = new Date(candStart);
+      const candEndDate = new Date(candEnd);
+
+      if (
+        Number.isNaN(candStartDate.getTime()) ||
+        Number.isNaN(candEndDate.getTime())
+      ) {
+        setError("Please provide valid candidacy filing dates.");
+        setLoading(false);
+        return;
+      }
+
+      if (candStartDate >= candEndDate) {
+        setError("Candidacy start date must be before candidacy end date.");
+        setLoading(false);
+        return;
+      }
+
+      if (candEndDate >= votingStartDate) {
+        setError("Candidacy filing deadline must be before voting start date.");
+        setLoading(false);
+        return;
+      }
+    }
+
     // datetime-local values are local time strings ("YYYY-MM-DDTHH:mm").
     // Convert to UTC ISO strings so PostgreSQL stores the correct moment
     // regardless of the DB server timezone.
     const toISO = (local: string) =>
       local ? new Date(local).toISOString() : null;
 
-    const result = await updateElectionDates(electionId, {
-      start_date: new Date(votingStart).toISOString(),
-      end_date: new Date(votingEnd).toISOString(),
-      candidacy_start_date: toISO(candStart),
-      candidacy_end_date: toISO(candEnd),
-    });
+    try {
+      const result = await updateElectionDates(electionId, {
+        start_date: votingStartDate.toISOString(),
+        end_date: votingEndDate.toISOString(),
+        candidacy_start_date: toISO(candStart),
+        candidacy_end_date: toISO(candEnd),
+      });
 
-    setLoading(false);
+      if (!result || (typeof result === "object" && "error" in result)) {
+        setError((result as any)?.error ?? "Failed to update election dates.");
+        return;
+      }
 
-    if (result.error) {
-      setError(result.error);
-      return;
+      setOpen(false);
+      router.refresh();
+    } catch (submitError) {
+      console.error(submitError);
+      setError("Failed to update election dates. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setOpen(false);
-    router.refresh();
   }
 
   function handleOpenChange(isOpen: boolean) {

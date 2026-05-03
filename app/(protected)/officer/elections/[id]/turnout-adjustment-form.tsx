@@ -45,8 +45,8 @@ export function TurnoutAdjustmentForm({
       reason: reason.trim() || undefined,
     });
 
-    if (result?.error) {
-      setError(result.error);
+    if (result && typeof result === "object" && "error" in result) {
+      setError((result as any).error);
     } else {
       setSuccess(true);
       setCastedVotesDelta("");

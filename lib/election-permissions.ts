@@ -9,6 +9,33 @@ function normalizeElectionType(type: string): string {
   return (type || "").trim().toLowerCase();
 }
 
+function fullPermissions(): ElectionPermissions {
+  return {
+    canView: true,
+    canEdit: true,
+    canDelete: true,
+    canApprove: true,
+  };
+}
+
+function deniedPermissions(): ElectionPermissions {
+  return {
+    canView: false,
+    canEdit: false,
+    canDelete: false,
+    canApprove: false,
+  };
+}
+
+function creatorOnlyPermissions(isCreator: boolean): ElectionPermissions {
+  return {
+    canView: true,
+    canEdit: isCreator,
+    canDelete: isCreator,
+    canApprove: isCreator,
+  };
+}
+
 export function canActorCreateElectionType(
   role: UserRole,
   electionType: string,
@@ -20,9 +47,7 @@ export function canActorCreateElectionType(
   }
 
   if (role === "seb-officer") {
-    return (
-      normalizedType === "campus-wide" || normalizedType === "faculty-wide"
-    );
+    return normalizedType === "faculty-wide";
   }
 
   return false;
@@ -32,73 +57,33 @@ export function getElectionPermissionsForActor(
   election: ElectionAccessPolicyRow,
   actor: ElectionActor,
 ): ElectionPermissions {
-  const isAdmin = actor.role === "system-admin";
-
-  if (isAdmin) {
-    return {
-      canView: true,
-      canEdit: true,
-      canDelete: true,
-      canApprove: true,
-    };
+  if (actor.role === "system-admin") {
+    return fullPermissions();
   }
 
   if (actor.role !== "seb-officer" || !actor.officer) {
-    return {
-      canView: false,
-      canEdit: false,
-      canDelete: false,
-      canApprove: false,
-    };
+    return deniedPermissions();
   }
 
-  const isLegacyUnlocked = !election.access_policy_locked;
-  if (isLegacyUnlocked) {
-    return {
-      canView: true,
-      canEdit: true,
-      canDelete: true,
-      canApprove: true,
-    };
+  if (!election.access_policy_locked) {
+    return fullPermissions();
   }
 
   const isCreator = election.created_by === actor.officer.seb_officer_id;
-  const sameCampus =
-    !!election.owner_campus && election.owner_campus === actor.officer.campus;
 
   const type = normalizeElectionType(election.election_type);
 
-  if (type === "campus-wide") {
-    return {
-      canView: isCreator || sameCampus,
-      canEdit: isCreator,
-      canDelete: isCreator,
-      canApprove: isCreator || sameCampus,
-    };
+  switch (type) {
+    case "faculty-wide":
+      return creatorOnlyPermissions(isCreator);
+    case "university-wide":
+      return {
+        canView: true,
+        canEdit: false,
+        canDelete: false,
+        canApprove: true,
+      };
+    default:
+      return creatorOnlyPermissions(isCreator);
   }
-
-  if (type === "faculty-wide") {
-    return {
-      canView: true,
-      canEdit: isCreator,
-      canDelete: isCreator,
-      canApprove: isCreator,
-    };
-  }
-
-  if (type === "university-wide") {
-    return {
-      canView: true,
-      canEdit: false,
-      canDelete: false,
-      canApprove: true,
-    };
-  }
-
-  return {
-    canView: true,
-    canEdit: isCreator,
-    canDelete: isCreator,
-    canApprove: isCreator,
-  };
 }

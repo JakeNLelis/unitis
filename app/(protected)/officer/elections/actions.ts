@@ -1,11 +1,10 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCurrentProfile, getSEBOfficer, getSystemAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { TurnoutAdjustmentInput } from "@/lib/types/election";
-import { isElectionActive } from "@/lib/utils";
+import { isElectionActive, isValidStudentId } from "@/lib/utils";
 import {
   canActorCreateElectionType,
   getElectionPermissionsForActor,
@@ -16,99 +15,28 @@ import type {
   ElectionAccessPolicyRow,
   ElectionActor,
 } from "@/lib/types/auth";
-
-async function getActionActor(): Promise<ActionActor | null> {
-  const profile = await getCurrentProfile();
-  if (!profile) return null;
-
-  if (profile.role === "seb-officer") {
-    const officer = await getSEBOfficer();
-    if (!officer) return null;
-
-    return {
-      role: "seb-officer",
-      userId: profile.id,
-      displayName: `${officer.faculty_code} (${officer.campus})`,
-      officer: {
-        seb_officer_id: officer.seb_officer_id,
-        campus: officer.campus,
-        faculty_code: officer.faculty_code,
-      },
-      systemAdminId: null,
-    };
-  }
-
-  if (profile.role === "system-admin") {
-    const admin = await getSystemAdmin();
-    if (!admin) return null;
-
-    return {
-      role: "system-admin",
-      userId: profile.id,
-      displayName: admin.username || profile.display_name,
-      officer: null,
-      systemAdminId: admin.system_admin_id,
-    };
-  }
-
-  return null;
-}
-
-function toElectionActor(actor: ActionActor): ElectionActor {
-  return {
-    role: actor.role,
-    officer: actor.officer,
-  };
-}
-
-function toAccessPolicyRow(election: ElectionContext): ElectionAccessPolicyRow {
-  return {
-    election_type: election.election_type,
-    created_by: election.created_by,
-    owner_campus: election.owner_campus,
-    owner_faculty_code: election.owner_faculty_code,
-    access_policy_locked: election.access_policy_locked,
-  };
-}
-
-async function getElectionContextForActor(
-  electionId: string,
-  actor: ActionActor,
-): Promise<
-  | {
-      election: ElectionContext;
-      permissions: ReturnType<typeof getElectionPermissionsForActor>;
-    }
-  | { error: string }
-> {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase
-    .from("elections")
-    .select(
-      "election_id, election_type, created_by, owner_campus, owner_faculty_code, access_policy_locked, start_date, end_date",
-    )
-    .eq("election_id", electionId)
-    .single();
-
-  if (error || !data) {
-    return { error: "Election not found" };
-  }
-
-  const election = data as ElectionContext;
-  const permissions = getElectionPermissionsForActor(
-    toAccessPolicyRow(election),
-    toElectionActor(actor),
-  );
-
-  return { election, permissions };
-}
+import {
+  requireActionActor,
+  getElectionContextForActor,
+  requireEditableElectionContext,
+  validateTurnoutAdjustmentInput,
+  insertTurnoutAdjustmentRecord,
+  getElectionDependencyIds,
+  deleteVoteSelectionsForCandidates,
+  deleteVotesAndSelectionsForVoters,
+  deleteElectionScopedRows,
+  getPositionById,
+  getVoterById,
+  revalidateElectionManagementPaths,
+} from "@/app/_helpers/elections/officer-actions";
 
 export async function createElection(formData: FormData) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
+
+  const actor = actorResult;
 
   const name = formData.get("name") as string;
   const election_type = formData.get("election_type") as string;
@@ -134,7 +62,7 @@ export async function createElection(formData: FormData) {
       error:
         actor.role === "system-admin"
           ? "System administrators can only create university-wide elections."
-          : "SEB officers can only create campus-wide or faculty-wide elections.",
+          : "SEB officers can only create faculty-wide elections.",
     };
   }
 
@@ -218,9 +146,9 @@ export async function createElection(formData: FormData) {
 }
 
 export async function createPosition(formData: FormData) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
   const election_id = formData.get("election_id") as string;
@@ -231,18 +159,13 @@ export async function createPosition(formData: FormData) {
     return { error: "Missing required fields" };
   }
 
-  const permissionContext = await getElectionContextForActor(
+  const permissionContext = await requireEditableElectionContext(
     election_id,
-    actor,
+    actorResult,
+    { requireUpcoming: true },
   );
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   const supabase = await createAdminClient();
@@ -257,8 +180,7 @@ export async function createPosition(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath(`/officer/elections/${election_id}`);
-  revalidatePath(`/admin/elections/${election_id}`);
+  revalidateElectionManagementPaths(election_id);
   return { success: true };
 }
 
@@ -267,10 +189,12 @@ export async function updateCandidateStatus(
   status: "approved" | "rejected",
   rejectionReason?: string,
 ) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
+
+  const actor = actorResult;
 
   if (status === "rejected" && !rejectionReason?.trim()) {
     return { error: "A rejection reason is required." };
@@ -280,12 +204,30 @@ export async function updateCandidateStatus(
 
   const { data: candidateRow, error: candidateFetchError } = await supabase
     .from("candidates")
-    .select("candidate_id, election_id")
+    .select(
+      "candidate_id, election_id, application_status, approved_by_display, approved_at",
+    )
     .eq("candidate_id", candidateId)
     .single();
 
   if (candidateFetchError || !candidateRow) {
     return { error: "Candidate not found" };
+  }
+
+  if (candidateRow.application_status !== "pending") {
+    const approvedBy = candidateRow.approved_by_display
+      ? ` by ${candidateRow.approved_by_display}`
+      : "";
+    const approvedAt = candidateRow.approved_at
+      ? ` on ${new Date(candidateRow.approved_at).toLocaleString()}`
+      : "";
+    return {
+      error: `Candidate already ${candidateRow.application_status}${approvedBy}${approvedAt}.`,
+      code: "candidate_already_processed",
+      currentStatus: candidateRow.application_status,
+      approvedByDisplay: candidateRow.approved_by_display,
+      approvedAt: candidateRow.approved_at,
+    };
   }
 
   const permissionContext = await getElectionContextForActor(
@@ -321,13 +263,37 @@ export async function updateCandidateStatus(
     updateData.approved_at = new Date().toISOString();
   }
 
-  const { error } = await supabase
+  const { data: updatedRows, error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("candidate_id", candidateId);
+    .eq("candidate_id", candidateId)
+    .eq("application_status", "pending")
+    .select("candidate_id");
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (!updatedRows || updatedRows.length === 0) {
+    const { data: latest } = await supabase
+      .from("candidates")
+      .select("application_status, approved_by_display, approved_at")
+      .eq("candidate_id", candidateId)
+      .single();
+
+    const approvedBy = latest?.approved_by_display
+      ? ` by ${latest.approved_by_display}`
+      : "";
+    const approvedAt = latest?.approved_at
+      ? ` on ${new Date(latest.approved_at).toLocaleString()}`
+      : "";
+    return {
+      error: `Candidate already ${latest?.application_status ?? "processed"}${approvedBy}${approvedAt}.`,
+      code: "candidate_already_processed",
+      currentStatus: latest?.application_status,
+      approvedByDisplay: latest?.approved_by_display,
+      approvedAt: latest?.approved_at,
+    };
   }
 
   return { success: true };
@@ -339,9 +305,9 @@ export async function updatePosition(
   title: string,
   maxVotes: number,
 ) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
   if (!title.trim()) {
@@ -354,32 +320,22 @@ export async function updatePosition(
 
   const supabase = await createAdminClient();
 
-  const { data: position, error: positionError } = await supabase
-    .from("positions")
-    .select("position_id, election_id")
-    .eq("position_id", positionId)
-    .single();
-
-  if (positionError || !position) {
-    return { error: "Position not found" };
+  const positionResult = await getPositionById(positionId);
+  if ("error" in positionResult) {
+    return positionResult;
   }
 
-  if (position.election_id !== electionId) {
+  if (positionResult.election_id !== electionId) {
     return { error: "Invalid election context for position." };
   }
 
-  const permissionContext = await getElectionContextForActor(
-    position.election_id,
-    actor,
+  const permissionContext = await requireEditableElectionContext(
+    positionResult.election_id,
+    actorResult,
+    { requireUpcoming: true },
   );
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   const { error } = await supabase
@@ -395,36 +351,26 @@ export async function updatePosition(
 }
 
 export async function deletePosition(positionId: string) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
   const supabase = await createAdminClient();
 
-  const { data: position, error: positionError } = await supabase
-    .from("positions")
-    .select("position_id, election_id")
-    .eq("position_id", positionId)
-    .single();
-
-  if (positionError || !position) {
-    return { error: "Position not found" };
+  const positionResult = await getPositionById(positionId);
+  if ("error" in positionResult) {
+    return positionResult;
   }
 
-  const permissionContext = await getElectionContextForActor(
-    position.election_id,
-    actor,
+  const permissionContext = await requireEditableElectionContext(
+    positionResult.election_id,
+    actorResult,
+    { requireUpcoming: true },
   );
 
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   const { error } = await supabase
@@ -439,6 +385,72 @@ export async function deletePosition(positionId: string) {
   return { success: true };
 }
 
+export async function updatePartylistRequiredPositions(
+  electionId: string,
+  requiredPositionIds: string[],
+) {
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
+  }
+
+  const permissionContext = await requireEditableElectionContext(
+    electionId,
+    actorResult,
+    { requireUpcoming: true },
+  );
+  if ("error" in permissionContext) {
+    return permissionContext;
+  }
+
+  const supabase = await createAdminClient();
+  const distinctRequiredIds = [...new Set(requiredPositionIds)];
+
+  const { data: electionPositions, error: positionsError } = await supabase
+    .from("positions")
+    .select("position_id")
+    .eq("election_id", electionId);
+
+  if (positionsError) {
+    return { error: positionsError.message };
+  }
+
+  const validPositionIds = new Set(
+    (electionPositions || []).map((item) => item.position_id),
+  );
+
+  const hasInvalidPositionId = distinctRequiredIds.some(
+    (positionId) => !validPositionIds.has(positionId),
+  );
+
+  if (hasInvalidPositionId) {
+    return { error: "One or more selected positions are invalid." };
+  }
+
+  const { error: resetError } = await supabase
+    .from("positions")
+    .update({ required_for_partylist: false })
+    .eq("election_id", electionId);
+
+  if (resetError) {
+    return { error: resetError.message };
+  }
+
+  if (distinctRequiredIds.length > 0) {
+    const { error: markError } = await supabase
+      .from("positions")
+      .update({ required_for_partylist: true })
+      .in("position_id", distinctRequiredIds);
+
+    if (markError) {
+      return { error: markError.message };
+    }
+  }
+
+  revalidateElectionManagementPaths(electionId);
+  return { success: true };
+}
+
 export async function updateElectionDates(
   electionId: string,
   data: {
@@ -448,20 +460,17 @@ export async function updateElectionDates(
     candidacy_end_date: string | null;
   },
 ) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
-  const permissionContext = await getElectionContextForActor(electionId, actor);
+  const permissionContext = await requireEditableElectionContext(
+    electionId,
+    actorResult,
+  );
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   const { start_date, end_date, candidacy_start_date, candidacy_end_date } =
@@ -523,12 +532,15 @@ export async function updateElectionDates(
 }
 
 export async function deleteElection(electionId: string) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
-  const permissionContext = await getElectionContextForActor(electionId, actor);
+  const permissionContext = await getElectionContextForActor(
+    electionId,
+    actorResult,
+  );
   if ("error" in permissionContext) {
     return { error: permissionContext.error };
   }
@@ -541,116 +553,27 @@ export async function deleteElection(electionId: string) {
 
   const supabase = await createAdminClient();
 
-  // Gather dependent IDs for cleanup steps that require `in (...)` filters.
-  const { data: candidates, error: candidatesFetchError } = await supabase
-    .from("candidates")
-    .select("candidate_id")
-    .eq("election_id", electionId);
-
-  if (candidatesFetchError) {
-    return { error: candidatesFetchError.message };
+  const dependencyIdsResult = await getElectionDependencyIds(electionId);
+  if ("error" in dependencyIdsResult) {
+    return { error: dependencyIdsResult.error };
   }
 
-  const candidateIds = (candidates || []).map((row) => row.candidate_id);
-
-  const { data: voters, error: votersFetchError } = await supabase
-    .from("voters")
-    .select("voter_id")
-    .eq("election_id", electionId);
-
-  if (votersFetchError) {
-    return { error: votersFetchError.message };
+  const candidateSelectionsDeleteError =
+    await deleteVoteSelectionsForCandidates(dependencyIdsResult.candidateIds);
+  if (candidateSelectionsDeleteError) {
+    return { error: candidateSelectionsDeleteError };
   }
 
-  const voterIds = (voters || []).map((row) => row.voter_id);
-
-  if (candidateIds.length > 0) {
-    const { error: voteSelectionsByCandidateDeleteError } = await supabase
-      .from("vote_selections")
-      .delete()
-      .in("candidate_id", candidateIds);
-
-    if (voteSelectionsByCandidateDeleteError) {
-      return { error: voteSelectionsByCandidateDeleteError.message };
-    }
+  const voterVotesDeleteError = await deleteVotesAndSelectionsForVoters(
+    dependencyIdsResult.voterIds,
+  );
+  if (voterVotesDeleteError) {
+    return { error: voterVotesDeleteError };
   }
 
-  if (voterIds.length > 0) {
-    const { data: votes, error: votesFetchError } = await supabase
-      .from("votes")
-      .select("vote_id")
-      .in("voter_id", voterIds);
-
-    if (votesFetchError) {
-      return { error: votesFetchError.message };
-    }
-
-    const voteIds = (votes || []).map((row) => row.vote_id);
-
-    if (voteIds.length > 0) {
-      const { error: voteSelectionsByVoteDeleteError } = await supabase
-        .from("vote_selections")
-        .delete()
-        .in("vote_id", voteIds);
-
-      if (voteSelectionsByVoteDeleteError) {
-        return { error: voteSelectionsByVoteDeleteError.message };
-      }
-
-      const { error: votesDeleteError } = await supabase
-        .from("votes")
-        .delete()
-        .in("vote_id", voteIds);
-
-      if (votesDeleteError) {
-        return { error: votesDeleteError.message };
-      }
-    }
-  }
-
-  const { error: turnoutAdjustmentsDeleteError } = await supabase
-    .from("turnout_adjustments")
-    .delete()
-    .eq("election_id", electionId);
-
-  if (turnoutAdjustmentsDeleteError) {
-    return { error: turnoutAdjustmentsDeleteError.message };
-  }
-
-  const { error: candidatesDeleteError } = await supabase
-    .from("candidates")
-    .delete()
-    .eq("election_id", electionId);
-
-  if (candidatesDeleteError) {
-    return { error: candidatesDeleteError.message };
-  }
-
-  const { error: votersDeleteError } = await supabase
-    .from("voters")
-    .delete()
-    .eq("election_id", electionId);
-
-  if (votersDeleteError) {
-    return { error: votersDeleteError.message };
-  }
-
-  const { error: positionsDeleteError } = await supabase
-    .from("positions")
-    .delete()
-    .eq("election_id", electionId);
-
-  if (positionsDeleteError) {
-    return { error: positionsDeleteError.message };
-  }
-
-  const { error: partylistsDeleteError } = await supabase
-    .from("partylists")
-    .delete()
-    .eq("election_id", electionId);
-
-  if (partylistsDeleteError) {
-    return { error: partylistsDeleteError.message };
+  const scopedRowsDeleteError = await deleteElectionScopedRows(electionId);
+  if (scopedRowsDeleteError) {
+    return { error: scopedRowsDeleteError };
   }
 
   const { error: unassignOfficersError } = await supabase
@@ -672,28 +595,25 @@ export async function deleteElection(electionId: string) {
   }
 
   revalidatePath("/officer/elections");
-  revalidatePath(`/officer/elections/${electionId}`);
   revalidatePath("/admin/elections");
-  revalidatePath(`/admin/elections/${electionId}`);
+  revalidateElectionManagementPaths(electionId);
 
   return { success: true };
 }
 
 export async function addVoterMasterlist(electionId: string, rawText: string) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
-  const permissionContext = await getElectionContextForActor(electionId, actor);
+  const permissionContext = await requireEditableElectionContext(
+    electionId,
+    actorResult,
+    { requireUpcoming: true },
+  );
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   // Parse student IDs: split by any whitespace (spaces, newlines, tabs)
@@ -708,6 +628,15 @@ export async function addVoterMasterlist(electionId: string, rawText: string) {
 
   // Remove duplicates
   const uniqueIds = [...new Set(studentIds)];
+
+  const invalidIds = uniqueIds.filter((id) => !isValidStudentId(id));
+  if (invalidIds.length > 0) {
+    return {
+      error:
+        `Invalid student ID format for: ${invalidIds.slice(0, 5).join(", ")}` +
+        `${invalidIds.length > 5 ? " ..." : ""}. Use xx-x-xxxxx (e.g. 23-1-01457).`,
+    };
+  }
 
   const supabase = await createAdminClient();
 
@@ -749,36 +678,26 @@ export async function addVoterMasterlist(electionId: string, rawText: string) {
 }
 
 export async function removeVoter(voterId: string) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
   const supabase = await createAdminClient();
 
-  const { data: voter, error: voterError } = await supabase
-    .from("voters")
-    .select("voter_id, election_id")
-    .eq("voter_id", voterId)
-    .single();
-
-  if (voterError || !voter) {
-    return { error: "Voter record not found" };
+  const voterResult = await getVoterById(voterId);
+  if ("error" in voterResult) {
+    return voterResult;
   }
 
-  const permissionContext = await getElectionContextForActor(
-    voter.election_id,
-    actor,
+  const permissionContext = await requireEditableElectionContext(
+    voterResult.election_id,
+    actorResult,
+    { requireUpcoming: true },
   );
 
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   const { error } = await supabase
@@ -794,20 +713,18 @@ export async function removeVoter(voterId: string) {
 }
 
 export async function clearVoterMasterlist(electionId: string) {
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
-  const permissionContext = await getElectionContextForActor(electionId, actor);
+  const permissionContext = await requireEditableElectionContext(
+    electionId,
+    actorResult,
+    { requireUpcoming: true },
+  );
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   const supabase = await createAdminClient();
@@ -846,47 +763,23 @@ export async function submitTurnoutAdjustment(
   input: TurnoutAdjustmentInput,
 ) {
   // T009: Auth check - return error instead of redirect per server-action contract
-  const actor = await getActionActor();
-  if (!actor) {
-    return { error: "Unauthorized" };
+  const actorResult = await requireActionActor();
+  if ("error" in actorResult) {
+    return actorResult;
   }
 
-  const permissionContext = await getElectionContextForActor(electionId, actor);
+  const permissionContext = await requireEditableElectionContext(
+    electionId,
+    actorResult,
+  );
   if ("error" in permissionContext) {
-    return { error: permissionContext.error };
-  }
-
-  if (!permissionContext.permissions.canEdit) {
-    return {
-      error: "Forbidden: You do not have permission to edit this election.",
-    };
+    return permissionContext;
   }
 
   // T010: Input validation
-  const { casted_votes_delta, expected_voters_value, reason } = input;
-
-  // Validate: at least one input provided
-  if (
-    (casted_votes_delta === undefined || casted_votes_delta === null) &&
-    (expected_voters_value === undefined || expected_voters_value === null)
-  ) {
-    return {
-      error:
-        "Must provide either casted votes adjustment or expected voters value",
-    };
-  }
-
-  // Validate: non-negative values
-  if (casted_votes_delta !== undefined && casted_votes_delta !== null) {
-    if (!Number.isInteger(casted_votes_delta) || casted_votes_delta < 0) {
-      return { error: "Casted votes adjustment must be non-negative integer" };
-    }
-  }
-
-  if (expected_voters_value !== undefined && expected_voters_value !== null) {
-    if (!Number.isInteger(expected_voters_value) || expected_voters_value < 0) {
-      return { error: "Expected voters must be non-negative integer" };
-    }
+  const inputValidationError = validateTurnoutAdjustmentInput(input);
+  if (inputValidationError) {
+    return { error: inputValidationError };
   }
 
   const supabase = await createAdminClient();
@@ -899,17 +792,8 @@ export async function submitTurnoutAdjustment(
   }
 
   // Insert turnout adjustment record
-  const { data: adjustment, error: insertError } = await supabase
-    .from("turnout_adjustments")
-    .insert({
-      election_id: electionId,
-      seb_officer_id: actor.officer?.seb_officer_id ?? null,
-      casted_votes_delta: casted_votes_delta || null,
-      expected_voters_value: expected_voters_value || null,
-      reason: reason || null,
-    })
-    .select()
-    .single();
+  const { data: adjustment, error: insertError } =
+    await insertTurnoutAdjustmentRecord(electionId, actorResult, input);
 
   if (insertError) {
     return { error: insertError.message };

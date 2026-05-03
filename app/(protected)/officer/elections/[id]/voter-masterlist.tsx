@@ -49,7 +49,7 @@ export function VoterMasterlist({
 
     setLoading(false);
 
-    if (result.error) {
+    if ("error" in result) {
       setError(result.error);
       return;
     }
@@ -65,7 +65,7 @@ export function VoterMasterlist({
   async function handleRemove(voterId: string) {
     if (!canEdit) return;
     const result = await removeVoter(voterId);
-    if (result.error) {
+    if ("error" in result) {
       setError(result.error);
       return;
     }
@@ -78,7 +78,7 @@ export function VoterMasterlist({
     const result = await clearVoterMasterlist(electionId);
     setClearLoading(false);
 
-    if (result.error) {
+    if ("error" in result) {
       setError(result.error);
       setClearOpen(false);
       return;

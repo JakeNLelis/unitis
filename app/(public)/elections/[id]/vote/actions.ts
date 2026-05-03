@@ -1,10 +1,21 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isDateTimeWindowOpen } from "@/lib/utils";
 import type { BallotSubmission } from "@/lib/types/public";
+import {
+  ensureVotingVoterRecord,
+  getApprovedVotingCandidates,
+  getVotingElection,
+  getVotingMasterlistVoter,
+  getVotingPositions,
+  getVotingUser,
+  isVotingWindowOpen,
+  submitBallotRecord,
+  updateVotingVoterEmail,
+  validateVotingSelections,
+} from "@/app/_helpers/elections/vote-actions";
 
+// @CodeScene(disable:"Complex Method")
 export async function submitBallot(data: BallotSubmission) {
   const { electionId, studentId, selections } = data;
 
@@ -12,221 +23,89 @@ export async function submitBallot(data: BallotSubmission) {
     return { error: "Student ID is required." };
   }
 
-  // Auth check: voter must have a verified @vsu.edu.ph session from voter-validation
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.email?.endsWith("@vsu.edu.ph")) {
-    return {
-      error:
-        "Voter identity could not be verified. Please complete voter verification first.",
-    };
+  const votingUser = await getVotingUser();
+  if ("error" in votingUser) {
+    return votingUser;
   }
 
-  const adminSupabase = await createAdminClient();
-
-  // Fetch election and validate voting period
-  const { data: election, error: electionError } = await adminSupabase
-    .from("elections")
-    .select("election_id, name, start_date, end_date, is_archived")
-    .eq("election_id", electionId)
-    .single();
-
-  if (electionError || !election) {
-    return { error: "Election not found." };
+  const electionResult = await getVotingElection(electionId);
+  if ("error" in electionResult) {
+    return electionResult;
   }
 
-  if (election.is_archived) {
-    return { error: "This election has been archived." };
-  }
-
-  if (!isDateTimeWindowOpen(election.start_date, election.end_date)) {
+  if (!isVotingWindowOpen(electionResult.election)) {
     return { error: "Voting is not currently open for this election." };
   }
 
   const trimmedId = studentId.trim();
-
-  // Check if a voter masterlist exists for this election
-  const { count: masterlistCount } = await adminSupabase
-    .from("voters")
-    .select("*", { count: "exact", head: true })
-    .eq("election_id", electionId);
-
+  const masterlistResult = await getVotingMasterlistVoter(
+    electionId,
+    trimmedId,
+  );
   let voterId: string;
 
-  if (masterlistCount && masterlistCount > 0) {
-    // Masterlist exists — the student must be in it
-    const { data: masterlistVoter } = await adminSupabase
-      .from("voters")
-      .select("voter_id, is_voted")
-      .eq("election_id", electionId)
-      .eq("student_id", trimmedId)
-      .single();
+  if ("error" in masterlistResult) {
+    const voterResult = await ensureVotingVoterRecord(
+      electionId,
+      trimmedId,
+      votingUser.email,
+    );
 
-    if (!masterlistVoter) {
-      return {
-        error:
-          "Your student ID is not in the voter masterlist for this election.",
-      };
+    if ("error" in voterResult) {
+      return voterResult;
     }
 
-    if (masterlistVoter.is_voted) {
-      return { error: "This student ID has already voted in this election." };
-    }
-
-    // Update the email on the voter record
-    await adminSupabase
-      .from("voters")
-      .update({ email: user.email! })
-      .eq("voter_id", masterlistVoter.voter_id);
-
-    voterId = masterlistVoter.voter_id;
+    voterId = voterResult.voterId;
   } else {
-    // No masterlist — auto-register voter (open election)
-    const { data: existingVoter } = await adminSupabase
-      .from("voters")
-      .select("voter_id, is_voted")
-      .eq("election_id", electionId)
-      .eq("student_id", trimmedId)
-      .single();
-
-    if (existingVoter) {
-      if (existingVoter.is_voted) {
-        return {
-          error: "This student ID has already voted in this election.",
-        };
-      }
-      voterId = existingVoter.voter_id;
-    } else {
-      const { data: newVoter, error: voterError } = await adminSupabase
-        .from("voters")
-        .insert({
-          election_id: electionId,
-          student_id: trimmedId,
-          email: user.email!,
-          is_voted: false,
-        })
-        .select("voter_id")
-        .single();
-
-      if (voterError || !newVoter) {
-        return { error: "Failed to register voter. Please try again." };
-      }
-      voterId = newVoter.voter_id;
-    }
+    voterId = masterlistResult.voter.voter_id;
+    await updateVotingVoterEmail(voterId, votingUser.email);
   }
 
-  // Fetch positions with max_votes for validation
-  const { data: positions } = await adminSupabase
-    .from("positions")
-    .select("position_id, title, max_votes")
-    .eq("election_id", electionId);
-
-  if (!positions || positions.length === 0) {
+  const positions = await getVotingPositions(electionId);
+  if (positions.length === 0) {
     return { error: "No positions found for this election." };
   }
 
-  // Validate selections
-  const allCandidateIds: string[] = [];
-
-  // Collect all selected candidate IDs first
-  for (const position of positions) {
-    const selected = selections[position.position_id] || [];
-
-    if (selected.length > position.max_votes) {
-      return {
-        error: `You selected ${selected.length} candidates for "${position.title}" but the maximum is ${position.max_votes}.`,
-      };
-    }
-
-    allCandidateIds.push(...selected);
+  const validCandidates = await getApprovedVotingCandidates(electionId);
+  const candidateMap = new Map(
+    validCandidates.map((candidate) => [candidate.candidate_id, candidate]),
+  );
+  const selectionCheck = validateVotingSelections(
+    positions,
+    selections,
+    candidateMap,
+  );
+  if ("error" in selectionCheck) {
+    return selectionCheck;
   }
 
-  if (allCandidateIds.length === 0) {
-    return { error: "You must select at least one candidate." };
-  }
-
-  // Fetch all selected candidates in a single query instead of N+1
-  const { data: validCandidates } = await adminSupabase
-    .from("candidates")
-    .select("candidate_id, position_id, application_status")
-    .in("candidate_id", allCandidateIds);
-
-  if (!validCandidates || validCandidates.length !== allCandidateIds.length) {
-    return { error: "Invalid candidate selection." };
-  }
-
-  // Validate each candidate belongs to the correct position and is approved
-  const candidateMap = new Map(validCandidates.map((c) => [c.candidate_id, c]));
-
-  for (const position of positions) {
-    const selected = selections[position.position_id] || [];
-    for (const candidateId of selected) {
-      const candidate = candidateMap.get(candidateId);
-      if (!candidate) {
-        return { error: "Invalid candidate selection." };
-      }
-      if (candidate.position_id !== position.position_id) {
-        return { error: "Candidate does not belong to the selected position." };
-      }
-      if (candidate.application_status !== "approved") {
-        return { error: "You can only vote for approved candidates." };
-      }
-    }
-  }
-
-  // Create vote record
-  const { data: vote, error: voteError } = await adminSupabase
-    .from("votes")
-    .insert({
-      voter_id: voterId,
-    })
-    .select("vote_id")
-    .single();
-
-  if (voteError || !vote) {
-    return { error: "Failed to record vote. Please try again." };
-  }
-
-  // Insert vote selections
-  const voteSelections = allCandidateIds.map((candidateId) => ({
-    vote_id: vote.vote_id,
-    candidate_id: candidateId,
-  }));
-
-  const { error: selectionsError } = await adminSupabase
-    .from("vote_selections")
-    .insert(voteSelections);
-
-  if (selectionsError) {
-    // Rollback: delete the vote record
-    await adminSupabase.from("votes").delete().eq("vote_id", vote.vote_id);
-    return { error: "Failed to record selections. Please try again." };
-  }
-
-  // Mark voter as voted
-  const { error: updateError } = await adminSupabase
-    .from("voters")
-    .update({ is_voted: true })
-    .eq("voter_id", voterId);
-
-  if (updateError) {
-    // This shouldn't fail but log it
-    console.error("Failed to update voter status:", updateError);
-  }
-
-  return { success: true };
+  return submitBallotRecord(voterId, selectionCheck.selectedCandidateIds);
 }
 
 /**
  * Fetch vote counts per candidate per position for an election.
  * Structured so a future realtime/websocket layer can provide the same shape.
  */
+// @CodeScene(disable:"Complex Method","Large Method")
 export async function getElectionResults(electionId: string) {
   const adminSupabase = await createAdminClient();
+
+  type PositionRow = {
+    position_id: string;
+    title: string;
+    max_votes: number;
+  };
+
+  type CandidateRow = {
+    candidate_id: string;
+    position_id: string;
+    full_name: string;
+    partylists: Array<{ name: string; acronym: string }> | null;
+  };
+
+  type VoteCountRow = {
+    candidate_id: string;
+  };
 
   // Fetch positions
   const { data: positions } = await adminSupabase
@@ -259,7 +138,7 @@ export async function getElectionResults(electionId: string) {
   // Build a count map
   const countMap: Record<string, number> = {};
   if (voteCounts) {
-    for (const vc of voteCounts) {
+    for (const vc of voteCounts as VoteCountRow[]) {
       countMap[vc.candidate_id] = (countMap[vc.candidate_id] || 0) + 1;
     }
   }
@@ -272,22 +151,26 @@ export async function getElectionResults(electionId: string) {
     .eq("is_voted", true);
 
   // Structure results by position
-  const results = positions.map((position) => {
-    const positionCandidates = candidates
-      .filter((c) => c.position_id === position.position_id)
-      .map((c) => {
-        const pl = c.partylists as unknown as {
-          name: string;
-          acronym: string;
-        } | null;
+  const results = (positions as PositionRow[]).map((position) => {
+    const positionCandidates = (candidates as CandidateRow[])
+      .filter(
+        (candidate: CandidateRow) =>
+          candidate.position_id === position.position_id,
+      )
+      .map((candidate: CandidateRow) => {
+        const partylist = candidate.partylists?.[0] ?? null;
+
         return {
-          candidate_id: c.candidate_id,
-          full_name: c.full_name,
-          partylist: pl,
-          vote_count: countMap[c.candidate_id] || 0,
+          candidate_id: candidate.candidate_id,
+          full_name: candidate.full_name,
+          partylist,
+          vote_count: countMap[candidate.candidate_id] || 0,
         };
       })
-      .sort((a, b) => b.vote_count - a.vote_count);
+      .sort(
+        (a: { vote_count: number }, b: { vote_count: number }) =>
+          b.vote_count - a.vote_count,
+      );
 
     return {
       position_id: position.position_id,

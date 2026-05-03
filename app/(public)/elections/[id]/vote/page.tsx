@@ -1,148 +1,66 @@
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { BallotForm } from "./ballot-form";
+import {
+  VoteHeader,
+  VoteLoadingCard,
+  VotingInfoCard,
+} from "@/app/_helpers/elections/vote-page";
+import {
+  buildPositionsWithCandidates,
+  getApprovedVotingCandidates,
+  getVotingElection,
+  getVotingMasterlistVoter,
+  getVotingPositions,
+  getVotingUser,
+  isVotingWindowOpen,
+} from "@/app/_helpers/elections/vote-actions";
 
 async function VotingContent({ electionId }: { electionId: string }) {
-  const supabase = await createClient();
-
-  // Voter auth check: must have an active @vsu.edu.ph session from voter-validation
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email?.endsWith("@vsu.edu.ph")) {
+  const votingUser = await getVotingUser();
+  if ("error" in votingUser) {
     redirect(`/elections/${electionId}/voter-validation`);
   }
 
-  const studentId = user.email!.split("@")[0];
-
-  const adminSupabase = await createAdminClient();
-
-  // Fetch election
-  const { data: election, error: electionError } = await adminSupabase
-    .from("elections")
-    .select(
-      "election_id, name, election_type, start_date, end_date, is_archived",
-    )
-    .eq("election_id", electionId)
-    .single();
-
-  if (electionError || !election) {
+  const electionResult = await getVotingElection(electionId);
+  if ("error" in electionResult) {
     notFound();
   }
 
-  // Check voting period
-  const now = new Date();
-  const start = new Date(election.start_date);
-  const end = new Date(election.end_date);
-  const votingOpen = !election.is_archived && now >= start && now <= end;
-
-  // Check if student is in masterlist and has already voted
-  const { data: existingVoter } = await adminSupabase
-    .from("voters")
-    .select("voter_id, is_voted")
-    .eq("election_id", electionId)
-    .eq("student_id", studentId)
-    .single();
-
-  // Not in masterlist for this election — re-validate
-  if (!existingVoter) {
+  const studentId = votingUser.email.split("@")[0];
+  const voterResult = await getVotingMasterlistVoter(electionId, studentId);
+  if ("error" in voterResult) {
     redirect(`/elections/${electionId}/voter-validation`);
   }
 
-  const alreadyVoted = existingVoter?.is_voted === true;
+  const election = electionResult.election;
+  const votingOpen = isVotingWindowOpen(election);
+  const alreadyVoted = voterResult.voter.is_voted;
 
-  // If not in voting period or already voted, show info card
   if (!votingOpen || alreadyVoted) {
     return (
-      <div className="max-w-lg mx-auto space-y-4">
-        <Link
-          href="/"
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Back to Elections
-        </Link>
-        <Card>
-          <CardContent className="pt-6 text-center space-y-4">
-            {alreadyVoted ? (
-              <>
-                <div className="mx-auto size-12 rounded-full bg-green-600 flex items-center justify-center text-white text-xl font-bold">
-                  ✓
-                </div>
-                <h2 className="text-2xl font-bold">Already Voted</h2>
-                <p className="text-muted-foreground">
-                  You have already submitted your ballot for{" "}
-                  <span className="font-semibold">{election.name}</span>.
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-2xl font-bold">Voting Closed</h2>
-                <p className="text-muted-foreground">
-                  {now < start
-                    ? `Voting opens on ${start.toLocaleString()}.`
-                    : "The voting period for this election has ended."}
-                </p>
-              </>
-            )}
-            <Button asChild variant="outline">
-              <Link href="/">Back to Home</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <VotingInfoCard
+        electionName={election.name}
+        alreadyVoted={alreadyVoted}
+        votingOpensAt={new Date(election.start_date).toLocaleString()}
+      />
     );
   }
 
-  // Fetch positions with approved candidates
-  const { data: positions } = await adminSupabase
-    .from("positions")
-    .select("position_id, title, max_votes")
-    .eq("election_id", electionId)
-    .order("created_at", { ascending: true });
-
-  const { data: candidates } = await adminSupabase
-    .from("candidates")
-    .select("candidate_id, full_name, position_id, partylists(name, acronym)")
-    .eq("election_id", electionId)
-    .eq("application_status", "approved");
-
-  const positionsWithCandidates = (positions || []).map((position) => ({
-    ...position,
-    candidates: (candidates || [])
-      .filter((c) => c.position_id === position.position_id)
-      .map((c) => ({
-        candidate_id: c.candidate_id,
-        full_name: c.full_name,
-        position_id: c.position_id,
-        partylist: c.partylists as unknown as {
-          name: string;
-          acronym: string;
-        } | null,
-      })),
-  }));
+  const positions = await getVotingPositions(electionId);
+  const candidates = await getApprovedVotingCandidates(electionId);
+  const positionsWithCandidates = buildPositionsWithCandidates(
+    positions,
+    candidates,
+  );
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/"
-        className="text-sm text-muted-foreground hover:text-foreground"
-      >
-        ← Back to Elections
-      </Link>
-
-      <div>
-        <h1 className="text-2xl font-bold">{election.name}</h1>
-        <p className="text-muted-foreground">{election.election_type}</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Voting as <span className="font-medium">{user.email}</span>
-        </p>
-      </div>
+      <VoteHeader
+        electionName={election.name}
+        electionType={election.election_type}
+        userEmail={votingUser.email}
+      />
 
       <BallotForm
         electionId={electionId}
@@ -162,17 +80,7 @@ export default function VotePage({
   return (
     <main className="min-h-screen bg-background">
       <div className="container max-w-3xl mx-auto py-10 px-4">
-        <Suspense
-          fallback={
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="h-8 w-64 bg-muted rounded animate-pulse" />
-                <div className="h-4 w-40 bg-muted rounded animate-pulse" />
-              </div>
-              <div className="h-48 bg-muted/50 rounded-lg animate-pulse" />
-            </div>
-          }
-        >
+        <Suspense fallback={<VoteLoadingCard />}>
           <VotePageWrapper params={params} />
         </Suspense>
       </div>

@@ -7,14 +7,17 @@ import { PartylistRegistrationForm } from "./partylist-form";
 import Link from "next/link";
 import { isDateTimeWindowOpen } from "@/lib/utils";
 import type {
+  CourseOption,
   RegisterPartylistContentProps,
   RegisterPartylistElection,
 } from "@/lib/types/public";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 async function RegisterPartylistContent({
   electionId,
 }: RegisterPartylistContentProps) {
   const supabase = await createClient();
+  const adminSupabase = await createAdminClient();
 
   const { data: election, error } = await supabase
     .from("elections")
@@ -39,6 +42,34 @@ async function RegisterPartylistContent({
     .select("partylist_id, name, acronym")
     .eq("election_id", electionId)
     .order("name", { ascending: true });
+
+  const { data: positions } = await supabase
+    .from("positions")
+    .select("position_id, title, required_for_partylist")
+    .eq("election_id", electionId)
+    .order("created_at", { ascending: true });
+
+  const { data: courses } = await adminSupabase
+    .from("courses")
+    .select("course_id, name, acronym, departments(name, faculties(name))")
+    .order("name", { ascending: true });
+
+  const courseOptions: CourseOption[] = (courses || []).map((course) => {
+    const departmentObj = Array.isArray(course.departments)
+      ? course.departments[0]
+      : course.departments;
+    const facultyObj = Array.isArray(departmentObj?.faculties)
+      ? departmentObj?.faculties[0]
+      : departmentObj?.faculties;
+
+    return {
+      course_id: course.course_id,
+      name: course.name,
+      acronym: course.acronym,
+      department_name: departmentObj?.name || "",
+      faculty_name: facultyObj?.name || "",
+    };
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,6 +104,9 @@ async function RegisterPartylistContent({
           <PartylistRegistrationForm
             electionId={electionId}
             electionName={electionData.name}
+            electionType={electionData.election_type}
+            positions={positions || []}
+            courses={courseOptions}
           />
         ) : (
           <Card>
