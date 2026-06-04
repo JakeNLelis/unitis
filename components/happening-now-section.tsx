@@ -103,7 +103,7 @@ export function HappeningNowSection({ elections }: HappeningNowSectionProps) {
   }
 
   return (
-    <section className="space-y-4" aria-label="Currently happening elections">
+    <section id="active-elections" className="space-y-4" aria-label="Currently happening elections">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">

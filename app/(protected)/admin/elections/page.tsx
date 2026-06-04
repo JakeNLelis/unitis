@@ -9,11 +9,11 @@ import { OfficerElectionRegistry } from "@/components/officer/election-registry"
 export default function AdminElectionsPage() {
   return (
     <div className="container max-w-6xl mx-auto px-6 space-y-16 py-12">
-      <div className="flex justify-between items-end border-b-2 border-foreground pb-10">
+      <div className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-end border-b-2 border-foreground pb-10">
         <div className="space-y-4">
           <h1
             className={cn(
-              "text-6xl font-black uppercase tracking-tighter leading-none",
+              "text-5xl sm:text-6xl font-black uppercase tracking-tighter leading-none",
               archivo.className,
             )}
           >
@@ -27,7 +27,7 @@ export default function AdminElectionsPage() {
         <Button
           asChild
           size="lg"
-          className="rounded-none font-black uppercase tracking-widest h-14 px-8"
+          className="w-full sm:w-auto rounded-none font-black uppercase tracking-widest h-14 px-8 shrink-0"
         >
           <Link href="/admin/elections/new">
             <Plus className="size-5 mr-3" />

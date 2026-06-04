@@ -55,12 +55,14 @@ export function InstitutionalDataTable({
                 key={i}
                 className="border-b border-border last:border-0 hover:bg-surface-lowest transition-colors duration-150"
               >
-                {Object.values(row).map((cell, j) => (
+                {headerKeys.map((header, j) => (
                   <td
                     key={j}
                     className="py-4 px-6 text-sm font-medium text-foreground tabular-nums"
                   >
-                    {cell}
+                    {row[header] ?? (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                 ))}
               </tr>

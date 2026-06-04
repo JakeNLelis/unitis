@@ -11,14 +11,14 @@ function getElectionStatus(election: Election): {
   label: string;
   className: string;
 } {
-  const today = toDateStr(new Date());
-  const start = toDateStr(election.start_date);
-  const end = toDateStr(election.end_date);
+  const now = new Date();
+  const start = new Date(election.start_date);
+  const end = new Date(election.end_date);
   const candStart = election.candidacy_start_date
-    ? toDateStr(election.candidacy_start_date)
+    ? new Date(election.candidacy_start_date)
     : null;
   const candEnd = election.candidacy_end_date
-    ? toDateStr(election.candidacy_end_date)
+    ? new Date(election.candidacy_end_date)
     : null;
 
   if (election.is_archived)
@@ -26,17 +26,17 @@ function getElectionStatus(election: Election): {
       label: "Archived",
       className: "bg-muted text-muted-foreground border-muted",
     };
-  if (today >= start && today <= end)
+  if (now >= start && now <= end)
     return {
       label: "Voting Open",
       className: "bg-green-600 text-white border-green-600",
     };
-  if (candStart && candEnd && today >= candStart && today <= candEnd)
+  if (candStart && candEnd && now >= candStart && now <= candEnd)
     return {
       label: "Filing Open",
       className: "bg-blue-600 text-white border-blue-600",
     };
-  if (today < start)
+  if (now < start)
     return {
       label: "Upcoming",
       className: "bg-amber-500 text-white border-amber-500",
@@ -122,8 +122,8 @@ export async function OfficerElectionRegistry({
               </div>
             }
           >
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-12 flex-1">
-              <div className="flex flex-wrap gap-x-8 gap-y-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 flex-1 w-full">
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     Election Cycle
@@ -153,7 +153,7 @@ export async function OfficerElectionRegistry({
                 )}
               </div>
 
-              <div className="ml-auto flex items-center gap-8 mr-12">
+              <div className="sm:ml-auto flex items-center gap-4 sm:mr-6">
                 <Badge
                   className={cn(
                     "rounded-none text-[10px] font-black uppercase tracking-widest px-3 py-1 border",

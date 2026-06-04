@@ -254,13 +254,14 @@ export function BallotForm({
         );
       })}
 
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4">
         <p className="text-sm text-muted-foreground">
           {getTotalSelections()} candidate
           {getTotalSelections() !== 1 ? "s" : ""} selected
         </p>
         <Button
           size="lg"
+          className="w-full sm:w-auto"
           disabled={
             (getTotalSelections() === 0 &&
               !Object.values(abstained).some(Boolean)) ||

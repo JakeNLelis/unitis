@@ -151,6 +151,10 @@ export type NormalizedCandidate = {
   position_title: string;
   partylist_name: string | null;
   partylist_acronym: string | null;
+  course_name: string | null;
+  course_acronym: string | null;
+  partylist_platform: string | null;
+  partylist_logo_url: string | null;
 };
 
 export interface CandidateOption {

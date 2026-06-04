@@ -244,7 +244,12 @@ function CandidateCard({
 
             <div className="space-y-2">
               <Label>1x1 Photo *</Label>
-              <Input type="file" accept="image/*" onChange={onPhotoUpload} />
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={onPhotoUpload}
+                className="cursor-pointer border border-input bg-background file:border-r file:border-input file:bg-muted file:px-3 file:mr-3 hover:bg-muted/10 transition-all"
+              />
               {candidate.photo && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

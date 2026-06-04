@@ -11,15 +11,30 @@ export async function lookupCandidateStatus(email: string, electionId: string) {
 
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !user.email) {
+    return { error: "You must be authenticated to check status." };
+  }
+
+  const authUserEmail = user.email.trim().toLowerCase();
+
+  // Enforce manager check using the logged-in user's email
   const { data: managedPartylists } = await supabase
     .from("partylists")
     .select("partylist_id")
     .eq("election_id", electionId)
-    .eq("representative_email", normalizedEmail);
+    .eq("representative_email", authUserEmail);
 
   const managedPartylistIds = (managedPartylists || []).map(
     (item) => item.partylist_id,
   );
+
+  const isManager = managedPartylistIds.length > 0;
+  const isSelf = authUserEmail === normalizedEmail;
+
+  if (!isSelf && !isManager) {
+    return { error: "Access denied. You can only view your own status or your partylist candidates." };
+  }
 
   let query = supabase
     .from("candidates")
@@ -27,14 +42,9 @@ export async function lookupCandidateStatus(email: string, electionId: string) {
       `
       candidate_id,
       full_name,
-      student_id,
-      email,
       application_status,
       rejection_reason,
       affiliation_status,
-      cog_link,
-      cor_link,
-      good_moral_link,
       created_at,
       positions(title),
       courses(name, acronym),
@@ -44,7 +54,7 @@ export async function lookupCandidateStatus(email: string, electionId: string) {
     .eq("election_id", electionId)
     .order("created_at", { ascending: false });
 
-  if (managedPartylistIds.length > 0) {
+  if (isManager) {
     query = query.in("partylist_id", managedPartylistIds);
   } else {
     query = query.eq("email", normalizedEmail);

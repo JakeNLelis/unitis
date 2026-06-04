@@ -30,8 +30,31 @@ export default async function TurnoutPage({ params }: TurnoutPageProps) {
   }
 
   const state = getElectionState(election.start_date, election.end_date);
+  
+  if (state === "upcoming") {
+    return (
+      <main className="min-h-screen bg-background pb-20 flex flex-col items-center justify-center">
+        <div className="container max-w-xl mx-auto px-6 text-center space-y-6 mt-20">
+          <Link
+            href={`/elections/${id}`}
+            className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground hover:text-primary transition-all duration-200 inline-block mb-4"
+          >
+            ← Back to {election.name}
+          </Link>
+          <div className="p-12 border-2 border-foreground bg-surface-low space-y-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h1 className={cn("text-3xl font-black uppercase tracking-tight", archivo.className)}>
+              Voting Has Not Commenced
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              The live turnout ledger for <span className="font-semibold text-foreground">{election.name}</span> will become available once the voting period starts on <span className="font-semibold text-foreground">{new Date(election.start_date).toLocaleString()}</span>.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-  if (state !== "active") {
+  if (state === "ended") {
     redirect(`/archive/${id}`);
   }
 
