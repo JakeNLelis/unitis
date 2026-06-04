@@ -13,6 +13,20 @@ An election management system designed to modernize student elections at Visayas
 | UN.010.007                                             | 2026-04-19    |
 | UN.010.008                                             | 2026-04-26    |
 | UN.010.009                                             | 2026-05-03    |
+| UN.010.010                                             | 2026-06-04    |
+
+## UN.010.010 Release Notes
+- Optimized mobile responsiveness and fixed layout overflows across the admin, officer, and voter portals.
+- Configured dynamic calendar scaling to show one month on mobile viewports and two months on desktops to prevent double calendar overflow.
+- Refactored page headers on elections dashboards and inline edit forms in the Academics Manager to stack vertically on smaller viewports.
+- Integrated same-page anchor navigation on the landing page for smooth, reload-free auto-scrolling to active and upcoming elections.
+- Replaced the copy URL icon with a text-labeled Copy Link button for clearer and more accessible user interaction.
+- Resolved turnout ledger redirection for upcoming/candidacy elections, rendering a friendly "voting has not commenced" notice.
+- Corrected the document redirect tooltip for Good Moral Character in candidate review tables and added target safety rel parameters.
+- Constrained the Live Vote Tally visibility to only display after the voting period has officially ended.
+- Updated voter masterlist editing rules to permit voter management prior to configuring election dates.
+- Secured candidate status lookup action by utilizing a request-scoped Supabase client, restricting profile lookups to verified user sessions, and stripping out PII query projections.
+- Fixed Candidate TypeScript interface definitions to support optional photo fields and resolved Next.js compilation issues.
 
 ## UN.010.009 Release Notes
 - Implemented age calculation from birth date during candidate application insertion.
