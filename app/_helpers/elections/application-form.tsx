@@ -149,7 +149,10 @@ export function ApplicationFormLayout({
     courseId &&
     cogLink?.trim() &&
     corLink?.trim() &&
-    goodMoralLink?.trim()
+    goodMoralLink?.trim() &&
+    formData.faculty?.trim() &&
+    formData.department?.trim() &&
+    derivedAge
   );
 
   return (

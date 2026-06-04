@@ -366,6 +366,7 @@ function CandidateAuditSection({
                     <a
                       href={candidate.cog_link}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="hover:text-primary transition-colors bg-surface-low border border-border rounded-none p-1.5"
                       title="COG"
                     >
@@ -376,6 +377,7 @@ function CandidateAuditSection({
                     <a
                       href={candidate.cor_link}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="hover:text-primary transition-colors bg-surface-low border border-border rounded-none p-1.5"
                       title="COR"
                     >
@@ -386,6 +388,7 @@ function CandidateAuditSection({
                     <a
                       href={candidate.good_moral_link}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="hover:text-primary transition-colors bg-surface-low border border-border rounded-none p-1.5"
                       title="Good Moral Character"
                     >

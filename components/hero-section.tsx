@@ -23,7 +23,7 @@ function HeroSection() {
           Electoral Board
         </p>
         <Link
-          href="/#active-elections"
+          href="#active-elections"
           className="bg-white text-[#00C2FF] hover:bg-[#00C2FF] hover:text-white py-2 px-6 rounded-md transition duration-300 mt-3 font-semibold text-center inline-block"
         >
           Go to Active Elections

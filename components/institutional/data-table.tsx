@@ -60,7 +60,9 @@ export function InstitutionalDataTable({
                     key={j}
                     className="py-4 px-6 text-sm font-medium text-foreground tabular-nums"
                   >
-                    {row[header]}
+                    {row[header] ?? (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                 ))}
               </tr>

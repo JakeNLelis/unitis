@@ -39,10 +39,10 @@ export function EditElectionDates({
   const [votingEnd, setVotingEnd] = useState(toDatetimeLocal(endDate));
 
   const now = new Date();
-  const isCandStartPassed = candidacyStartDate ? new Date(candidacyStartDate) < now : false;
-  const isCandEndPassed = candidacyEndDate ? new Date(candidacyEndDate) < now : false;
-  const isVotingStartPassed = startDate ? new Date(startDate) < now : false;
-  const isVotingEndPassed = endDate ? new Date(endDate) < now : false;
+  const isCandStartPassed = candidacyStartDate ? new Date(candidacyStartDate) <= now : false;
+  const isCandEndPassed = candidacyEndDate ? new Date(candidacyEndDate) <= now : false;
+  const isVotingStartPassed = startDate ? new Date(startDate) <= now : false;
+  const isVotingEndPassed = endDate ? new Date(endDate) <= now : false;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -98,6 +98,38 @@ export function EditElectionDates({
     // regardless of the DB server timezone.
     const toISO = (local: string) =>
       local ? new Date(local).toISOString() : null;
+
+    const nowSubmit = new Date();
+    const isCandStartPassedSubmit = candidacyStartDate ? new Date(candidacyStartDate) <= nowSubmit : false;
+    const isCandEndPassedSubmit = candidacyEndDate ? new Date(candidacyEndDate) <= nowSubmit : false;
+    const isVotingStartPassedSubmit = startDate ? new Date(startDate) <= nowSubmit : false;
+    const isVotingEndPassedSubmit = endDate ? new Date(endDate) <= nowSubmit : false;
+
+    const originalCandStartISO = candidacyStartDate ? new Date(candidacyStartDate).toISOString() : null;
+    const originalCandEndISO = candidacyEndDate ? new Date(candidacyEndDate).toISOString() : null;
+    const originalVotingStartISO = startDate ? new Date(startDate).toISOString() : null;
+    const originalVotingEndISO = endDate ? new Date(endDate).toISOString() : null;
+
+    if (isCandStartPassedSubmit && toISO(candStart) !== originalCandStartISO) {
+      setError("Cannot modify candidacy start date after it has passed.");
+      setLoading(false);
+      return;
+    }
+    if (isCandEndPassedSubmit && toISO(candEnd) !== originalCandEndISO) {
+      setError("Cannot modify candidacy end date after it has passed.");
+      setLoading(false);
+      return;
+    }
+    if (isVotingStartPassedSubmit && toISO(votingStart) !== originalVotingStartISO) {
+      setError("Cannot modify voting start date after it has passed.");
+      setLoading(false);
+      return;
+    }
+    if (isVotingEndPassedSubmit && toISO(votingEnd) !== originalVotingEndISO) {
+      setError("Cannot modify voting end date after it has passed.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const result = await updateElectionDates(electionId, {

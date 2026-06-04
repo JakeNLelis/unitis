@@ -47,7 +47,7 @@ export function InstitutionalListItem({
       </div>
 
       <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full sm:w-auto justify-between sm:justify-end">
-        {children && <div className="w-full sm:w-auto">{children}</div>}
+        {children && <div>{children}</div>}
 
         {status && (
           <div className="hidden sm:block">

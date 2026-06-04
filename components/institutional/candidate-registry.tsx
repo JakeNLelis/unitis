@@ -66,8 +66,10 @@ export function CandidateRegistry({ candidates }: CandidateRegistryProps) {
               {positionCandidates.map((candidate) => (
                 <Dialog key={candidate.candidate_id}>
                   <DialogTrigger asChild>
-                    <div
-                      className="group relative border-2 border-foreground/5 p-6 hover:border-foreground/20 hover:shadow-xs transition-all bg-white cursor-pointer"
+                    <button
+                      type="button"
+                      className="group relative border-2 border-foreground/5 p-6 hover:border-foreground/20 hover:shadow-xs transition-all bg-white cursor-pointer text-left w-full"
+                      aria-label={`View details of ${candidate.full_name}`}
                     >
                       <div className="flex gap-6 items-start">
                         <div className="relative">
@@ -106,7 +108,7 @@ export function CandidateRegistry({ candidates }: CandidateRegistryProps) {
                       <span className="absolute top-2 right-4 text-4xl font-black text-foreground/3 italic select-none">
                         {candidate.partylist_acronym || "IND"}
                       </span>
-                    </div>
+                    </button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
