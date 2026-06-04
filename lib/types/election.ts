@@ -57,6 +57,7 @@ export interface Candidate {
   cog_link: string | null;
   cor_link: string | null;
   good_moral_link: string | null;
+  photo: string | null;
   application_status: ApplicationStatus;
   partylist_id: string | null;
   affiliation_status: AffiliationStatus | null;

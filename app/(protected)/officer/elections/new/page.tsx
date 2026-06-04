@@ -57,7 +57,7 @@ export default function NewElectionPage() {
 
       {/* Hero Header */}
       <section className="pb-8 border-b-2 border-foreground">
-        <h1 className="text-6xl md:text-7xl font-black font-heading tracking-tighter uppercase leading-[0.8] mb-4">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-black font-heading tracking-tighter uppercase leading-[0.8] mb-4">
           Initialize
           <br />
           Election
@@ -122,7 +122,7 @@ export default function NewElectionPage() {
           </div>
 
           <div className="p-6 bg-surface-lowest border-2 border-foreground relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+            <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
               <Info className="size-20" />
             </div>
             <h4 className="text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2">

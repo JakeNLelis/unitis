@@ -96,6 +96,15 @@ export function VoterMasterlist({
 
   return (
     <div className="space-y-4">
+      {!canEdit && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-sm text-amber-800 text-sm">
+          <p className="font-bold uppercase tracking-wide text-xs mb-1">Voter Masterlist Locked</p>
+          <p className="text-xs text-amber-700">
+            Voter masterlist updates are disabled once the voting period commences.
+          </p>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="flex items-center gap-3 text-sm">
         <Badge variant="secondary">{totalVoters} total</Badge>
@@ -184,7 +193,7 @@ export function VoterMasterlist({
 
       {/* Voter list */}
       {voters.length > 0 && (
-        <div className="border rounded-lg max-h-64 overflow-y-auto">
+        <div className="border rounded-lg max-h-64 overflow-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-muted">
               <tr>

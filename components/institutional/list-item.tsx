@@ -18,7 +18,7 @@ export function InstitutionalListItem({
   const content = (
     <div
       className={cn(
-        "group relative flex items-center justify-between py-5 px-6",
+        "group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 px-6",
         "bg-background hover:bg-surface-low transition-colors duration-200",
         "border-b border-border last:border-0",
         className,
@@ -46,8 +46,8 @@ export function InstitutionalListItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-8">
-        {children && <div className="w-full md:w-auto">{children}</div>}
+      <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full sm:w-auto justify-between sm:justify-end">
+        {children && <div className="w-full sm:w-auto">{children}</div>}
 
         {status && (
           <div className="hidden sm:block">

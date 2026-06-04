@@ -160,7 +160,8 @@ export async function ElectionPageContent({ id }: { id: string }) {
       full_name,
       photo,
       position:positions(title),
-      partylist:partylists(name, acronym)
+      partylist:partylists(name, acronym, platform, logo_url),
+      course:courses(name, acronym)
     `,
     )
     .eq("election_id", id)
@@ -178,6 +179,9 @@ export async function ElectionPageContent({ id }: { id: string }) {
       const partylist = Array.isArray(candidate.partylist)
         ? candidate.partylist[0]
         : candidate.partylist;
+      const course = Array.isArray(candidate.course)
+        ? candidate.course[0]
+        : candidate.course;
 
       return {
         candidate_id: candidate.candidate_id,
@@ -186,6 +190,10 @@ export async function ElectionPageContent({ id }: { id: string }) {
         position_title: position?.title || "Unknown Position",
         partylist_name: partylist?.name || null,
         partylist_acronym: partylist?.acronym || null,
+        course_name: course?.name || null,
+        course_acronym: course?.acronym || null,
+        partylist_platform: partylist?.platform || null,
+        partylist_logo_url: partylist?.logo_url || null,
       };
     },
   );

@@ -136,6 +136,22 @@ export function ApplicationFormLayout({
     electionType === "University-Wide" ? "USSC" : "FSSC";
   const derivedAge = calculateAgeFromBirthDate(formData.birthday);
 
+  const isFormValid = !!(
+    formData.fullName?.trim() &&
+    formData.studentId?.trim() &&
+    formData.email?.trim() &&
+    formData.birthday?.trim() &&
+    formData.currentAddress?.trim() &&
+    formData.permanentAddress?.trim() &&
+    formData.contactNumber?.trim() &&
+    formData.photo &&
+    positionId &&
+    courseId &&
+    cogLink?.trim() &&
+    corLink?.trim() &&
+    goodMoralLink?.trim()
+  );
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <form onSubmit={onSubmit} className="space-y-6">
@@ -172,7 +188,7 @@ export function ApplicationFormLayout({
                 type="file"
                 accept="image/*"
                 onChange={onPhotoUpload}
-                className="w-auto"
+                className="w-auto cursor-pointer border border-input bg-background file:border-r file:border-input file:bg-muted file:px-3 file:mr-3 hover:bg-muted/10 transition-all"
               />
               {formData.photo && (
                 <button
@@ -228,7 +244,7 @@ export function ApplicationFormLayout({
                 placeholder="Last Name, First Name, Middle Name"
               />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="birthday">Date of Birth *</Label>
                 <div className="relative">
@@ -281,7 +297,7 @@ export function ApplicationFormLayout({
                 placeholder="Enter permanent address"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address *</Label>
                 <Input
@@ -321,7 +337,7 @@ export function ApplicationFormLayout({
                 ))}
               </SelectContent>
             </Select>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="faculty">Faculty</Label>
                 <Input
@@ -405,9 +421,19 @@ export function ApplicationFormLayout({
           </div>
         </SectionCard>
 
-        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+        <Button
+          type="submit"
+          className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
+          size="lg"
+          disabled={loading || !isFormValid}
+        >
           {loading ? "Submitting..." : "Submit Candidacy Application"}
         </Button>
+        {!isFormValid && (
+          <p className="text-xs text-center text-muted-foreground bg-muted/40 p-2 border border-dashed rounded mt-2">
+            Please fill in all required fields and upload all required documents to enable submission.
+          </p>
+        )}
       </form>
     </div>
   );

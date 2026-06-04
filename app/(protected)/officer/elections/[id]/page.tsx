@@ -15,6 +15,7 @@ import { EditElectionDates } from "./edit-election-dates";
 import { DeleteElectionButton } from "./delete-election-button";
 import { ElectionResults } from "./election-results";
 import { VoterMasterlist } from "./voter-masterlist";
+import { CandidateDetailDialog } from "./candidate-detail-dialog";
 import { TurnoutAdjustmentForm } from "./turnout-adjustment-form";
 import { PartylistRequiredSettings } from "./partylist-required-settings";
 import { archivo } from "@/lib/fonts";
@@ -323,14 +324,16 @@ function CandidateAuditSection({
             ]}
             data={candidatesData.map((candidate) => ({
               Candidate: (
-                <div className="space-y-0.5">
-                  <p className="font-bold text-foreground uppercase tracking-tight">
-                    {candidate.full_name}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
-                    {candidate.student_id}
-                  </p>
-                </div>
+                <CandidateDetailDialog candidate={candidate}>
+                  <button className="space-y-0.5 text-left hover:underline hover:text-primary transition-all cursor-pointer">
+                    <p className="font-bold text-foreground uppercase tracking-tight">
+                      {candidate.full_name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+                      {candidate.student_id}
+                    </p>
+                  </button>
+                </CandidateDetailDialog>
               ),
               Position: (
                 <span className="text-xs font-black uppercase text-foreground/80">
@@ -384,7 +387,7 @@ function CandidateAuditSection({
                       href={candidate.good_moral_link}
                       target="_blank"
                       className="hover:text-primary transition-colors bg-surface-low border border-border rounded-none p-1.5"
-                      title="COR"
+                      title="Good Moral Character"
                     >
                       <ExternalLink className="size-3" />
                     </a>
@@ -460,7 +463,7 @@ function LowerLedgerSections({
           <VoterMasterlist
             electionId={electionId}
             voters={votersData}
-            canEdit={permissions.canEdit && votingStatus === "not_started"}
+            canEdit={permissions.canEdit && votingStatus !== "open" && votingStatus !== "ended"}
           />
         </div>
       </section>
@@ -568,7 +571,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     electionData.start_date,
     electionData.end_date,
   );
-  const votingStarted = votingStatus === "open" || votingStatus === "ended";
+  const votingEnded = votingStatus === "ended";
 
   const headersList = await headers();
   const host = headersList.get("host") || "localhost:3000";
@@ -615,7 +618,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           permissions={permissions}
         />
 
-        {votingStarted && <ResultsSection electionId={electionId} />}
+        {votingEnded && <ResultsSection electionId={electionId} />}
 
         <LowerLedgerSections
           electionId={electionId}

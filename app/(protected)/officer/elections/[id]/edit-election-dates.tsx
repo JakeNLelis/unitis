@@ -38,6 +38,12 @@ export function EditElectionDates({
   const [votingStart, setVotingStart] = useState(toDatetimeLocal(startDate));
   const [votingEnd, setVotingEnd] = useState(toDatetimeLocal(endDate));
 
+  const now = new Date();
+  const isCandStartPassed = candidacyStartDate ? new Date(candidacyStartDate) < now : false;
+  const isCandEndPassed = candidacyEndDate ? new Date(candidacyEndDate) < now : false;
+  const isVotingStartPassed = startDate ? new Date(startDate) < now : false;
+  const isVotingEndPassed = endDate ? new Date(endDate) < now : false;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -138,7 +144,7 @@ export function EditElectionDates({
         </CardHeader>
         <CardContent>
           {candidacyStartDate && candidacyEndDate ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                   Start
@@ -148,10 +154,10 @@ export function EditElectionDates({
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-left sm:text-right">
                   End
                 </p>
-                <p className="text-sm font-bold text-right">
+                <p className="text-sm font-bold text-left sm:text-right">
                   {new Date(candidacyEndDate).toLocaleString()}
                 </p>
               </div>
@@ -170,7 +176,7 @@ export function EditElectionDates({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                 Start
@@ -180,10 +186,10 @@ export function EditElectionDates({
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-left sm:text-right">
                 End
               </p>
-              <p className="text-sm font-bold text-right">
+              <p className="text-sm font-bold text-left sm:text-right">
                 {new Date(endDate).toLocaleString()}
               </p>
             </div>
@@ -214,44 +220,56 @@ export function EditElectionDates({
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="cand_start">Candidacy Start</Label>
+                  <Label htmlFor="cand_start">
+                    Candidacy Start {isCandStartPassed && <span className="text-xs text-amber-600 font-bold ml-2">(Locked — Passed)</span>}
+                  </Label>
                   <Input
                     id="cand_start"
                     type="datetime-local"
                     value={candStart}
                     onChange={(e) => setCandStart(e.target.value)}
+                    disabled={isCandStartPassed}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cand_end">Candidacy End</Label>
+                  <Label htmlFor="cand_end">
+                    Candidacy End {isCandEndPassed && <span className="text-xs text-amber-600 font-bold ml-2">(Locked — Passed)</span>}
+                  </Label>
                   <Input
                     id="cand_end"
                     type="datetime-local"
                     value={candEnd}
                     onChange={(e) => setCandEnd(e.target.value)}
+                    disabled={isCandEndPassed}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="voting_start">Voting Start</Label>
+                  <Label htmlFor="voting_start">
+                    Voting Start {isVotingStartPassed && <span className="text-xs text-amber-600 font-bold ml-2">(Locked — Passed)</span>}
+                  </Label>
                   <Input
                     id="voting_start"
                     type="datetime-local"
                     value={votingStart}
                     onChange={(e) => setVotingStart(e.target.value)}
                     required
+                    disabled={isVotingStartPassed}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="voting_end">Voting End</Label>
+                  <Label htmlFor="voting_end">
+                    Voting End {isVotingEndPassed && <span className="text-xs text-amber-600 font-bold ml-2">(Locked — Passed)</span>}
+                  </Label>
                   <Input
                     id="voting_end"
                     type="datetime-local"
                     value={votingEnd}
                     onChange={(e) => setVotingEnd(e.target.value)}
                     required
+                    disabled={isVotingEndPassed}
                   />
                 </div>
 

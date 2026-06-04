@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function lookupCandidateStatus(email: string, electionId: string) {
   const normalizedEmail = email.trim().toLowerCase();
@@ -9,7 +9,7 @@ export async function lookupCandidateStatus(email: string, electionId: string) {
     return { error: "Email and election ID are required." };
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data: managedPartylists } = await supabase
     .from("partylists")

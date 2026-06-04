@@ -13,9 +13,9 @@ function HeaderSection({ color = "blue" }: HeaderSectionProps) {
   const isBlue = color === "blue";
 
   const navLinks = [
-    { href: "#", label: "Contact Us" },
-    { href: "#", label: "Active Elections" },
-    { href: "#", label: "Upcomings" },
+    { href: "/#footer", label: "Contact Us" },
+    { href: "/#active-elections", label: "Active Elections" },
+    { href: "/#upcoming-elections", label: "Upcomings" },
     { href: "/archive", label: "Archive" },
   ];
 
