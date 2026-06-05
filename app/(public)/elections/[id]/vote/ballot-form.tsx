@@ -36,6 +36,10 @@ export function BallotForm({
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [receiptData, setReceiptData] = useState<{
+    voteId: string;
+    timestamp: string;
+  } | null>(null);
 
   // Sign out the voter session whenever they leave this page —
   // whether by navigating away, closing the tab, or refreshing.
@@ -109,13 +113,20 @@ export function BallotForm({
 
     setLoading(false);
 
-    if (result.error) {
-      setError(result.error);
+    if ('error' in result && result.error) {
+      setError(result.error as string);
       setConfirmOpen(false);
       return;
     }
 
     setConfirmOpen(false);
+    // Capture receipt data before signing out
+    if ("vote_id" in result && "timestamp" in result) {
+      setReceiptData({
+        voteId: result.vote_id as string,
+        timestamp: result.timestamp as string,
+      });
+    }
     // Explicitly clear the voter session immediately on successful submission
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -125,19 +136,60 @@ export function BallotForm({
   if (submitted) {
     return (
       <Card className="max-w-lg mx-auto">
-        <CardContent className="pt-6 text-center space-y-4">
-          <div className="mx-auto size-12 rounded-full bg-green-600 flex items-center justify-center text-white text-xl font-bold">
-            ✓
+        <CardContent className="pt-6 space-y-6">
+          <div className="text-center space-y-3">
+            <div className="mx-auto size-14 rounded-full bg-green-600 flex items-center justify-center text-white text-2xl font-bold">
+              ✓
+            </div>
+            <h2 className="text-2xl font-bold">Vote Submitted!</h2>
+            <p className="text-muted-foreground">
+              Your ballot for{" "}
+              <span className="font-semibold">{electionName}</span> has been
+              recorded successfully.
+            </p>
           </div>
-          <h2 className="text-2xl font-bold">Vote Submitted!</h2>
-          <p className="text-muted-foreground">
-            Your ballot for{" "}
-            <span className="font-semibold">{electionName}</span> has been
-            recorded successfully.
-          </p>
-          <Button onClick={() => router.push("/")} variant="outline">
-            Back to Home
-          </Button>
+
+          {receiptData && (
+            <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Ballot Receipt
+              </p>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Receipt ID
+                  </span>
+                  <span className="text-sm font-mono font-semibold">
+                    {receiptData.voteId.substring(0, 8).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Timestamp
+                  </span>
+                  <span className="text-sm font-mono">
+                    {new Date(receiptData.timestamp).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Election
+                  </span>
+                  <span className="text-sm font-semibold">{electionName}</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground italic pt-2 border-t border-border">
+                Save this receipt for your records. This is your proof of
+                participation.
+              </p>
+            </div>
+          )}
+
+          <div className="text-center">
+            <Button onClick={() => router.push("/")} variant="outline">
+              Back to Home
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

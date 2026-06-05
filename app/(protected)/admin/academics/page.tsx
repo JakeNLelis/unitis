@@ -10,25 +10,17 @@ import type {
 async function AcademicsContent() {
   const supabase = await createClient();
 
-  const { data: faculties } = await supabase
-    .from("faculties")
-    .select("faculty_id, campus_id, name, acronym")
-    .order("name");
-
-  const { data: departments } = await supabase
-    .from("departments")
-    .select("department_id, faculty_id, name, acronym")
-    .order("name");
-
-  const { data: courses } = await supabase
-    .from("courses")
-    .select("course_id, department_id, name, acronym")
-    .order("name");
-
-  const { data: campusesRaw } = await supabase
-    .from("campuses")
-    .select("campus_id, name, created_at")
-    .order("name");
+  const [
+    { data: faculties },
+    { data: departments },
+    { data: courses },
+    { data: campusesRaw },
+  ] = await Promise.all([
+    supabase.from("faculties").select("faculty_id, campus_id, name, acronym").order("name"),
+    supabase.from("departments").select("department_id, faculty_id, name, acronym").order("name"),
+    supabase.from("courses").select("course_id, department_id, name, acronym").order("name"),
+    supabase.from("campuses").select("campus_id, name, created_at").order("name"),
+  ]);
 
   // Nest: departments into faculties, courses into departments
   const deptMap = new Map<string, AcademicDepartment>();

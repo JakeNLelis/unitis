@@ -140,7 +140,7 @@ export function EditElectionDates({
       });
 
       if (!result || (typeof result === "object" && "error" in result)) {
-        setError((result as any)?.error ?? "Failed to update election dates.");
+        setError(((result as Record<string, unknown>)?.error as string) ?? "Failed to update election dates.");
         return;
       }
 

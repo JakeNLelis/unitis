@@ -87,7 +87,7 @@ export interface PositionWithCandidates extends Position {
   candidates: Candidate[];
 }
 
-export const ELECTION_TYPES = ["University-Wide", "Faculty-Wide"] as const;
+export const ELECTION_TYPES = ["Campus-Wide", "Faculty-Wide"] as const;
 
 export type ElectionType = (typeof ELECTION_TYPES)[number];
 
@@ -99,7 +99,11 @@ export interface TurnoutSnapshot {
   election_id: string;
   casted_votes: number;
   expected_voters: number;
+  expected_voters_base: number;
+  expected_voters_delta: number;
   turnout_percentage: number;
+  quorum_target: number;
+  quorum_met: boolean;
   last_updated_at: string;
 }
 
@@ -108,7 +112,7 @@ export interface TurnoutAdjustment {
   election_id: string;
   seb_officer_id: string | null;
   casted_votes_delta: number | null;
-  expected_voters_value: number | null;
+  expected_voters_delta: number | null;
   reason: string | null;
   created_at: string;
 }
@@ -116,6 +120,6 @@ export interface TurnoutAdjustment {
 export interface TurnoutAdjustmentInput {
   election_id?: string;
   casted_votes_delta?: number;
-  expected_voters_value?: number;
+  expected_voters_delta?: number;
   reason?: string;
 }

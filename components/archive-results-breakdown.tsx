@@ -14,6 +14,8 @@ export function ArchiveResultsBreakdown({
   totalVotes,
   expectedVoters,
   turnoutPercentage,
+  quorumTarget,
+  quorumMet,
   candidateResults,
 }: ArchiveResultsBreakdownProps) {
   return (
@@ -41,6 +43,17 @@ export function ArchiveResultsBreakdown({
                 {expectedVoters === 0
                   ? "—"
                   : `${turnoutPercentage.toFixed(1)}%`}
+              </p>
+            </div>
+          </div>
+          <div className={`mt-4 p-3 rounded-lg border ${quorumMet ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' : 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800'}`}>
+            <div className="flex items-center gap-2">
+              <div className={`size-2 rounded-full ${quorumMet ? 'bg-green-500' : 'bg-amber-500'}`} />
+              <p className="text-sm font-medium">
+                {quorumMet ? 'Quorum Established' : 'Quorum Not Met'}
+              </p>
+              <p className="text-xs text-muted-foreground ml-auto">
+                {totalVotes} of {quorumTarget} required
               </p>
             </div>
           </div>

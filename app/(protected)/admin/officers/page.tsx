@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { SEBOfficer, ROLE_LABELS } from "@/lib/types/auth";
+import { SEBOfficer } from "@/lib/types/auth";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,9 @@ async function OfficersList() {
             </div>
 
             <div className="mt-3">
-              <Badge variant="secondary">{ROLE_LABELS["seb-officer"]}</Badge>
+              <Badge variant={officer.is_chairperson ? "default" : "secondary"}>
+                {officer.is_chairperson ? "Chairperson" : "SEB Officer"}
+              </Badge>
             </div>
 
             <div className="mt-4 text-xs">
@@ -113,8 +115,8 @@ async function OfficersList() {
                     {officer.email}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">
-                      {ROLE_LABELS["seb-officer"]}
+                    <Badge variant={officer.is_chairperson ? "default" : "secondary"}>
+                      {officer.is_chairperson ? "Chairperson" : "SEB Officer"}
                     </Badge>
                   </TableCell>
                   <TableCell>

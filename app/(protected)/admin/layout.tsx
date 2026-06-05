@@ -16,6 +16,7 @@ async function AdminNav() {
         { href: "/admin/officers", label: "SEB Officers" },
         { href: "/admin/elections", label: "Elections" },
         { href: "/admin/academics", label: "Academics" },
+        { href: "/admin/logs", label: "Audit Logs" },
       ]}
     />
   );

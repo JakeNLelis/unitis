@@ -133,7 +133,7 @@ export function ApplicationFormLayout({
   setGoodMoralLink: (value: string) => void;
 }) {
   const resolvedCouncilType: CouncilType =
-    electionType === "University-Wide" ? "USSC" : "FSSC";
+    electionType === "Campus-Wide" ? "USSC" : "FSSC";
   const derivedAge = calculateAgeFromBirthDate(formData.birthday);
 
   const isFormValid = !!(

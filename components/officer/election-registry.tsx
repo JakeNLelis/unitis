@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireElectionManager } from "@/lib/auth";
 import { Election } from "@/lib/types/election";
-import { toDateStr, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Calendar, Info, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { InstitutionalListItem } from "@/components/institutional/list-item";

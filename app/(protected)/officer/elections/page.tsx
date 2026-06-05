@@ -20,7 +20,7 @@ export default function ElectionsPage() {
             Elections
           </h1>
           <p className="text-sm font-medium text-muted-foreground max-w-md">
-            The authoritative registry of all university-wide and localized
+            The authoritative registry of all campus-wide and localized
             election cycles managed by the Student Election Board.
           </p>
         </div>

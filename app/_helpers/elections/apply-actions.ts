@@ -23,6 +23,7 @@ type CandidacyFormValues = {
   faculty: string;
   department: string;
   campaign_manager: string;
+  has_two_failing_grades: boolean;
 };
 
 type CandidateApplication = {
@@ -48,6 +49,7 @@ type CandidateApplication = {
   faculty: string | null;
   department: string | null;
   campaign_manager: string | null;
+  has_two_failing_grades: boolean;
 };
 
 export function readCandidacyFormValues(
@@ -73,6 +75,7 @@ export function readCandidacyFormValues(
     faculty: String(formData.get("faculty") || ""),
     department: String(formData.get("department") || ""),
     campaign_manager: String(formData.get("campaign_manager") || ""),
+    has_two_failing_grades: formData.get("has_two_failing_grades") === "true",
   };
 }
 
@@ -182,6 +185,7 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
     faculty: values.faculty || null,
     department: values.department || null,
     campaign_manager: values.campaign_manager || null,
+    has_two_failing_grades: values.has_two_failing_grades,
   };
 
   const { error } = await adminSupabase.from("candidates").insert(application);

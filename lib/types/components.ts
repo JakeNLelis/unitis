@@ -24,6 +24,8 @@ export interface ArchiveResultsBreakdownProps {
   totalVotes: number;
   expectedVoters: number;
   turnoutPercentage: number;
+  quorumTarget: number;
+  quorumMet: boolean;
   candidateResults: ArchiveCandidateResult[];
 }
 

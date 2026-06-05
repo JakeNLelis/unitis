@@ -44,7 +44,7 @@ export function PartylistRequiredSettings({
     );
 
     if (result && "error" in result) {
-      setError((result as any).error);
+      setError((result as Record<string, unknown>).error as string);
       setIsSaving(false);
       return;
     }

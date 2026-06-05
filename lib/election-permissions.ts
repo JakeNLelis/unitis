@@ -15,6 +15,7 @@ function fullPermissions(): ElectionPermissions {
     canEdit: true,
     canDelete: true,
     canApprove: true,
+    canManage: true,
   };
 }
 
@@ -24,15 +25,19 @@ function deniedPermissions(): ElectionPermissions {
     canEdit: false,
     canDelete: false,
     canApprove: false,
+    canManage: false,
   };
 }
 
-function creatorOnlyPermissions(isCreator: boolean): ElectionPermissions {
+function creatorOnlyPermissions(isCreator: boolean, role: UserRole): ElectionPermissions {
+  // Chairperson can edit details and delete; standard officer cannot change details
+  const canEdit = isCreator && (role === "chairperson" || role === "system-admin");
   return {
     canView: true,
-    canEdit: isCreator,
-    canDelete: isCreator,
+    canEdit: canEdit,
+    canDelete: isCreator && (role === "chairperson" || role === "system-admin"),
     canApprove: isCreator,
+    canManage: isCreator,
   };
 }
 
@@ -43,10 +48,12 @@ export function canActorCreateElectionType(
   const normalizedType = normalizeElectionType(electionType);
 
   if (role === "system-admin") {
-    return normalizedType === "university-wide";
+    // System admin can only create campus-wide (previously university-wide) elections
+    return normalizedType === "campus-wide" || normalizedType === "university-wide";
   }
 
-  if (role === "seb-officer") {
+  if (role === "seb-officer" || role === "chairperson") {
+    // SEB officers/chairpersons can only create faculty-wide elections
     return normalizedType === "faculty-wide";
   }
 
@@ -61,7 +68,10 @@ export function getElectionPermissionsForActor(
     return fullPermissions();
   }
 
-  if (actor.role !== "seb-officer" || !actor.officer) {
+  if (
+    (actor.role !== "seb-officer" && actor.role !== "chairperson") ||
+    !actor.officer
+  ) {
     return deniedPermissions();
   }
 
@@ -70,20 +80,34 @@ export function getElectionPermissionsForActor(
   }
 
   const isCreator = election.created_by === actor.officer.seb_officer_id;
-
   const type = normalizeElectionType(election.election_type);
+
+  // Check if campus and faculty code match for localized access
+  const campusMatch = election.owner_campus === actor.officer.campus;
+  const facultyMatch = election.owner_faculty_code === actor.officer.faculty_code;
+  
+  const hasLocalAccess = isCreator || (campusMatch && (type === "campus-wide" || type === "university-wide" || facultyMatch));
+
+  if (!hasLocalAccess) {
+    return deniedPermissions();
+  }
 
   switch (type) {
     case "faculty-wide":
-      return creatorOnlyPermissions(isCreator);
+      return creatorOnlyPermissions(isCreator, actor.role);
+    case "campus-wide":
     case "university-wide":
+      // In campus-wide/university-wide elections:
+      // - Standard SEB officers from that campus can view, approve candidates, and manage voters (canManage=true, canApprove=true), but cannot edit details or delete.
+      // - Chairpersons from that campus CAN edit details (canEdit=true).
       return {
         canView: true,
-        canEdit: false,
-        canDelete: false,
+        canEdit: actor.role === "chairperson",
+        canDelete: false, // only admin can delete campus-wide
         canApprove: true,
+        canManage: true,
       };
     default:
-      return creatorOnlyPermissions(isCreator);
+      return creatorOnlyPermissions(isCreator, actor.role);
   }
 }

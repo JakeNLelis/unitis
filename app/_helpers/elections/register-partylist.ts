@@ -29,6 +29,7 @@ export type PartylistCandidateInput = {
   good_moral_link: string;
   faculty: string;
   department: string;
+  has_two_failing_grades: boolean;
 };
 
 export function getPartylistRegistrationInput(
@@ -85,6 +86,7 @@ export function getPartylistRegistrationInput(
         good_moral_link: String(candidate.good_moral_link || "").trim(),
         faculty: String(candidate.faculty || "").trim(),
         department: String(candidate.department || "").trim(),
+        has_two_failing_grades: Boolean(candidate.has_two_failing_grades),
       };
     });
   } catch {

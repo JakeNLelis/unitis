@@ -71,6 +71,7 @@ export interface PartylistRegistrationCandidateDraft {
   good_moral_link: string;
   faculty: string;
   department: string;
+  has_two_failing_grades?: boolean;
 }
 
 export interface PartylistRegistrationPDFProps {
@@ -94,6 +95,7 @@ export interface ApplyPageElection {
   candidacy_start_date: string | null;
   candidacy_end_date: string | null;
   is_archived: boolean;
+  owner_campus: string | null;
 }
 
 export interface CourseOption {
@@ -138,6 +140,7 @@ export interface ApplicationFormProps {
   positions: ApplicationFormPosition[];
   courses: ApplicationFormCourse[];
   partylists: ApplicationFormPartylist[];
+  ownerCampus?: string | null;
 }
 
 export interface ElectionPageProps {

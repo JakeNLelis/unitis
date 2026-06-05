@@ -4,7 +4,7 @@ import type { TurnoutSnapshot } from "@/lib/types/election";
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type TurnoutAdjustmentRow = {
   casted_votes_delta: number | null;
-  expected_voters_value: number | null;
+  expected_voters_delta: number | null;
 };
 
 async function getBaseVoteCount(
@@ -31,7 +31,7 @@ async function getTurnoutAdjustmentRows(
 ): Promise<TurnoutAdjustmentRow[] | null> {
   const { data, error } = await supabase
     .from("turnout_adjustments")
-    .select("casted_votes_delta, expected_voters_value")
+    .select("casted_votes_delta, expected_voters_delta")
     .eq("election_id", electionId);
 
   if (error) {
@@ -45,21 +45,21 @@ async function getTurnoutAdjustmentRows(
 function applyAdjustments(
   baseVoteCount: number,
   adjustments: TurnoutAdjustmentRow[],
-): { castedVotes: number; expectedVoters: number | null } {
+): { castedVotes: number; expectedVotersDelta: number } {
   let castedVotes = baseVoteCount;
-  let expectedVoters: number | null = null;
+  let expectedVotersDelta = 0;
 
   for (const adjustment of adjustments) {
     if (adjustment.casted_votes_delta !== null) {
       castedVotes += adjustment.casted_votes_delta;
     }
 
-    if (adjustment.expected_voters_value !== null) {
-      expectedVoters = adjustment.expected_voters_value;
+    if (adjustment.expected_voters_delta !== null) {
+      expectedVotersDelta += adjustment.expected_voters_delta;
     }
   }
 
-  return { castedVotes, expectedVoters };
+  return { castedVotes, expectedVotersDelta };
 }
 
 async function getExpectedVoterCount(
@@ -103,11 +103,9 @@ export async function getTurnoutSnapshot(
   }
 
   const adjusted = applyAdjustments(baseVoteCount, adjustments);
-  const expectedVoters = Math.max(
-    0,
-    adjusted.expectedVoters ??
-      (await getExpectedVoterCount(supabase, electionId)),
-  );
+  const expectedVotersBase = await getExpectedVoterCount(supabase, electionId);
+  const expectedVotersDelta = adjusted.expectedVotersDelta;
+  const expectedVoters = Math.max(0, expectedVotersBase + expectedVotersDelta);
   const totalCastedVotes = Math.max(0, adjusted.castedVotes);
 
   // Step 4: Calculate turnout percentage
@@ -115,12 +113,21 @@ export async function getTurnoutSnapshot(
   const turnoutPercentage =
     expectedVoters === 0 ? 0 : (totalCastedVotes / expectedVoters) * 100;
 
+  // Step 4b: Calculate quorum — majority of expected voters
+  const quorumTarget =
+    expectedVoters === 0 ? 0 : Math.floor(expectedVoters / 2) + 1;
+  const quorumMet = totalCastedVotes >= quorumTarget;
+
   // Step 5: Return complete snapshot
   return {
     election_id: electionId,
     casted_votes: totalCastedVotes,
     expected_voters: expectedVoters,
+    expected_voters_base: expectedVotersBase,
+    expected_voters_delta: expectedVotersDelta,
     turnout_percentage: Math.round(turnoutPercentage * 10) / 10, // Round to 1 decimal
+    quorum_target: quorumTarget,
+    quorum_met: quorumMet,
     last_updated_at: new Date().toISOString(),
   };
 }

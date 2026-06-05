@@ -80,8 +80,8 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
     return {
       id: user.id,
       email: sebOfficer.email,
-      role: "seb-officer",
-      display_name: `${sebOfficer.faculty_code} (${sebOfficer.campus})`,
+      role: sebOfficer.is_chairperson ? "chairperson" : "seb-officer",
+      display_name: `${sebOfficer.faculty_code} (${sebOfficer.campus})${sebOfficer.is_chairperson ? " (Chair)" : ""}`,
     };
   }
 
@@ -148,7 +148,7 @@ export async function requireSEBOfficer() {
     redirect("/login");
   }
 
-  if (profile.role !== "seb-officer") {
+  if (profile.role !== "seb-officer" && profile.role !== "chairperson") {
     redirect("/unauthorized");
   }
 
@@ -167,11 +167,15 @@ export async function requireElectionManager() {
     redirect("/login");
   }
 
-  if (profile.role !== "seb-officer" && profile.role !== "system-admin") {
+  if (
+    profile.role !== "seb-officer" &&
+    profile.role !== "chairperson" &&
+    profile.role !== "system-admin"
+  ) {
     redirect("/unauthorized");
   }
 
-  if (profile.role === "seb-officer") {
+  if (profile.role === "seb-officer" || profile.role === "chairperson") {
     const officer = await getSEBOfficer();
     if (!officer) {
       redirect("/unauthorized");

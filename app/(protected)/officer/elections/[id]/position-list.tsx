@@ -31,7 +31,7 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
       maxVotes,
     );
     if (result && typeof result === "object" && "error" in result) {
-      setError((result as any).error);
+      setError((result as Record<string, unknown>).error as string);
     } else {
       setIsEditing(false);
       router.refresh();
@@ -44,7 +44,7 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
     setError(null);
     const result = await deletePosition(position.position_id);
     if (result && typeof result === "object" && "error" in result) {
-      setError((result as any).error);
+      setError((result as Record<string, unknown>).error as string);
       setIsDeleting(false);
     } else {
       router.refresh();
