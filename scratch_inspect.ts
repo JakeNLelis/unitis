@@ -11,9 +11,9 @@ if (fs.existsSync(envLocalPath)) {
   const content = fs.readFileSync(envLocalPath, "utf-8");
   for (const line of content.split("\n")) {
     const matchUrl = line.match(/^NEXT_PUBLIC_SUPABASE_URL\s*=\s*(.*)$/);
-    if (matchUrl) url = matchUrl[1].trim();
+    if (matchUrl) url = matchUrl[1].trim().replace(/^['"]|['"]$/g, '');
     const matchKey = line.match(/^SUPABASE_SERVICE_ROLE_KEY\s*=\s*(.*)$/);
-    if (matchKey) key = matchKey[1].trim();
+    if (matchKey) key = matchKey[1].trim().replace(/^['"]|['"]$/g, '');
   }
 }
 
@@ -51,4 +51,7 @@ async function inspect() {
   }
 }
 
-inspect();
+inspect().catch(err => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});

@@ -116,7 +116,7 @@ export async function getTurnoutSnapshot(
   // Step 4b: Calculate quorum — majority of expected voters
   const quorumTarget =
     expectedVoters === 0 ? 0 : Math.floor(expectedVoters / 2) + 1;
-  const quorumMet = totalCastedVotes >= quorumTarget;
+  const quorumMet = expectedVoters === 0 ? false : totalCastedVotes >= quorumTarget;
 
   // Step 5: Return complete snapshot
   return {

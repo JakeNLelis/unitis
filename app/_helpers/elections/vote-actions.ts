@@ -283,6 +283,8 @@ export async function submitBallotRecord(
 
   if (updateError) {
     console.error("Failed to update voter status:", updateError);
+    await adminSupabase.from("votes").delete().eq("vote_id", vote.vote_id);
+    return { error: "Failed to finalize vote status. Please try again." };
   }
 
   return { success: true, voteId: vote.vote_id, timestamp: new Date().toISOString() };

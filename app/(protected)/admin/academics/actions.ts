@@ -335,6 +335,8 @@ export async function updateCampusName(
     return { error: updateOfficersError.message };
   }
 
+  await logAdminAction("campus.updated", `Updated campus ${campusId} name from ${previousName} to ${nextName}`);
+
   return { success: true };
 }
 
@@ -382,5 +384,8 @@ export async function deleteCampus(campusId: string): Promise<ActionResult> {
     .eq("campus_id", campusId);
 
   if (error) return { error: error.message };
+
+  await logAdminAction("campus.deleted", `Deleted campus ${campusId} (${campus.name})`);
+
   return { success: true };
 }

@@ -30,7 +30,9 @@ export type AdminActionType =
   | "course.created"
   | "course.updated"
   | "course.deleted"
-  | "campus.created";
+  | "campus.created"
+  | "campus.updated"
+  | "campus.deleted";
 
 /**
  * Record an administrative action in the audit log.
@@ -74,8 +76,8 @@ export async function logAdminAction(
       finalActorRole = profile.role;
     }
 
-    const adminSupabase = createAdminClient();
-    await adminSupabase.from("admin_logs").insert({
+    const adminSupabase = await createAdminClient();
+    const { error } = await adminSupabase.from("admin_logs").insert({
       actor_id: finalActorId,
       actor_email: finalActorEmail,
       actor_role: finalActorRole,
@@ -83,6 +85,11 @@ export async function logAdminAction(
       description,
       election_id: electionId,
     });
+
+    if (error) {
+      console.error("[AuditLog] Failed to record action:", error, { finalActorId, actionType, electionId });
+      throw new Error(`Failed to record audit log: ${error.message}`);
+    }
   } catch (error) {
     console.error("[AuditLog] Failed to record action:", error);
   }

@@ -5,10 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 
+interface AdminLog {
+  log_id: string;
+  created_at: string;
+  actor_email: string;
+  actor_role: string;
+  action_type: string;
+  description: string;
+  elections: { name: string } | null;
+}
+
 export default async function AdminLogsPage() {
   const supabase = await createAdminClient();
 
-  const { data: logs } = await supabase
+  const { data: logs, error } = await supabase
     .from("admin_logs")
     .select("*, elections(name)")
     .order("created_at", { ascending: false })
@@ -45,7 +55,16 @@ export default async function AdminLogsPage() {
                 </tr>
               </thead>
               <tbody>
-                {!logs || logs.length === 0 ? (
+                {error ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="p-8 text-center text-destructive font-medium"
+                    >
+                      Failed to load audit logs. Please try again later.
+                    </td>
+                  </tr>
+                ) : !logs || logs.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}
@@ -55,7 +74,7 @@ export default async function AdminLogsPage() {
                     </td>
                   </tr>
                 ) : (
-                  logs.map((log: Record<string, unknown>) => (
+                  logs.map((log: AdminLog) => (
                     <tr
                       key={log.log_id}
                       className="border-b hover:bg-muted/30 transition-colors"

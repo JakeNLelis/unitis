@@ -86,9 +86,8 @@ export default async function TurnoutPage({ params }: TurnoutPageProps) {
   }
 
   const expectedVoters = snapshot.expected_voters;
-  const quorumTarget =
-    expectedVoters === 0 ? 0 : Math.floor(expectedVoters / 2) + 1;
-  const quorumMet = snapshot.casted_votes >= quorumTarget;
+  const quorumTarget = snapshot.quorum_target;
+  const quorumMet = snapshot.quorum_met;
 
   const isCampusWide = election.election_type?.toLowerCase() === "campus-wide";
   let facultyBreakdownData: Array<{

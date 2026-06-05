@@ -26,7 +26,54 @@ export interface UserProfile {
   display_name: string;
 }
 
+export interface ActionActor {
+  role: UserRole;
+  userId: string;
+  email: string;
+  displayName: string;
+  officer: {
+    seb_officer_id: string;
+    campus: string;
+    faculty_code: string;
+  } | null;
+  systemAdminId: string | null;
+}
 
+export interface ElectionActor {
+  role: UserRole;
+  officer: {
+    seb_officer_id: string;
+    campus: string;
+    faculty_code: string;
+  } | null;
+}
+
+export interface ElectionContext {
+  election_id: string;
+  election_type: string;
+  created_by: string | null;
+  owner_campus: string | null;
+  owner_faculty_code: string | null;
+  access_policy_locked: boolean;
+  start_date: string;
+  end_date: string;
+}
+
+export interface ElectionAccessPolicyRow {
+  election_type: string;
+  created_by: string | null;
+  owner_campus: string | null;
+  owner_faculty_code: string | null;
+  access_policy_locked: boolean;
+}
+
+export interface ElectionPermissions {
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canApprove: boolean;
+  canManage: boolean;
+}
 
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   "system-admin": 3,

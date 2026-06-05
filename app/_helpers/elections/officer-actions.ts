@@ -36,12 +36,12 @@ async function getActionActor(): Promise<ActionActor | null> {
   const profile = await getCurrentProfile();
   if (!profile) return null;
 
-  if (profile.role === "seb-officer") {
+  if (profile.role === "seb-officer" || profile.role === "chairperson") {
     const officer = await getSEBOfficer();
     if (!officer) return null;
 
     return {
-      role: "seb-officer",
+      role: profile.role,
       userId: profile.id,
       email: profile.email,
       displayName: `${officer.faculty_code} (${officer.campus})`,
@@ -192,8 +192,8 @@ export async function insertTurnoutAdjustmentRecord(
     .insert({
       election_id: electionId,
       seb_officer_id: actor.officer?.seb_officer_id ?? null,
-      casted_votes_delta: input.casted_votes_delta || null,
-      expected_voters_delta: input.expected_voters_delta || null,
+      casted_votes_delta: input.casted_votes_delta ?? null,
+      expected_voters_delta: input.expected_voters_delta ?? null,
       reason: input.reason || null,
     })
     .select()

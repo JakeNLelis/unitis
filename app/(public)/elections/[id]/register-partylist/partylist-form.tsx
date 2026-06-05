@@ -157,8 +157,9 @@ export function PartylistRegistrationForm({
 
   const handleOpenEditDialog = (positionId: string) => {
     setActivePositionId(positionId);
-    setDialogStep('details');
-    setDialogScreeningPassed(true);
+    setDialogStep('screening');
+    setDialogScreeningStep(0);
+    setDialogScreeningPassed(null);
     const existing = candidateMap[positionId];
     setDialogCandidateData(existing || {
       ...createEmptyCandidate(),

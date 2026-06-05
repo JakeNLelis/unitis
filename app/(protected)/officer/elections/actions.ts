@@ -682,6 +682,38 @@ export async function addVoterMasterlist(
 
   const supabase = await createAdminClient();
 
+  if (facultyId) {
+    const { data: faculty, error: facultyError } = await supabase
+      .from("faculties")
+      .select("faculty_id")
+      .eq("faculty_id", facultyId)
+      .single();
+    if (facultyError || !faculty) {
+      return { error: "Invalid faculty selected." };
+    }
+  }
+
+  if (courseId) {
+    const { data: course, error: courseError } = await supabase
+      .from("courses")
+      .select("course_id, departments(faculty_id)")
+      .eq("course_id", courseId)
+      .single();
+    if (courseError || !course) {
+      return { error: "Invalid course selected." };
+    }
+
+    if (facultyId) {
+      const courseFacultyId = Array.isArray(course.departments)
+        ? course.departments[0]?.faculty_id
+        : (course.departments as Record<string, unknown>)?.faculty_id;
+
+      if (courseFacultyId !== facultyId) {
+        return { error: "Selected course does not belong to the selected faculty." };
+      }
+    }
+  }
+
   // Get existing student IDs for this election to skip duplicates
   const { data: existing } = await supabase
     .from("voters")

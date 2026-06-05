@@ -44,7 +44,14 @@ export function PartylistRequiredSettings({
     );
 
     if (result && "error" in result) {
-      setError((result as Record<string, unknown>).error as string);
+      const err = (result as Record<string, unknown>).error;
+      if (typeof err === "string") {
+        setError(err);
+      } else if (typeof err === "object" && err !== null && "message" in err && typeof (err as Record<string, unknown>).message === "string") {
+        setError((err as Record<string, unknown>).message as string);
+      } else {
+        setError(err ? JSON.stringify(err) : "Unknown error");
+      }
       setIsSaving(false);
       return;
     }

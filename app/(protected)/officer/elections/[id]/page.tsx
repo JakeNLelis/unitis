@@ -536,12 +536,12 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
   }
 
   const [
-    { data: positions },
-    { data: candidates },
-    { data: voters },
-    { data: faculties },
-    { data: coursesData },
-    { data: auditLogs }
+    positionsRes,
+    candidatesRes,
+    votersRes,
+    facultiesRes,
+    coursesRes,
+    auditLogsRes
   ] = await Promise.all([
     adminSupabase
       .from("positions")
@@ -573,6 +573,24 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       .order("created_at", { ascending: false })
       .limit(100)
   ]);
+
+  if (
+    positionsRes.error ||
+    candidatesRes.error ||
+    votersRes.error ||
+    facultiesRes.error ||
+    coursesRes.error ||
+    auditLogsRes.error
+  ) {
+    throw new Error("Failed to load comprehensive election data. Please try again later.");
+  }
+
+  const positions = positionsRes.data;
+  const candidates = candidatesRes.data;
+  const voters = votersRes.data;
+  const faculties = facultiesRes.data;
+  const coursesData = coursesRes.data;
+  const auditLogs = auditLogsRes.data;
 
   const coursesList = (coursesData || []).map((c) => {
     const dept = Array.isArray(c.departments)
@@ -727,8 +745,11 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
                 ? auditLogData
                 : [
                     {
-                      Empty:
-                        "No audit log entries found for this election yet.",
+                      Date: "",
+                      Actor: "",
+                      Role: "",
+                      Action: "",
+                      Description: "No audit log entries found for this election yet.",
                     },
                   ]
             }

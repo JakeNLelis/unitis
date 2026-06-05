@@ -114,7 +114,6 @@ export function ApplicationForm({
     let revokedUrl = "";
 
     async function generateAndDownload() {
-      setDownloadState("generating");
       try {
         const blob = await pdf(<CandidacyPDF data={payload} />).toBlob();
 
@@ -128,10 +127,8 @@ export function ApplicationForm({
         anchor.click();
         document.body.removeChild(anchor);
 
-        setDownloadState("done");
       } catch (downloadError) {
         console.error(downloadError);
-        setDownloadState("failed");
       }
     }
 
@@ -260,6 +257,9 @@ export function ApplicationForm({
     fd.set("cor_link", corLink);
     fd.set("good_moral_link", goodMoralLink);
     fd.set("has_two_failing_grades", screeningAnswers.failingGrades ? "true" : "false");
+    fd.set("bonafide", screeningAnswers.bonafide ? "true" : "false");
+    fd.set("amaranth", screeningAnswers.amaranth ? "true" : "false");
+    fd.set("convicted", screeningAnswers.convicted ? "true" : "false");
 
     const result = await submitCandidacyApplication(fd);
     if (result.error) {

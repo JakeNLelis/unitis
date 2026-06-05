@@ -99,16 +99,21 @@ export default async function ArchiveDetailPage({
       .eq("election_id", id),
     supabase
       .from("turnout_adjustments")
-      .select("expected_voters_delta")
+      .select("expected_voters_delta, casted_votes_delta")
       .eq("election_id", id)
   ]);
 
-  const total = totalVotes ?? 0;
-  const expectedBase = expectedVoters ?? 0;
+  const castedDelta = (expectedAdjustments || []).reduce(
+    (sum, adjustment) => sum + (adjustment.casted_votes_delta ?? 0),
+    0,
+  );
   const expectedDelta = (expectedAdjustments || []).reduce(
     (sum, adjustment) => sum + (adjustment.expected_voters_delta ?? 0),
     0,
   );
+
+  const total = Math.max(0, (totalVotes ?? 0) + castedDelta);
+  const expectedBase = expectedVoters ?? 0;
   const expected = Math.max(0, expectedBase + expectedDelta);
   const turnout = expected === 0 ? 0 : (total / expected) * 100;
   const quorumTarget = expected === 0 ? 0 : Math.floor(expected / 2) + 1;
