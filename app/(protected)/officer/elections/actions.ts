@@ -98,9 +98,9 @@ export async function createElection(formData: FormData) {
 
   const electionTypeNormalized = election_type.trim().toLowerCase();
   const scopeCampus =
-    actor.role === "seb-officer" ? actor.officer?.campus : null;
+    actor.role === "seb-officer" || actor.role === "chairperson" ? actor.officer?.campus : null;
   const scopeFacultyCode =
-    actor.role === "seb-officer" ? actor.officer?.faculty_code : null;
+    actor.role === "seb-officer" || actor.role === "chairperson" ? actor.officer?.faculty_code : null;
 
   const { data, error } = await supabase
     .from("elections")
@@ -108,7 +108,7 @@ export async function createElection(formData: FormData) {
       name,
       election_type,
       created_by:
-        actor.role === "seb-officer" ? actor.officer?.seb_officer_id : null,
+        actor.role === "seb-officer" || actor.role === "chairperson" ? actor.officer?.seb_officer_id : null,
       created_by_admin_id:
         actor.role === "system-admin" ? actor.systemAdminId : null,
       owner_campus:
@@ -128,7 +128,7 @@ export async function createElection(formData: FormData) {
     return { error: error.message };
   }
 
-  if (actor.role === "seb-officer" && actor.officer) {
+  if ((actor.role === "seb-officer" || actor.role === "chairperson") && actor.officer) {
     // Keep the creator officer linked to the election for existing workflows.
     await supabase
       .from("seb_officers")
@@ -685,30 +685,44 @@ export async function addVoterMasterlist(
   if (facultyId) {
     const { data: faculty, error: facultyError } = await supabase
       .from("faculties")
-      .select("faculty_id")
+      .select("faculty_id, acronym")
       .eq("faculty_id", facultyId)
       .single();
     if (facultyError || !faculty) {
       return { error: "Invalid faculty selected." };
+    }
+
+    if (permissionContext.election.owner_faculty_code) {
+      if (faculty.acronym !== permissionContext.election.owner_faculty_code) {
+        return { error: "Selected faculty does not match the election's assigned faculty." };
+      }
     }
   }
 
   if (courseId) {
     const { data: course, error: courseError } = await supabase
       .from("courses")
-      .select("course_id, departments(faculty_id)")
+      .select("course_id, departments(faculty_id, faculties(acronym))")
       .eq("course_id", courseId)
       .single();
     if (courseError || !course) {
       return { error: "Invalid course selected." };
     }
 
-    if (facultyId) {
-      const courseFacultyId = Array.isArray(course.departments)
-        ? course.departments[0]?.faculty_id
-        : (course.departments as Record<string, unknown>)?.faculty_id;
+    const courseFacultyId = Array.isArray(course.departments)
+      ? course.departments[0]?.faculty_id
+      : (course.departments as Record<string, unknown>)?.faculty_id;
 
+    const courseFacultyAcronym = Array.isArray(course.departments)
+      ? (course.departments[0]?.faculties as any)?.acronym
+      : (course.departments as any)?.faculties?.acronym;
+
+    if (facultyId) {
       if (courseFacultyId !== facultyId) {
+        return { error: "Selected course does not belong to the selected faculty." };
+      }
+    } else if (permissionContext.election.owner_faculty_code) {
+      if (courseFacultyAcronym !== permissionContext.election.owner_faculty_code) {
         return { error: "Selected course does not belong to the selected faculty." };
       }
     }

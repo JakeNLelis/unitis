@@ -89,10 +89,10 @@ export function getPartylistRegistrationInput(
         good_moral_link: String(candidate.good_moral_link || "").trim(),
         faculty: String(candidate.faculty || "").trim(),
         department: String(candidate.department || "").trim(),
-        has_two_failing_grades: Boolean(candidate.has_two_failing_grades),
-        bonafide: Boolean(candidate.bonafide),
-        amaranth: Boolean(candidate.amaranth),
-        convicted: Boolean(candidate.convicted),
+        has_two_failing_grades: candidate.has_two_failing_grades === true || String(candidate.has_two_failing_grades).toLowerCase() === "true",
+        bonafide: candidate.bonafide === true || String(candidate.bonafide).toLowerCase() === "true",
+        amaranth: candidate.amaranth === true || String(candidate.amaranth).toLowerCase() === "true",
+        convicted: candidate.convicted === true || String(candidate.convicted).toLowerCase() === "true",
       };
     });
   } catch {
