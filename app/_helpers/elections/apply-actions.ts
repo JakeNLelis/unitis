@@ -23,6 +23,10 @@ type CandidacyFormValues = {
   faculty: string;
   department: string;
   campaign_manager: string;
+  has_two_failing_grades: boolean;
+  bonafide: boolean;
+  amaranth: boolean;
+  convicted: boolean;
 };
 
 type CandidateApplication = {
@@ -48,6 +52,7 @@ type CandidateApplication = {
   faculty: string | null;
   department: string | null;
   campaign_manager: string | null;
+  has_two_failing_grades: boolean;
 };
 
 export function readCandidacyFormValues(
@@ -73,6 +78,10 @@ export function readCandidacyFormValues(
     faculty: String(formData.get("faculty") || ""),
     department: String(formData.get("department") || ""),
     campaign_manager: String(formData.get("campaign_manager") || ""),
+    has_two_failing_grades: formData.get("has_two_failing_grades") === "true",
+    bonafide: formData.get("bonafide") === "true",
+    amaranth: formData.get("amaranth") === "true",
+    convicted: formData.get("convicted") === "true",
   };
 }
 
@@ -100,6 +109,10 @@ export function validateCandidacyFormValues(values: CandidacyFormValues) {
 
   if (!values.birth_date) {
     return { error: "Please provide your date of birth." };
+  }
+
+  if (!values.bonafide || values.amaranth || values.convicted) {
+    return { error: "You do not meet the eligibility requirements to file a candidacy." };
   }
 
   return { values };
@@ -182,6 +195,7 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
     faculty: values.faculty || null,
     department: values.department || null,
     campaign_manager: values.campaign_manager || null,
+    has_two_failing_grades: values.has_two_failing_grades,
   };
 
   const { error } = await adminSupabase.from("candidates").insert(application);

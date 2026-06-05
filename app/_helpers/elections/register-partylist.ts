@@ -29,6 +29,10 @@ export type PartylistCandidateInput = {
   good_moral_link: string;
   faculty: string;
   department: string;
+  has_two_failing_grades: boolean;
+  bonafide: boolean;
+  amaranth: boolean;
+  convicted: boolean;
 };
 
 export function getPartylistRegistrationInput(
@@ -85,6 +89,10 @@ export function getPartylistRegistrationInput(
         good_moral_link: String(candidate.good_moral_link || "").trim(),
         faculty: String(candidate.faculty || "").trim(),
         department: String(candidate.department || "").trim(),
+        has_two_failing_grades: candidate.has_two_failing_grades === true || String(candidate.has_two_failing_grades).toLowerCase() === "true",
+        bonafide: candidate.bonafide === true || String(candidate.bonafide).toLowerCase() === "true",
+        amaranth: candidate.amaranth === true || String(candidate.amaranth).toLowerCase() === "true",
+        convicted: candidate.convicted === true || String(candidate.convicted).toLowerCase() === "true",
       };
     });
   } catch {
@@ -121,6 +129,12 @@ export function getPartylistRegistrationInput(
     if (!candidate.birth_date) {
       return {
         error: "Each candidate must include a valid birth date.",
+      };
+    }
+
+    if (!candidate.bonafide || candidate.amaranth || candidate.convicted) {
+      return {
+        error: `Candidate ${candidate.full_name || candidate.student_id} does not meet the eligibility requirements.`,
       };
     }
   }

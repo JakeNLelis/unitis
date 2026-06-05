@@ -21,6 +21,7 @@ import { PartylistRequiredSettings } from "./partylist-required-settings";
 import { archivo } from "@/lib/fonts";
 import { InstitutionalDataTable } from "@/components/institutional/data-table";
 import { InstitutionalListItem } from "@/components/institutional/list-item";
+import { Badge } from "@/components/ui/badge";
 import { getElectionPermissionsForActor } from "@/lib/election-permissions";
 import { BackToRegistryLink } from "./back-to-registry-link";
 import {
@@ -33,6 +34,10 @@ type VoterListRow = {
   voter_id: string;
   student_id: string;
   is_voted: boolean;
+  faculty_id: string | null;
+  course_id: string | null;
+  faculties: { acronym: string | null } | null;
+  courses: { acronym: string | null } | null;
 };
 
 function HeroHeaderSection({
@@ -442,11 +447,17 @@ function LowerLedgerSections({
   votersData,
   permissions,
   votingStatus,
+  faculties,
+  courses,
+  electionType,
 }: {
   electionId: string;
   votersData: VoterListRow[];
   permissions: ElectionPermissions;
   votingStatus: string;
+  faculties: { faculty_id: string; name: string; acronym: string | null }[];
+  courses: { course_id: string; name: string; acronym: string | null; faculty_id: string | null }[];
+  electionType: string;
 }) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
@@ -466,7 +477,14 @@ function LowerLedgerSections({
           <VoterMasterlist
             electionId={electionId}
             voters={votersData}
-            canEdit={permissions.canEdit && votingStatus !== "open" && votingStatus !== "ended"}
+            canEdit={
+              permissions.canEdit &&
+              votingStatus !== "open" &&
+              votingStatus !== "ended"
+            }
+            faculties={faculties}
+            courses={courses}
+            electionType={electionType}
           />
         </div>
       </section>
@@ -517,30 +535,86 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     notFound();
   }
 
-  const { data: positions } = await adminSupabase
-    .from("positions")
-    .select("*")
-    .eq("election_id", electionId)
-    .order("created_at", { ascending: true });
+  const [
+    positionsRes,
+    candidatesRes,
+    votersRes,
+    facultiesRes,
+    coursesRes,
+    auditLogsRes
+  ] = await Promise.all([
+    adminSupabase
+      .from("positions")
+      .select("*")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: true }),
+    adminSupabase
+      .from("candidates")
+      .select("*, positions(title), courses(name, acronym), partylists(name, acronym)")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: false }),
+    adminSupabase
+      .from("voters")
+      .select("voter_id, student_id, is_voted, faculty_id, course_id, faculties(acronym), courses(acronym)")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: true }),
+    adminSupabase
+      .from("faculties")
+      .select("faculty_id, name, acronym")
+      .order("name", { ascending: true }),
+    adminSupabase
+      .from("courses")
+      .select("course_id, name, acronym, department_id, departments(faculty_id)")
+      .order("name", { ascending: true }),
+    adminSupabase
+      .from("admin_logs")
+      .select("log_id, created_at, actor_email, actor_role, action_type, description")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: false })
+      .limit(100)
+  ]);
 
-  const { data: candidates } = await adminSupabase
-    .from("candidates")
-    .select(
-      "*, positions(title), courses(name, acronym), partylists(name, acronym)",
-    )
-    .eq("election_id", electionId)
-    .order("created_at", { ascending: false });
+  if (
+    positionsRes.error ||
+    candidatesRes.error ||
+    votersRes.error ||
+    facultiesRes.error ||
+    coursesRes.error ||
+    auditLogsRes.error
+  ) {
+    throw new Error("Failed to load comprehensive election data. Please try again later.");
+  }
 
-  const { data: voters } = await adminSupabase
-    .from("voters")
-    .select("voter_id, student_id, is_voted")
-    .eq("election_id", electionId)
-    .order("created_at", { ascending: true });
+  const positions = positionsRes.data;
+  const candidates = candidatesRes.data;
+  const voters = votersRes.data;
+  const faculties = facultiesRes.data;
+  const coursesData = coursesRes.data;
+  const auditLogs = auditLogsRes.data;
+
+  const coursesList = (coursesData || []).map((c) => {
+    const dept = Array.isArray(c.departments)
+      ? c.departments[0]
+      : c.departments;
+    return {
+      course_id: c.course_id,
+      name: c.name,
+      acronym: c.acronym,
+      faculty_id: dept?.faculty_id || null,
+    };
+  });
 
   const electionData = election as Election;
   const positionsData = (positions || []) as Position[];
   const candidatesData = (candidates || []) as CandidateWithDetails[];
-  const votersData = (voters || []) as VoterListRow[];
+  const votersData = ((voters || []).map((v: unknown) => {
+    const raw = v as Record<string, unknown>;
+    return {
+      ...raw,
+      faculties: Array.isArray(raw.faculties) ? raw.faculties[0] || null : raw.faculties,
+      courses: Array.isArray(raw.courses) ? raw.courses[0] || null : raw.courses,
+    };
+  })) as VoterListRow[];
 
   const permissions = getElectionPermissionsForActor(
     {
@@ -580,6 +654,22 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
   const host = headersList.get("host") || "localhost:3000";
   const proto = headersList.get("x-forwarded-proto") || "http";
   const baseUrl = `${proto}://${host}`;
+
+  const auditLogData = (auditLogs || []).map((log) => ({
+    Date: new Date(log.created_at).toLocaleString(),
+    Actor: log.actor_email,
+    Role: (
+      <Badge variant="outline" className="text-[10px]">
+        {log.actor_role}
+      </Badge>
+    ),
+    Action: (
+      <Badge variant="secondary" className="text-[10px] font-mono">
+        {log.action_type}
+      </Badge>
+    ),
+    Description: log.description,
+  }));
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -628,7 +718,43 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           votersData={votersData}
           permissions={permissions}
           votingStatus={votingStatus}
+          faculties={faculties || []}
+          courses={coursesList}
+          electionType={electionData.election_type}
         />
+
+        <section>
+          <div className="mb-8 flex items-baseline justify-between group">
+            <h2
+              className={cn(
+                "text-xl font-black uppercase tracking-tight",
+                archivo.className,
+              )}
+            >
+              Election Audit Logs
+            </h2>
+            <div className="h-px flex-1 mx-4 bg-border/60 group-hover:bg-primary/30 transition-colors" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+              Latest activity
+            </span>
+          </div>
+          <InstitutionalDataTable
+            headers={["Date", "Actor", "Role", "Action", "Description"]}
+            data={
+              auditLogData.length > 0
+                ? auditLogData
+                : [
+                    {
+                      Date: "",
+                      Actor: "",
+                      Role: "",
+                      Action: "",
+                      Description: "No audit log entries found for this election yet.",
+                    },
+                  ]
+            }
+          />
+        </section>
       </div>
     </div>
   );

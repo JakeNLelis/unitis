@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Database,
   ShieldCheck,
-  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { archivo } from "@/lib/fonts";

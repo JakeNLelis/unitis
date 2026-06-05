@@ -43,7 +43,7 @@ export function AddPositionForm({
 
     const result = await createPosition(formData);
     if (!result || (typeof result === "object" && "error" in result)) {
-      setError((result as any)?.error ?? "Unknown error");
+      setError(((result as Record<string, unknown>)?.error as string) ?? "Unknown error");
       setIsLoading(false);
       return;
     }

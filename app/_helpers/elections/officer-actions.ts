@@ -36,13 +36,14 @@ async function getActionActor(): Promise<ActionActor | null> {
   const profile = await getCurrentProfile();
   if (!profile) return null;
 
-  if (profile.role === "seb-officer") {
+  if (profile.role === "seb-officer" || profile.role === "chairperson") {
     const officer = await getSEBOfficer();
     if (!officer) return null;
 
     return {
-      role: "seb-officer",
+      role: profile.role,
       userId: profile.id,
+      email: profile.email,
       displayName: `${officer.faculty_code} (${officer.campus})`,
       officer: {
         seb_officer_id: officer.seb_officer_id,
@@ -60,6 +61,7 @@ async function getActionActor(): Promise<ActionActor | null> {
     return {
       role: "system-admin",
       userId: profile.id,
+      email: profile.email,
       displayName: admin.username || profile.display_name,
       officer: null,
       systemAdminId: admin.system_admin_id,
@@ -155,8 +157,8 @@ export function validateNonNegativeInteger(
 export function validateTurnoutAdjustmentInput(
   input: TurnoutAdjustmentInput,
 ): string | null {
-  if (input.casted_votes_delta == null && input.expected_voters_value == null) {
-    return "Must provide either casted votes adjustment or expected voters value";
+  if (input.casted_votes_delta == null && input.expected_voters_delta == null) {
+    return "Must provide either casted votes adjustment or expected voters delta";
   }
 
   const castedVotesError = validateNonNegativeInteger(
@@ -167,10 +169,15 @@ export function validateTurnoutAdjustmentInput(
     return castedVotesError;
   }
 
-  return validateNonNegativeInteger(
-    input.expected_voters_value,
-    "Expected voters",
-  );
+  if (input.expected_voters_delta == null) {
+    return null;
+  }
+
+  if (!Number.isInteger(input.expected_voters_delta)) {
+    return "Expected voters delta must be an integer";
+  }
+
+  return null;
 }
 
 export async function insertTurnoutAdjustmentRecord(
@@ -185,8 +192,8 @@ export async function insertTurnoutAdjustmentRecord(
     .insert({
       election_id: electionId,
       seb_officer_id: actor.officer?.seb_officer_id ?? null,
-      casted_votes_delta: input.casted_votes_delta || null,
-      expected_voters_value: input.expected_voters_value || null,
+      casted_votes_delta: input.casted_votes_delta ?? null,
+      expected_voters_delta: input.expected_voters_delta ?? null,
       reason: input.reason || null,
     })
     .select()

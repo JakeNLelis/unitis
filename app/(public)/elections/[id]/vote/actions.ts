@@ -79,7 +79,20 @@ export async function submitBallot(data: BallotSubmission) {
     return selectionCheck;
   }
 
-  return submitBallotRecord(voterId, selectionCheck.selectedCandidateIds);
+  const result = await submitBallotRecord(
+    voterId,
+    selectionCheck.selectedCandidateIds,
+  );
+
+  if ("error" in result) {
+    return result;
+  }
+
+  return {
+    success: true,
+    vote_id: result.voteId,
+    timestamp: result.timestamp,
+  };
 }
 
 /**

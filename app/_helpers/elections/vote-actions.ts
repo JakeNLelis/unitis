@@ -177,7 +177,7 @@ export async function getApprovedVotingCandidates(electionId: string) {
     .eq("election_id", electionId)
     .eq("application_status", "approved");
 
-  return (candidates || []).map((c: any) => ({
+  return (candidates || []).map((c: Record<string, unknown>) => ({
     ...c,
     partylists: Array.isArray(c.partylists)
       ? c.partylists[0] || null
@@ -283,7 +283,9 @@ export async function submitBallotRecord(
 
   if (updateError) {
     console.error("Failed to update voter status:", updateError);
+    await adminSupabase.from("votes").delete().eq("vote_id", vote.vote_id);
+    return { error: "Failed to finalize vote status. Please try again." };
   }
 
-  return { success: true };
+  return { success: true, voteId: vote.vote_id, timestamp: new Date().toISOString() };
 }

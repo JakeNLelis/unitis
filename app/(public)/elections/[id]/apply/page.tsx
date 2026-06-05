@@ -92,6 +92,7 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
               positions={positions}
               courses={courseOptions}
               partylists={[]}
+              ownerCampus={electionData.owner_campus}
             />
           ) : (
             <NoPositionsCard />

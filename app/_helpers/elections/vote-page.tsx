@@ -2,33 +2,6 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-function VotingClosedCard({
-  electionName,
-  startLabel,
-  isUpcoming,
-}: {
-  electionName: string;
-  startLabel: string;
-  isUpcoming: boolean;
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-6 text-center space-y-4">
-        <h2 className="text-2xl font-bold">
-          {isUpcoming ? "Voting Closed" : "Already Voted"}
-        </h2>
-        <p className="text-muted-foreground">
-          {isUpcoming
-            ? `Voting opens on ${startLabel}.`
-            : `You have already submitted your ballot for ${electionName}.`}
-        </p>
-        <Button asChild variant="outline">
-          <Link href="/">Back to Home</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 export function VoteLoadingCard() {
   return (

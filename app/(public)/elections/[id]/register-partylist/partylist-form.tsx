@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   Select,
   SelectContent,
@@ -32,6 +32,13 @@ import type {
 } from "@/lib/types/public";
 import type { CandidacyFormData } from "@/lib/types/candidacy";
 import { calculateAgeFromBirthDate } from "@/lib/utils";
+import { Edit, Trash2, UserPlus, ShieldAlert, ChevronLeft } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 function toInputDate(value: string) {
   return value ? new Date(value).toISOString().slice(0, 10) : "";
@@ -55,253 +62,11 @@ function createEmptyCandidate(): PartylistRegistrationCandidateDraft {
     good_moral_link: "",
     faculty: "",
     department: "",
+    has_two_failing_grades: false,
   };
 }
 
-function CandidateCard({
-  position,
-  required,
-  candidate,
-  enabled,
-  courses,
-  onEnabledChange,
-  onCandidateChange,
-  onPhotoUpload,
-}: {
-  position: PartylistRegistrationPosition;
-  required: boolean;
-  candidate: PartylistRegistrationCandidateDraft;
-  enabled: boolean;
-  courses: CourseOption[];
-  onEnabledChange: (next: boolean) => void;
-  onCandidateChange: (
-    key: keyof PartylistRegistrationCandidateDraft,
-    value: string,
-  ) => void;
-  onPhotoUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  const selectedCourse = courses.find(
-    (course) => course.course_id === candidate.course_id,
-  );
-  const derivedAge = calculateAgeFromBirthDate(candidate.birth_date);
-
-  return (
-    <Card className={enabled ? "" : "opacity-70"}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <CardTitle className="text-base">{position.title}</CardTitle>
-          <div className="flex items-center gap-2">
-            {required && <Badge variant="outline">Required</Badge>}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={enabled}
-                disabled={required}
-                onCheckedChange={(value) => onEnabledChange(value === true)}
-                id={`include-${position.position_id}`}
-              />
-              <Label
-                htmlFor={`include-${position.position_id}`}
-                className="text-sm"
-              >
-                Include candidate
-              </Label>
-            </div>
-          </div>
-        </div>
-        <CardDescription>
-          {required
-            ? "This position must have a candidate before registration."
-            : "Optional slot. Include only if your partylist has a nominee."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {enabled ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Full Name *</Label>
-                <Input
-                  value={candidate.full_name}
-                  onChange={(event) =>
-                    onCandidateChange("full_name", event.target.value)
-                  }
-                  placeholder="Last Name, First Name, Middle Name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Student ID *</Label>
-                <Input
-                  value={candidate.student_id}
-                  onChange={(event) =>
-                    onCandidateChange("student_id", event.target.value)
-                  }
-                  placeholder="23-1-01457"
-                  pattern="^\\d{2}-\\d-\\d{5}$"
-                  title="Use format xx-x-xxxxx, e.g. 23-1-01457"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Email *</Label>
-                <Input
-                  type="email"
-                  value={candidate.email}
-                  onChange={(event) =>
-                    onCandidateChange("email", event.target.value)
-                  }
-                  placeholder="candidate@vsu.edu.ph"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Contact Number *</Label>
-                <Input
-                  value={candidate.contact_number}
-                  onChange={(event) =>
-                    onCandidateChange("contact_number", event.target.value)
-                  }
-                  placeholder="09XXXXXXXXX"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2 md:col-span-2">
-                <Label>Date of Birth *</Label>
-                <Input
-                  type="date"
-                  value={candidate.birth_date}
-                  onChange={(event) =>
-                    onCandidateChange("birth_date", event.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Age (Auto-computed)</Label>
-                <Input value={derivedAge} readOnly className="bg-muted/60" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Course / Degree Program *</Label>
-              <Select
-                value={candidate.course_id}
-                onValueChange={(value) => {
-                  onCandidateChange("course_id", value);
-                  const selected = courses.find(
-                    (course) => course.course_id === value,
-                  );
-                  onCandidateChange("faculty", selected?.faculty_name || "");
-                  onCandidateChange(
-                    "department",
-                    selected?.department_name || "",
-                  );
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.course_id} value={course.course_id}>
-                      {course.acronym
-                        ? `${course.acronym} - ${course.name}`
-                        : course.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedCourse && (
-                <p className="text-xs text-muted-foreground">
-                  {selectedCourse.faculty_name} /{" "}
-                  {selectedCourse.department_name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Current Address *</Label>
-              <Input
-                value={candidate.current_address}
-                onChange={(event) =>
-                  onCandidateChange("current_address", event.target.value)
-                }
-                placeholder="Current address"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Permanent Address *</Label>
-              <Input
-                value={candidate.permanent_address}
-                onChange={(event) =>
-                  onCandidateChange("permanent_address", event.target.value)
-                }
-                placeholder="Permanent address"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>1x1 Photo *</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={onPhotoUpload}
-                className="cursor-pointer border border-input bg-background file:border-r file:border-input file:bg-muted file:px-3 file:mr-3 hover:bg-muted/10 transition-all"
-              />
-              {candidate.photo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={candidate.photo}
-                  alt={`${position.title} candidate preview`}
-                  className="w-16 h-16 rounded object-cover border"
-                />
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>COG Link *</Label>
-                <Input
-                  value={candidate.cog_link}
-                  onChange={(event) =>
-                    onCandidateChange("cog_link", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>COR Link *</Label>
-                <Input
-                  value={candidate.cor_link}
-                  onChange={(event) =>
-                    onCandidateChange("cor_link", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Good Moral Link *</Label>
-                <Input
-                  value={candidate.good_moral_link}
-                  onChange={(event) =>
-                    onCandidateChange("good_moral_link", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Candidate entry for this position is currently skipped.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+// CandidateCard was replaced by the dialog wizard modal.
 
 // @CodeScene(disable:"Large Method")
 export function PartylistRegistrationForm({
@@ -357,6 +122,144 @@ export function PartylistRegistrationForm({
     return initial;
   });
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activePositionId, setActivePositionId] = useState<string | null>(null);
+  const [dialogStep, setDialogStep] = useState<'screening' | 'details'>('screening');
+  const [dialogScreeningStep, setDialogScreeningStep] = useState(0);
+  const [dialogScreeningAnswers, setDialogScreeningAnswers] = useState({
+    bonafide: null as boolean | null,
+    failingGrades: null as boolean | null,
+    amaranth: null as boolean | null,
+    convicted: null as boolean | null,
+  });
+  const [dialogScreeningPassed, setDialogScreeningPassed] = useState<boolean | null>(null);
+  const [dialogCandidateData, setDialogCandidateData] = useState<PartylistRegistrationCandidateDraft>(createEmptyCandidate());
+  const [dialogError, setDialogError] = useState<string | null>(null);
+
+  const handleOpenAddDialog = (positionId: string) => {
+    setActivePositionId(positionId);
+    setDialogStep('screening');
+    setDialogScreeningStep(0);
+    setDialogScreeningAnswers({
+      bonafide: null,
+      failingGrades: null,
+      amaranth: null,
+      convicted: null,
+    });
+    setDialogScreeningPassed(null);
+    setDialogCandidateData({
+      ...createEmptyCandidate(),
+      position_id: positionId,
+    });
+    setDialogError(null);
+    setDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (positionId: string) => {
+    setActivePositionId(positionId);
+    setDialogStep('screening');
+    setDialogScreeningStep(0);
+    setDialogScreeningPassed(null);
+    const existing = candidateMap[positionId];
+    setDialogCandidateData(existing || {
+      ...createEmptyCandidate(),
+      position_id: positionId,
+    });
+    setDialogScreeningAnswers({
+      bonafide: true,
+      failingGrades: existing?.has_two_failing_grades || false,
+      amaranth: false,
+      convicted: false,
+    });
+    setDialogError(null);
+    setDialogOpen(true);
+  };
+
+  const handleRemoveCandidate = (positionId: string) => {
+    setCandidateMap(prev => ({
+      ...prev,
+      [positionId]: {
+        ...createEmptyCandidate(),
+        position_id: positionId,
+      }
+    }));
+    setEnabledMap(prev => ({
+      ...prev,
+      [positionId]: false
+    }));
+  };
+
+  const handleDialogScreeningAnswer = (field: 'bonafide' | 'failingGrades' | 'amaranth' | 'convicted', value: boolean) => {
+    const updated = { ...dialogScreeningAnswers, [field]: value };
+    setDialogScreeningAnswers(updated);
+
+    if (field === 'bonafide' && value === false) {
+      setDialogScreeningPassed(false);
+      return;
+    }
+    if (field === 'amaranth' && value === true) {
+      setDialogScreeningPassed(false);
+      return;
+    }
+    if (field === 'convicted' && value === true) {
+      setDialogScreeningPassed(false);
+      return;
+    }
+
+    if (dialogScreeningStep < 3) {
+      setDialogScreeningStep(prev => prev + 1);
+    } else {
+      setDialogScreeningPassed(true);
+      setDialogStep('details');
+    }
+  };
+
+  const handleDialogBack = () => {
+    if (dialogScreeningStep > 0) {
+      setDialogScreeningStep(prev => prev - 1);
+    }
+  };
+
+  const handleSaveCandidate = () => {
+    const position = positions.find(p => p.position_id === activePositionId);
+    const positionTitle = position ? position.title : "this position";
+    const validationError = validateCandidate(positionTitle, dialogCandidateData);
+    
+    if (validationError) {
+      setDialogError(validationError);
+      return;
+    }
+    
+    const finalCandidate = {
+      ...dialogCandidateData,
+      has_two_failing_grades: !!dialogScreeningAnswers.failingGrades,
+    };
+    
+    setCandidateMap(prev => ({
+      ...prev,
+      [activePositionId!]: finalCandidate,
+    }));
+    setEnabledMap(prev => ({
+      ...prev,
+      [activePositionId!]: true,
+    }));
+    setDialogOpen(false);
+  };
+
+  const handlePhotoUploadInDialog = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setDialogCandidateData(prev => ({
+        ...prev,
+        photo: String(reader.result || ""),
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+
   useEffect(() => {
     if (!pdfPayload) {
       return;
@@ -404,19 +307,7 @@ export function PartylistRegistrationForm({
     };
   }, [pdfPayload]);
 
-  function updateCandidate(
-    positionId: string,
-    key: keyof PartylistRegistrationCandidateDraft,
-    value: string,
-  ) {
-    setCandidateMap((previous) => ({
-      ...previous,
-      [positionId]: {
-        ...previous[positionId],
-        [key]: value,
-      },
-    }));
-  }
+
 
   function validateCandidate(
     positionTitle: string,
@@ -512,7 +403,7 @@ export function PartylistRegistrationForm({
 
     const partylistName = String(formData.get("name") || "Partylist").trim();
     const managerName = String(formData.get("registered_by_name") || "").trim();
-    const councilType = electionType === "University-Wide" ? "USSC" : "FSSC";
+    const councilType = electionType === "Campus-Wide" ? "USSC" : "FSSC";
 
     const candidatesForPdf = selectedCandidates.map((candidate) => {
       const course = courses.find(
@@ -675,8 +566,7 @@ export function PartylistRegistrationForm({
         <CardHeader>
           <CardTitle className="text-lg">Candidate Slate</CardTitle>
           <CardDescription>
-            Fill candidate details per position. Required positions must always
-            be filled.
+            Add nominee candidates for each position slot. Required positions must be filled.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -686,47 +576,410 @@ export function PartylistRegistrationForm({
             </p>
           ) : (
             <div className="space-y-4">
-              {positions.map((position) => (
-                <CandidateCard
-                  key={position.position_id}
-                  position={position}
-                  required={requiredPositionIds.has(position.position_id)}
-                  enabled={enabledMap[position.position_id]}
-                  candidate={candidateMap[position.position_id]}
-                  courses={courses}
-                  onEnabledChange={(next) => {
-                    if (requiredPositionIds.has(position.position_id)) {
-                      return;
-                    }
-                    setEnabledMap((previous) => ({
-                      ...previous,
-                      [position.position_id]: next,
-                    }));
-                  }}
-                  onCandidateChange={(key, value) =>
-                    updateCandidate(position.position_id, key, value)
-                  }
-                  onPhotoUpload={(event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) {
-                      return;
-                    }
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      updateCandidate(
-                        position.position_id,
-                        "photo",
-                        String(reader.result || ""),
-                      );
-                    };
-                    reader.readAsDataURL(file);
-                  }}
-                />
-              ))}
+              {positions.map((position) => {
+                const candidate = candidateMap[position.position_id];
+                const isEnabled = enabledMap[position.position_id];
+                const isRequired = requiredPositionIds.has(position.position_id);
+                const hasCandidate = isEnabled && candidate && candidate.full_name;
+
+                return (
+                  <div key={position.position_id} className="border border-border p-5 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-muted/5">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-foreground text-sm">{position.title}</h3>
+                        {isRequired && <Badge variant="outline" className="text-[10px] uppercase tracking-wider h-5">Required</Badge>}
+                        {hasCandidate ? (
+                          <Badge className="bg-green-600 hover:bg-green-700 text-white text-[10px] uppercase tracking-wider h-5">Filled</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px] uppercase tracking-wider h-5">Empty</Badge>
+                        )}
+                      </div>
+                      {hasCandidate ? (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p className="font-semibold text-foreground text-sm">{candidate.full_name} ({candidate.student_id})</p>
+                          <p className="text-muted-foreground">
+                            Course: {courses.find(c => c.course_id === candidate.course_id)?.acronym || "N/A"} | Email: {candidate.email}
+                          </p>
+                          {candidate.has_two_failing_grades && (
+                            <Badge variant="destructive" className="text-[9px] uppercase font-bold tracking-widest mt-1">
+                              Flagged: Failing Grades
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {isRequired 
+                            ? "This position requires a candidate slate nominee." 
+                            : "Optional candidate position slot."}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {hasCandidate ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEditDialog(position.position_id)}
+                            className="cursor-pointer"
+                          >
+                            <Edit className="size-3.5 mr-1.5" />
+                            Edit
+                          </Button>
+                          {!isRequired && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemoveCandidate(position.position_id)}
+                              className="cursor-pointer"
+                            >
+                              <Trash2 className="size-3.5 mr-1.5" />
+                              Remove
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenAddDialog(position.position_id)}
+                          className="border-2 border-foreground hover:bg-foreground hover:text-background font-black uppercase tracking-wider text-[11px] cursor-pointer h-9"
+                        >
+                          <UserPlus className="size-3.5 mr-1.5" />
+                          Add Nominee
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="uppercase tracking-tight font-black">
+              {positions.find(p => p.position_id === activePositionId)?.title || "Candidate Details"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {dialogStep === 'screening' && (
+            <div className="space-y-6 py-4">
+              {dialogScreeningPassed === false ? (
+                <div className="text-center space-y-4 border border-destructive/30 p-6 bg-destructive/5 rounded-md">
+                  <div className="inline-flex items-center justify-center size-12 rounded-full bg-destructive/10 text-destructive mb-1">
+                    <ShieldAlert className="size-6" />
+                  </div>
+                  <h3 className="text-lg font-black uppercase tracking-tight text-destructive">Nominee Disqualified</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                    Based on the screening answers, this nominee does not meet the eligibility qualifications for candidacy.
+                  </p>
+                  <div className="bg-background border p-4 rounded text-left text-xs font-semibold text-foreground/80 space-y-2">
+                    {dialogScreeningAnswers.bonafide === false && (
+                      <p>• The nominee must be a bonafide undergraduate student of this campus.</p>
+                    )}
+                    {dialogScreeningAnswers.amaranth === true && (
+                      <p>• The nominee must not be a staff member of the Amaranth Board.</p>
+                    )}
+                    {dialogScreeningAnswers.convicted === true && (
+                      <p>• The nominee must not have been convicted of violations of University Rules and Regulations.</p>
+                    )}
+                  </div>
+                  <Button type="button" onClick={() => setDialogOpen(false)} className="w-full">
+                    Close Dialog
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <span>Nominee Screening Questions</span>
+                      <span>Question {dialogScreeningStep + 1} of 4</span>
+                    </div>
+                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-foreground h-full transition-all duration-300"
+                        style={{ width: `${(dialogScreeningStep / 4) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="min-h-[100px] flex flex-col justify-center space-y-2">
+                    <h3 className="text-lg font-bold leading-snug">
+                      {dialogScreeningStep === 0 && "Is the nominee a bonafide VSU undergraduate student of this campus?"}
+                      {dialogScreeningStep === 1 && "Has the nominee incurred two (2) previous failing grades from the last semester?"}
+                      {dialogScreeningStep === 2 && "Is the nominee currently a staff member of the Amaranth Board?"}
+                      {dialogScreeningStep === 3 && "Has the nominee been convicted of any violations of the University Rules and Regulations?"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {dialogScreeningStep === 0 && "Requires student enrollment and registration verification."}
+                      {dialogScreeningStep === 1 && "Note: Incuring failing grades flags the nominee but does not disqualify them."}
+                      {dialogScreeningStep === 2 && "Amaranth Board staff members are ineligible to hold student council slots."}
+                      {dialogScreeningStep === 3 && "Requires clean disciplinary record with the university."}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleDialogScreeningAnswer(
+                        dialogScreeningStep === 0 ? 'bonafide' :
+                        dialogScreeningStep === 1 ? 'failingGrades' :
+                        dialogScreeningStep === 2 ? 'amaranth' : 'convicted',
+                        true
+                      )}
+                      className="h-14 font-black uppercase text-xs tracking-wider border-2"
+                    >
+                      Yes
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleDialogScreeningAnswer(
+                        dialogScreeningStep === 0 ? 'bonafide' :
+                        dialogScreeningStep === 1 ? 'failingGrades' :
+                        dialogScreeningStep === 2 ? 'amaranth' : 'convicted',
+                        false
+                      )}
+                      className="h-14 font-black uppercase text-xs tracking-wider border-2"
+                    >
+                      No
+                    </Button>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-4 border-t text-xs">
+                    {dialogScreeningStep > 0 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDialogBack}
+                        className="font-bold uppercase tracking-wider text-xs"
+                      >
+                        <ChevronLeft className="size-4 mr-1" /> Back
+                      </Button>
+                    ) : <span />}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDialogOpen(false)}
+                      className="font-bold uppercase tracking-wider text-xs text-muted-foreground"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {dialogStep === 'details' && (
+            <div className="space-y-4 py-2">
+              {dialogError && (
+                <div className="bg-destructive/10 text-destructive text-xs p-3 rounded border border-destructive/20 font-medium">
+                  {dialogError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">Full Name *</Label>
+                  <Input
+                    value={dialogCandidateData.full_name}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({ ...prev, full_name: event.target.value }))
+                    }
+                    placeholder="Last Name, First Name, Middle Name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">Student ID *</Label>
+                  <Input
+                    value={dialogCandidateData.student_id}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({ ...prev, student_id: event.target.value }))
+                    }
+                    placeholder="23-1-01457"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">Email *</Label>
+                  <Input
+                    type="email"
+                    value={dialogCandidateData.email}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({ ...prev, email: event.target.value }))
+                    }
+                    placeholder="candidate@vsu.edu.ph"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">Contact Number *</Label>
+                  <Input
+                    value={dialogCandidateData.contact_number}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({ ...prev, contact_number: event.target.value }))
+                    }
+                    placeholder="09XXXXXXXXX"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1 md:col-span-2">
+                  <Label className="text-xs font-bold uppercase">Date of Birth *</Label>
+                  <Input
+                    type="date"
+                    value={dialogCandidateData.birth_date}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({
+                        ...prev,
+                        birth_date: event.target.value,
+                        age: calculateAgeFromBirthDate(event.target.value),
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">Age (Auto-computed)</Label>
+                  <Input 
+                    value={calculateAgeFromBirthDate(dialogCandidateData.birth_date) || ""} 
+                    readOnly 
+                    className="bg-muted/60" 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold uppercase">Course / Degree Program *</Label>
+                <Select
+                  value={dialogCandidateData.course_id}
+                  onValueChange={(value) => {
+                    const selected = courses.find((course) => course.course_id === value);
+                    setDialogCandidateData(prev => ({
+                      ...prev,
+                      course_id: value,
+                      faculty: selected?.faculty_name || "",
+                      department: selected?.department_name || "",
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.course_id} value={course.course_id}>
+                        {course.acronym
+                          ? `${course.acronym} - ${course.name}`
+                          : course.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {dialogCandidateData.course_id && (
+                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                    {dialogCandidateData.faculty} / {dialogCandidateData.department}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold uppercase">Current Address *</Label>
+                <Input
+                  value={dialogCandidateData.current_address}
+                  onChange={(event) =>
+                    setDialogCandidateData(prev => ({ ...prev, current_address: event.target.value }))
+                  }
+                  placeholder="Current address"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold uppercase">Permanent Address *</Label>
+                <Input
+                  value={dialogCandidateData.permanent_address}
+                  onChange={(event) =>
+                    setDialogCandidateData(prev => ({ ...prev, permanent_address: event.target.value }))
+                  }
+                  placeholder="Permanent address"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold uppercase">1x1 Photo *</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUploadInDialog}
+                  className="cursor-pointer border border-input bg-background file:border-r file:border-input file:bg-muted file:px-3 file:mr-3 hover:bg-muted/10 transition-all text-xs"
+                />
+                {dialogCandidateData.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={dialogCandidateData.photo}
+                    alt="Nominee preview"
+                    className="w-12 h-12 rounded object-cover border mt-1"
+                  />
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">COG Link *</Label>
+                  <Input
+                    value={dialogCandidateData.cog_link}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({ ...prev, cog_link: event.target.value }))
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">COR Link *</Label>
+                  <Input
+                    value={dialogCandidateData.cor_link}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({ ...prev, cor_link: event.target.value }))
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold uppercase">Good Moral Link *</Label>
+                  <Input
+                    value={dialogCandidateData.good_moral_link}
+                    onChange={(event) =>
+                      setDialogCandidateData(prev => ({ ...prev, good_moral_link: event.target.value }))
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleSaveCandidate}>
+                  Save Nominee
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Button type="submit" className="w-full" size="lg" disabled={loading}>
         {loading ? "Registering..." : "Register Partylist"}

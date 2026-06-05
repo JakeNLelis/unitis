@@ -20,7 +20,7 @@ export function TurnoutAdjustmentForm({
   canEdit,
 }: TurnoutAdjustmentFormProps) {
   const [castedVotesDelta, setCastedVotesDelta] = useState("");
-  const [expectedVotersValue, setExpectedVotersValue] = useState("");
+  const [expectedVotersDelta, setExpectedVotersDelta] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -37,20 +37,20 @@ export function TurnoutAdjustmentForm({
     const parsedDelta =
       castedVotesDelta.trim() === "" ? null : Number(castedVotesDelta);
     const parsedExpected =
-      expectedVotersValue.trim() === "" ? null : Number(expectedVotersValue);
+      expectedVotersDelta.trim() === "" ? null : Number(expectedVotersDelta);
 
     const result = await submitTurnoutAdjustment(electionId, {
       casted_votes_delta: parsedDelta ?? undefined,
-      expected_voters_value: parsedExpected ?? undefined,
+      expected_voters_delta: parsedExpected ?? undefined,
       reason: reason.trim() || undefined,
     });
 
     if (result && typeof result === "object" && "error" in result) {
-      setError((result as any).error);
+      setError((result as Record<string, unknown>).error as string);
     } else {
       setSuccess(true);
       setCastedVotesDelta("");
-      setExpectedVotersValue("");
+      setExpectedVotersDelta("");
       setReason("");
     }
 
@@ -82,15 +82,14 @@ export function TurnoutAdjustmentForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="expectedVotersValue">Expected voters total</Label>
+            <Label htmlFor="expectedVotersDelta">Expected voters delta</Label>
             <Input
-              id="expectedVotersValue"
+              id="expectedVotersDelta"
               type="number"
-              min="0"
               step="1"
-              value={expectedVotersValue}
-              onChange={(e) => setExpectedVotersValue(e.target.value)}
-              placeholder="e.g. 120"
+              value={expectedVotersDelta}
+              onChange={(e) => setExpectedVotersDelta(e.target.value)}
+              placeholder="e.g. -10"
               disabled={!canEdit || isSubmitting}
             />
           </div>
