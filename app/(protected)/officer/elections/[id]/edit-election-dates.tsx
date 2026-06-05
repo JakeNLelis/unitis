@@ -18,6 +18,89 @@ import { updateElectionDates } from "../actions";
 import type { EditElectionDatesProps } from "@/lib/types/officer-elections";
 import { toDatetimeLocal } from "@/app/_helpers/datetime";
 
+function validateDates(
+  votingStart: string,
+  votingEnd: string,
+  candStart: string,
+  candEnd: string,
+  originalDates: {
+    candidacyStartDate: string | null;
+    candidacyEndDate: string | null;
+    startDate: string;
+    endDate: string;
+  }
+): { error: string | null; payload?: any } {
+  const votingStartDate = new Date(votingStart);
+  const votingEndDate = new Date(votingEnd);
+
+  if (
+    Number.isNaN(votingStartDate.getTime()) ||
+    Number.isNaN(votingEndDate.getTime())
+  ) {
+    return { error: "Please provide valid voting dates." };
+  }
+
+  if (votingEndDate <= votingStartDate) {
+    return { error: "Voting end date must be after voting start date." };
+  }
+
+  if (candStart && candEnd) {
+    const candStartDate = new Date(candStart);
+    const candEndDate = new Date(candEnd);
+
+    if (
+      Number.isNaN(candStartDate.getTime()) ||
+      Number.isNaN(candEndDate.getTime())
+    ) {
+      return { error: "Please provide valid candidacy filing dates." };
+    }
+
+    if (candStartDate >= candEndDate) {
+      return { error: "Candidacy start date must be before candidacy end date." };
+    }
+
+    if (candEndDate >= votingStartDate) {
+      return { error: "Candidacy filing deadline must be before voting start date." };
+    }
+  }
+
+  const toISO = (local: string) => (local ? new Date(local).toISOString() : null);
+
+  const nowSubmit = new Date();
+  const isCandStartPassedSubmit = originalDates.candidacyStartDate ? new Date(originalDates.candidacyStartDate) <= nowSubmit : false;
+  const isCandEndPassedSubmit = originalDates.candidacyEndDate ? new Date(originalDates.candidacyEndDate) <= nowSubmit : false;
+  const isVotingStartPassedSubmit = originalDates.startDate ? new Date(originalDates.startDate) <= nowSubmit : false;
+  const isVotingEndPassedSubmit = originalDates.endDate ? new Date(originalDates.endDate) <= nowSubmit : false;
+
+  const originalCandStartISO = originalDates.candidacyStartDate ? new Date(originalDates.candidacyStartDate).toISOString() : null;
+  const originalCandEndISO = originalDates.candidacyEndDate ? new Date(originalDates.candidacyEndDate).toISOString() : null;
+  const originalVotingStartISO = originalDates.startDate ? new Date(originalDates.startDate).toISOString() : null;
+  const originalVotingEndISO = originalDates.endDate ? new Date(originalDates.endDate).toISOString() : null;
+
+  if (isCandStartPassedSubmit && toISO(candStart) !== originalCandStartISO) {
+    return { error: "Cannot modify candidacy start date after it has passed." };
+  }
+  if (isCandEndPassedSubmit && toISO(candEnd) !== originalCandEndISO) {
+    return { error: "Cannot modify candidacy end date after it has passed." };
+  }
+  if (isVotingStartPassedSubmit && toISO(votingStart) !== originalVotingStartISO) {
+    return { error: "Cannot modify voting start date after it has passed." };
+  }
+  if (isVotingEndPassedSubmit && toISO(votingEnd) !== originalVotingEndISO) {
+    return { error: "Cannot modify voting end date after it has passed." };
+  }
+
+  return {
+    error: null,
+    payload: {
+      start_date: votingStartDate.toISOString(),
+      end_date: votingEndDate.toISOString(),
+      candidacy_start_date: toISO(candStart),
+      candidacy_end_date: toISO(candEnd),
+    },
+  };
+}
+
 export function EditElectionDates({
   electionId,
   candidacyStartDate,
@@ -49,95 +132,21 @@ export function EditElectionDates({
     setError(null);
     setLoading(true);
 
-    const votingStartDate = new Date(votingStart);
-    const votingEndDate = new Date(votingEnd);
+    const validation = validateDates(votingStart, votingEnd, candStart, candEnd, {
+      candidacyStartDate,
+      candidacyEndDate,
+      startDate,
+      endDate,
+    });
 
-    if (
-      Number.isNaN(votingStartDate.getTime()) ||
-      Number.isNaN(votingEndDate.getTime())
-    ) {
-      setError("Please provide valid voting dates.");
-      setLoading(false);
-      return;
-    }
-
-    if (votingEndDate <= votingStartDate) {
-      setError("Voting end date must be after voting start date.");
-      setLoading(false);
-      return;
-    }
-
-    if (candStart && candEnd) {
-      const candStartDate = new Date(candStart);
-      const candEndDate = new Date(candEnd);
-
-      if (
-        Number.isNaN(candStartDate.getTime()) ||
-        Number.isNaN(candEndDate.getTime())
-      ) {
-        setError("Please provide valid candidacy filing dates.");
-        setLoading(false);
-        return;
-      }
-
-      if (candStartDate >= candEndDate) {
-        setError("Candidacy start date must be before candidacy end date.");
-        setLoading(false);
-        return;
-      }
-
-      if (candEndDate >= votingStartDate) {
-        setError("Candidacy filing deadline must be before voting start date.");
-        setLoading(false);
-        return;
-      }
-    }
-
-    // datetime-local values are local time strings ("YYYY-MM-DDTHH:mm").
-    // Convert to UTC ISO strings so PostgreSQL stores the correct moment
-    // regardless of the DB server timezone.
-    const toISO = (local: string) =>
-      local ? new Date(local).toISOString() : null;
-
-    const nowSubmit = new Date();
-    const isCandStartPassedSubmit = candidacyStartDate ? new Date(candidacyStartDate) <= nowSubmit : false;
-    const isCandEndPassedSubmit = candidacyEndDate ? new Date(candidacyEndDate) <= nowSubmit : false;
-    const isVotingStartPassedSubmit = startDate ? new Date(startDate) <= nowSubmit : false;
-    const isVotingEndPassedSubmit = endDate ? new Date(endDate) <= nowSubmit : false;
-
-    const originalCandStartISO = candidacyStartDate ? new Date(candidacyStartDate).toISOString() : null;
-    const originalCandEndISO = candidacyEndDate ? new Date(candidacyEndDate).toISOString() : null;
-    const originalVotingStartISO = startDate ? new Date(startDate).toISOString() : null;
-    const originalVotingEndISO = endDate ? new Date(endDate).toISOString() : null;
-
-    if (isCandStartPassedSubmit && toISO(candStart) !== originalCandStartISO) {
-      setError("Cannot modify candidacy start date after it has passed.");
-      setLoading(false);
-      return;
-    }
-    if (isCandEndPassedSubmit && toISO(candEnd) !== originalCandEndISO) {
-      setError("Cannot modify candidacy end date after it has passed.");
-      setLoading(false);
-      return;
-    }
-    if (isVotingStartPassedSubmit && toISO(votingStart) !== originalVotingStartISO) {
-      setError("Cannot modify voting start date after it has passed.");
-      setLoading(false);
-      return;
-    }
-    if (isVotingEndPassedSubmit && toISO(votingEnd) !== originalVotingEndISO) {
-      setError("Cannot modify voting end date after it has passed.");
+    if (validation.error) {
+      setError(validation.error);
       setLoading(false);
       return;
     }
 
     try {
-      const result = await updateElectionDates(electionId, {
-        start_date: votingStartDate.toISOString(),
-        end_date: votingEndDate.toISOString(),
-        candidacy_start_date: toISO(candStart),
-        candidacy_end_date: toISO(candEnd),
-      });
+      const result = await updateElectionDates(electionId, validation.payload);
 
       if (!result || (typeof result === "object" && "error" in result)) {
         setError(((result as Record<string, unknown>)?.error as string) ?? "Failed to update election dates.");
