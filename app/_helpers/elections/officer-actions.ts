@@ -23,7 +23,7 @@ const FORBIDDEN_EDIT_ERROR =
 const MASTERLIST_LOCKED_ERROR =
   "Voter masterlist updates are locked once voting has started.";
 
-export function toError(error: string): ActionError {
+function toError(error: string): ActionError {
   return { error };
 }
 
@@ -139,7 +139,7 @@ export async function requireEditableElectionContext(
   return permissionContext;
 }
 
-export function validateNonNegativeInteger(
+function validateNonNegativeInteger(
   value: number | null | undefined,
   label: string,
 ): string | null {

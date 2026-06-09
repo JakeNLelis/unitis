@@ -62,3 +62,6 @@ skills-lock.json
 .agents/
 .stitch/
 
+# fallow
+.fallowrc.json
+fallow-results.json

@@ -100,22 +100,3 @@ export async function unsubscribeTurnoutDeltas(
     console.error("Error unsubscribing from turnout channel:", error);
   }
 }
-
-/**
- * Unsubscribe by channel name (alternative approach)
- */
-export async function unsubscribeTurnoutDeltasByName(
-  electionId: string,
-): Promise<void> {
-  const supabase = createClient();
-  try {
-    const channel = supabase
-      .getChannels()
-      .find((c) => c.topic === `turnout:${electionId}`);
-    if (channel) {
-      await supabase.removeChannel(channel);
-    }
-  } catch (error) {
-    console.error("Error removing turnout channel by name:", error);
-  }
-}

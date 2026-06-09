@@ -7,7 +7,7 @@ export const hasEnvVars = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 );
 
-export const STUDENT_ID_PATTERN = /^\d{2}-\d-\d{5}$/;
+const STUDENT_ID_PATTERN = /^\d{2}-\d-\d{5}$/;
 
 export function isValidStudentId(studentId: string): boolean {
   return STUDENT_ID_PATTERN.test(studentId.trim());
@@ -42,7 +42,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /** Extract YYYY-MM-DD from any date/timestamp string or Date object.
  *  Uses local time to avoid UTC timezone mismatch. */
-export function toDateStr(value: string | Date): string {
+function toDateStr(value: string | Date): string {
   if (value instanceof Date) {
     return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
   }
@@ -51,7 +51,7 @@ export function toDateStr(value: string | Date): string {
 }
 
 /** Get today's date as YYYY-MM-DD string using local time. */
-export function getTodayStr(): string {
+function getTodayStr(): string {
   return toDateStr(new Date());
 }
 
@@ -196,7 +196,7 @@ export function isElectionUpcoming(
 }
 
 /** Check if an election has ended (past end_date). */
-export function isElectionEnded(
+function isElectionEnded(
   endDate: string | Date,
   reference: Date | string = new Date(),
 ): boolean {

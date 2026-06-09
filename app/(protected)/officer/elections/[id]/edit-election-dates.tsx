@@ -29,7 +29,7 @@ function validateDates(
     startDate: string;
     endDate: string;
   }
-): { error: string | null; payload?: any } {
+): { error: string | null; payload?: { start_date: string; end_date: string; candidacy_start_date: string | null; candidacy_end_date: string | null; } } {
   const votingStartDate = new Date(votingStart);
   const votingEndDate = new Date(votingEnd);
 
@@ -146,7 +146,7 @@ export function EditElectionDates({
     }
 
     try {
-      const result = await updateElectionDates(electionId, validation.payload);
+      const result = await updateElectionDates(electionId, validation.payload!);
 
       if (!result || (typeof result === "object" && "error" in result)) {
         setError(((result as Record<string, unknown>)?.error as string) ?? "Failed to update election dates.");
