@@ -210,7 +210,7 @@ export async function updateCandidateStatus(
   const { data: candidateRow, error: candidateFetchError } = await supabase
     .from("candidates")
     .select(
-      "candidate_id, election_id, application_status, approved_by_display, approved_at",
+      "candidate_id, election_id, application_status, approved_by_display, approved_at, full_name",
     )
     .eq("candidate_id", candidateId)
     .single();
@@ -303,7 +303,7 @@ export async function updateCandidateStatus(
 
   await logAdminAction(
     status === "approved" ? "candidate.approved" : "candidate.rejected",
-    `${status === "approved" ? "Approved" : "Rejected"} candidate ${candidateId}`,
+    `${status === "approved" ? "Approved" : "Rejected"} candidate ${candidateRow.full_name}`,
     candidateRow.election_id,
   );
   return { success: true };
@@ -758,10 +758,27 @@ export async function addVoterMasterlist(
     course_id: courseId || null,
   }));
 
-  const { error } = await supabase.from("voters").insert(rows);
-
-  if (error) {
-    return { error: error.message };
+  const CHUNK_SIZE = 500;
+  let totalInserted = 0;
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+    const { error } = await supabase.from("voters").insert(chunk);
+    
+    if (error) {
+      if (totalInserted > 0) {
+        await logAdminAction(
+          "voter.masterlist_added",
+          `Added ${totalInserted} voters to masterlist before encountering an error`,
+          electionId,
+        );
+      }
+      return { 
+        error: `Error in batch insert: ${error.message}. Successfully added ${totalInserted} before failing.`,
+        added: totalInserted,
+        success: false 
+      };
+    }
+    totalInserted += chunk.length;
   }
 
   await logAdminAction(

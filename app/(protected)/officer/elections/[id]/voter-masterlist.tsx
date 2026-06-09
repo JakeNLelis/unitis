@@ -29,6 +29,7 @@ export function VoterMasterlist({
   faculties,
   courses,
   electionType,
+  electionFacultyId,
 }: VoterMasterlistProps) {
   const router = useRouter();
   const [rawText, setRawText] = useState("");
@@ -52,10 +53,11 @@ export function VoterMasterlist({
   const votedCount = voters.filter((v) => v.is_voted).length;
   const notVotedCount = totalVoters - votedCount;
 
-  // Filter courses based on selected faculty
-  const filteredCoursesForAdd = selectedFacultyId
-    ? courses.filter((c) => c.faculty_id === selectedFacultyId)
-    : courses;
+  // Filter courses based on selected faculty (or fixed faculty if Faculty-Wide)
+  const effectiveFacultyId = electionType === "Faculty-Wide" ? electionFacultyId : selectedFacultyId;
+  const filteredCoursesForAdd = effectiveFacultyId
+    ? courses.filter((c) => c.faculty_id === effectiveFacultyId)
+    : electionType === "Faculty-Wide" ? [] : courses;
 
   async function handleAdd() {
     if (!canEdit) return;
@@ -85,7 +87,7 @@ export function VoterMasterlist({
     setLoading(false);
 
     if ("error" in result) {
-      setError(result.error);
+      setError(result.error || "An unknown error occurred");
       return;
     }
 

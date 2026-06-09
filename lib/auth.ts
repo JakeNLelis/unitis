@@ -131,6 +131,10 @@ export async function requireSystemAdmin() {
   return requireRole(["system-admin"]);
 }
 
+export async function requireAdminOrChairperson() {
+  return requireRole(["system-admin", "chairperson"]);
+}
+
 export async function requireElectionManager() {
   const profile = await getCurrentProfile();
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { StudentIdInput } from "@/components/ui/student-id-input";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -106,13 +107,11 @@ export function EligibilityCheck({
           <form onSubmit={handleCheckEligibility} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="student-id">Student ID number</Label>
-              <Input
+              <StudentIdInput
                 id="student-id"
                 placeholder="e.g. 23-1-01457"
                 value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                pattern="^\d{2}-\d-\d{5}$"
-                title="Use format xx-x-xxxxx, e.g. 23-1-01457"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStudentId(e.target.value)}
                 required
               />
               <p className="text-xs text-muted-foreground">
