@@ -15,6 +15,14 @@ An election management system designed to modernize student elections at Visayas
 | UN.010.009                                             | 2026-05-03    |
 | UN.010.010                                             | 2026-06-04    |
 | UN.010.011                                             | 2026-06-05    |
+| UN.010.012                                             | 2026-06-09    |
+
+## UN.010.012 Release Notes
+- Resolved SEO and AEO scanner issues by implementing native Next.js `robots.ts` and a dynamic `sitemap.ts` to dramatically improve search engine and AI crawler indexing.
+- Addressed comprehensive code review findings: added robust error handling to the React PDF generation, incorporated "N/A" sentinels for null turnout metrics, and lazily loaded heavy dependencies (`@react-pdf/renderer`) to reduce client bundle size.
+- Cleaned up dead codebase components identified by Fallow (e.g., outdated auth roles and turnout unsubscription logic) and resolved ESLint flat config compatibility issues.
+- Fixed Recharts legend lookup type errors and updated components to properly handle missing metrics in the detailed election archive graphs.
+- Addressed email spoofing security risk by providing the necessary SPF DNS record configuration for the Resend integration.
 
 ## UN.010.011 Release Notes
 - Optimized database fetching by parallelizing independent queries with `Promise.all` to significantly reduce request waterfall latency and speed up page loads.
