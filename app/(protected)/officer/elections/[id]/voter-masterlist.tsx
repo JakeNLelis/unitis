@@ -57,7 +57,7 @@ export function VoterMasterlist({
   const effectiveFacultyId = electionType === "Faculty-Wide" ? electionFacultyId : selectedFacultyId;
   const filteredCoursesForAdd = effectiveFacultyId
     ? courses.filter((c) => c.faculty_id === effectiveFacultyId)
-    : courses;
+    : electionType === "Faculty-Wide" ? [] : courses;
 
   async function handleAdd() {
     if (!canEdit) return;
@@ -87,7 +87,7 @@ export function VoterMasterlist({
     setLoading(false);
 
     if ("error" in result) {
-      setError(result.error);
+      setError(result.error || "An unknown error occurred");
       return;
     }
 

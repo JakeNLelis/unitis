@@ -15,7 +15,7 @@ export default function Loading() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  {["Date", "Actor", "Role", "Action", "Description", "Election"].map((header, i) => (
+                  {["Date", "Actor", "Role", "Action", "Description", "Election"].map((_, i) => (
                     <th key={i} className="text-left p-3">
                       <Skeleton className="h-4 w-16" />
                     </th>

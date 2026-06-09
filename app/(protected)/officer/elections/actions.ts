@@ -759,13 +759,26 @@ export async function addVoterMasterlist(
   }));
 
   const CHUNK_SIZE = 500;
+  let totalInserted = 0;
   for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
     const chunk = rows.slice(i, i + CHUNK_SIZE);
     const { error } = await supabase.from("voters").insert(chunk);
     
     if (error) {
-      return { error: `Error in batch insert: ${error.message}` };
+      if (totalInserted > 0) {
+        await logAdminAction(
+          "voter.masterlist_added",
+          `Added ${totalInserted} voters to masterlist before encountering an error`,
+          electionId,
+        );
+      }
+      return { 
+        error: `Error in batch insert: ${error.message}. Successfully added ${totalInserted} before failing.`,
+        added: totalInserted,
+        success: false 
+      };
     }
+    totalInserted += chunk.length;
   }
 
   await logAdminAction(

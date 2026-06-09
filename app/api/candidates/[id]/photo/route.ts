@@ -30,9 +30,18 @@ export async function GET(
     });
   }
 
-  // Fallback: If it's a regular URL, just redirect
+  // Fallback: If it's a regular URL, validate it to prevent open redirects
   if (data.photo.startsWith('http')) {
-    return Response.redirect(data.photo);
+    try {
+      const url = new URL(data.photo);
+      const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co");
+      if ((url.protocol === 'http:' || url.protocol === 'https:') && url.hostname === supabaseUrl.hostname) {
+        return Response.redirect(data.photo);
+      }
+    } catch (e) {
+      // Invalid URL
+    }
+    return new Response("Invalid image URL", { status: 400 });
   }
 
   return new Response("Invalid image format", { status: 400 });

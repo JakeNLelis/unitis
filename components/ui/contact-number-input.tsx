@@ -23,7 +23,7 @@ export const ContactNumberInput = React.forwardRef<HTMLInputElement, React.Compo
         ref={ref}
         value={value}
         onChange={handleChange}
-        pattern="^\d{11}$"
+        pattern="^\\d{11}$"
         title="Contact number must be exactly 11 digits (e.g. 09XXXXXXXXX)"
       />
     );

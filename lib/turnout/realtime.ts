@@ -20,7 +20,7 @@ import type {
 
 export interface TurnoutDeltaCallback {
   (
-    adjustment: RealtimePostgresInsertPayload<Record<string, unknown>>["new"],
+    adjustment: RealtimePostgresInsertPayload<Record<string, unknown>>["new"] | RealtimePostgresInsertPayload<Record<string, unknown>>["old"],
   ): void;
 }
 
@@ -64,6 +64,8 @@ export function subscribeTurnoutDeltas(
         // Voter status changes impact turnout counts
         if (payload.new) {
           onUpdate(payload.new);
+        } else if (payload.old) {
+          onUpdate(payload.old);
         }
       },
     )
