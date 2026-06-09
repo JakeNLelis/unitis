@@ -55,7 +55,7 @@ export function subscribeTurnoutDeltas(
     .on(
       "postgres_changes",
       {
-        event: "UPDATE",
+        event: "*",
         schema: "public",
         table: "voters",
         filter: `election_id=eq.${electionId}`,

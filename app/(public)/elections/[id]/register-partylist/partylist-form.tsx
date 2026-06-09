@@ -7,6 +7,8 @@ import PartylistRegistrationPDF from "./partylist-registration-pdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StudentIdInput } from "@/components/ui/student-id-input";
+import { ContactNumberInput } from "@/components/ui/contact-number-input";
 import { Textarea } from "@/components/ui/textarea";
 
 import {
@@ -662,7 +664,7 @@ export function PartylistRegistrationForm({
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="uppercase tracking-tight font-black">
               {positions.find(p => p.position_id === activePositionId)?.title || "Candidate Details"}
@@ -802,9 +804,9 @@ export function PartylistRegistrationForm({
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-bold uppercase">Student ID *</Label>
-                  <Input
+                  <StudentIdInput
                     value={dialogCandidateData.student_id}
-                    onChange={(event) =>
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                       setDialogCandidateData(prev => ({ ...prev, student_id: event.target.value }))
                     }
                     placeholder="23-1-01457"
@@ -826,9 +828,9 @@ export function PartylistRegistrationForm({
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-bold uppercase">Contact Number *</Label>
-                  <Input
+                  <ContactNumberInput
                     value={dialogCandidateData.contact_number}
-                    onChange={(event) =>
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                       setDialogCandidateData(prev => ({ ...prev, contact_number: event.target.value }))
                     }
                     placeholder="09XXXXXXXXX"

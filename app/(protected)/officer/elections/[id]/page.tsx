@@ -22,6 +22,7 @@ import { archivo } from "@/lib/fonts";
 import { InstitutionalDataTable } from "@/components/institutional/data-table";
 import { InstitutionalListItem } from "@/components/institutional/list-item";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getElectionPermissionsForActor } from "@/lib/election-permissions";
 import { BackToRegistryLink } from "./back-to-registry-link";
 import {
@@ -450,6 +451,7 @@ function LowerLedgerSections({
   faculties,
   courses,
   electionType,
+  electionFacultyId,
 }: {
   electionId: string;
   votersData: VoterListRow[];
@@ -458,6 +460,7 @@ function LowerLedgerSections({
   faculties: { faculty_id: string; name: string; acronym: string | null }[];
   courses: { course_id: string; name: string; acronym: string | null; faculty_id: string | null }[];
   electionType: string;
+  electionFacultyId: string | null;
 }) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
@@ -485,6 +488,7 @@ function LowerLedgerSections({
             faculties={faculties}
             courses={courses}
             electionType={electionType}
+            electionFacultyId={electionFacultyId}
           />
         </div>
       </section>
@@ -550,7 +554,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
       .order("created_at", { ascending: true }),
     adminSupabase
       .from("candidates")
-      .select("*, positions(title), courses(name, acronym), partylists(name, acronym)")
+      .select("candidate_id, election_id, position_id, course_id, full_name, age, birth_date, student_id, current_address, permanent_address, email, cog_link, cor_link, good_moral_link, application_status, partylist_id, affiliation_status, rejection_reason, user_id, created_at, updated_at, approved_by_user_id, approved_by_role, approved_by_display, approved_at, has_two_failing_grades, positions(title), courses(name, acronym), partylists(name, acronym)")
       .eq("election_id", electionId)
       .order("created_at", { ascending: false }),
     adminSupabase
@@ -606,7 +610,10 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
 
   const electionData = election as Election;
   const positionsData = (positions || []) as Position[];
-  const candidatesData = (candidates || []) as CandidateWithDetails[];
+  const candidatesData = ((candidates || []) as unknown as CandidateWithDetails[]).map(c => ({
+    ...c,
+    photo: `/api/candidates/${c.candidate_id}/photo`
+  }));
   const votersData = ((voters || []).map((v: unknown) => {
     const raw = v as Record<string, unknown>;
     return {
@@ -721,6 +728,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           faculties={faculties || []}
           courses={coursesList}
           electionType={electionData.election_type}
+          electionFacultyId={(faculties || []).find((f) => f.acronym === electionData.owner_faculty_code)?.faculty_id || null}
         />
 
         <section>
@@ -769,15 +777,15 @@ export default function ElectionDetailPage({
     <Suspense
       fallback={
         <div className="space-y-6 container max-w-6xl mx-auto px-6 pt-20">
-          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+          <Skeleton className="h-4 w-32" />
           <div className="space-y-4">
-            <div className="h-16 w-3/4 bg-muted rounded animate-pulse" />
-            <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+            <Skeleton className="h-16 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
           </div>
-          <div className="grid grid-cols-3 gap-8 mt-12 text-center">
-            <div className="h-24 bg-muted/50 rounded animate-pulse" />
-            <div className="h-24 bg-muted/50 rounded animate-pulse" />
-            <div className="h-24 bg-muted/50 rounded animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
           </div>
         </div>
       }

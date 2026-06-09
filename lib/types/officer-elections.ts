@@ -31,6 +31,7 @@ export interface VoterMasterlistProps {
   faculties: Array<{ faculty_id: string; name: string; acronym: string | null }>;
   courses: Array<{ course_id: string; name: string; acronym: string | null; faculty_id: string | null }>;
   electionType: string;
+  electionFacultyId?: string | null;
 }
 
 export interface TurnoutAdjustmentFormProps {

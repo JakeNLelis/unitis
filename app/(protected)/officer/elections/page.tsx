@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { archivo } from "@/lib/fonts";
 import { OfficerElectionRegistry } from "@/components/officer/election-registry";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ElectionsPage() {
   return (
@@ -52,7 +53,17 @@ export default function ElectionsPage() {
           fallback={
             <div className="space-y-4 border-y border-border divide-y divide-border">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-surface-low animate-pulse" />
+                <div key={i} className="py-4 space-y-3">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-1/4" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
               ))}
             </div>
           }

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ElectionsList } from "@/components/elections-list";
 import HeroSection from "@/components/hero-section";
 import FeatureSection from "@/components/feature-section";
@@ -19,11 +20,19 @@ export default function Home() {
       <div className="container max-w-4xl mx-auto px-4 py-10 space-y-6">
         <Suspense
           fallback={
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Loading elections...</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-4 w-1/4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           }
         >
           <ElectionsList />

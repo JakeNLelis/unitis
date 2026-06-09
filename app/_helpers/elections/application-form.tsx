@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { StudentIdInput } from "@/components/ui/student-id-input";
+import { ContactNumberInput } from "@/components/ui/contact-number-input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -272,13 +274,11 @@ export function ApplicationFormLayout({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="studentId">Student ID *</Label>
-                <Input
+                <StudentIdInput
                   id="studentId"
                   value={formData.studentId}
-                  onChange={(e) => onUpdate("studentId", e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate("studentId", e.target.value)}
                   placeholder="23-1-01457"
-                  pattern={String.raw`^\d{2}-\d-\d{5}$`}
-                  title="Use format xx-x-xxxxx, e.g. 23-1-01457"
                 />
               </div>
             </div>
@@ -313,11 +313,11 @@ export function ApplicationFormLayout({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contactNumber">Contact Number *</Label>
-                <Input
+                <ContactNumberInput
                   id="contactNumber"
                   value={formData.contactNumber}
-                  onChange={(e) => onUpdate("contactNumber", e.target.value)}
-                  placeholder="09XX-XXX-XXXX"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdate("contactNumber", e.target.value)}
+                  placeholder="09XXXXXXXXX"
                 />
               </div>
             </div>

@@ -142,30 +142,29 @@ function ElectionCandidatesSection({
 export async function ElectionPageContent({ id }: { id: string }) {
   const supabase = await createClient();
 
-  const { data: election, error: electionError } = await supabase
-    .from("elections")
-    .select("*")
-    .eq("election_id", id)
-    .single();
+  const [electionResult, candidatesResult] = await Promise.all([
+    supabase.from("elections").select("*").eq("election_id", id).single(),
+    supabase
+      .from("candidates")
+      .select(
+        `
+        candidate_id,
+        full_name,
+        position:positions(title),
+        partylist:partylists(name, acronym, platform, logo_url),
+        course:courses(name, acronym)
+      `,
+      )
+      .eq("election_id", id)
+      .eq("application_status", "approved"),
+  ]);
+
+  const { data: election, error: electionError } = electionResult;
+  const { data: candidates, error: candidatesError } = candidatesResult;
 
   if (electionError || !election) {
     notFound();
   }
-
-  const { data: candidates, error: candidatesError } = await supabase
-    .from("candidates")
-    .select(
-      `
-      candidate_id,
-      full_name,
-      photo,
-      position:positions(title),
-      partylist:partylists(name, acronym, platform, logo_url),
-      course:courses(name, acronym)
-    `,
-    )
-    .eq("election_id", id)
-    .eq("application_status", "approved");
 
   if (candidatesError) {
     console.error("Candidates fetch error:", candidatesError);
@@ -186,7 +185,7 @@ export async function ElectionPageContent({ id }: { id: string }) {
       return {
         candidate_id: candidate.candidate_id,
         full_name: candidate.full_name,
-        photo: candidate.photo,
+        photo: `/api/candidates/${candidate.candidate_id}/photo`,
         position_title: position?.title || "Unknown Position",
         partylist_name: partylist?.name || null,
         partylist_acronym: partylist?.acronym || null,
