@@ -113,16 +113,6 @@ export async function getSEBOfficer(): Promise<SEBOfficer | null> {
   return getCurrentRoleRecord<SEBOfficer>("seb_officers");
 }
 
-async function requireAuth() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  return user;
-}
-
 async function requireRole(allowedRoles: UserRole[]) {
   const profile = await getCurrentProfile();
 
@@ -139,25 +129,6 @@ async function requireRole(allowedRoles: UserRole[]) {
 
 export async function requireSystemAdmin() {
   return requireRole(["system-admin"]);
-}
-
-async function requireSEBOfficer() {
-  const profile = await getCurrentProfile();
-
-  if (!profile) {
-    redirect("/login");
-  }
-
-  if (profile.role !== "seb-officer" && profile.role !== "chairperson") {
-    redirect("/unauthorized");
-  }
-
-  const officer = await getSEBOfficer();
-  if (!officer) {
-    redirect("/unauthorized");
-  }
-
-  return { profile, officer };
 }
 
 export async function requireElectionManager() {

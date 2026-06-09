@@ -22,10 +22,10 @@ export interface ArchiveCandidateResult {
 export interface ArchiveResultsBreakdownProps {
   electionName: string;
   totalVotes: number;
-  expectedVoters: number;
-  turnoutPercentage: number;
-  quorumTarget: number;
-  quorumMet: boolean;
+  expectedVoters: number | null;
+  turnoutPercentage: number | null;
+  quorumTarget: number | null;
+  quorumMet: boolean | null;
   candidateResults: ArchiveCandidateResult[];
   canDownloadPdf?: boolean;
 }

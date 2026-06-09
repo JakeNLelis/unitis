@@ -30,6 +30,8 @@ export function ElectionResults({ electionId, electionName }: ElectionResultsPro
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [exportError, setExportError] = useState<string | null>(null);
+
   const fetchResults = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -78,9 +80,13 @@ export function ElectionResults({ electionId, electionName }: ElectionResultsPro
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {exportError && (
+            <p className="text-sm text-destructive font-medium mr-2">{exportError}</p>
+          )}
           {electionName && results.length > 0 && (
             <Button variant="outline" size="sm" onClick={async () => {
               try {
+                setExportError(null);
                 // We'll lazy import the PDF generator to avoid bloat if not used
                 const { pdf } = await import("@react-pdf/renderer");
                 const ElectionResultPDF = (await import("@/app/(protected)/officer/elections/[id]/results-pdf")).default;
@@ -101,10 +107,10 @@ export function ElectionResults({ electionId, electionName }: ElectionResultsPro
                     totalVotes={totalVoters}
                     // Since this is live tally, expectedVoters and turnout are hard to know precisely here without more data
                     // We can pass placeholder values or adjust the PDF to handle nulls
-                    expectedVoters={0} 
-                    turnoutPercentage={0}
-                    quorumTarget={0}
-                    quorumMet={true} // Placeholder
+                    expectedVoters={null} 
+                    turnoutPercentage={null}
+                    quorumTarget={null}
+                    quorumMet={null}
                     candidateResults={formattedResults}
                   />
                 ).toBlob();
@@ -117,8 +123,9 @@ export function ElectionResults({ electionId, electionName }: ElectionResultsPro
                 anchor.click();
                 document.body.removeChild(anchor);
                 URL.revokeObjectURL(objectUrl);
-              } catch (error) {
+              } catch (error: any) {
                 console.error("Error generating PDF:", error);
+                setExportError(`Failed to generate PDF: ${error.message || "Unknown error"}`);
               }
             }}>
               <Download className="w-4 h-4 mr-2" />

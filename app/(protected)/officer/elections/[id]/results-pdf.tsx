@@ -199,19 +199,19 @@ export default function ElectionResultPDF({
           </View>
           <View style={styles.summaryCol}>
             <Text style={styles.summaryLabel}>EXPECTED VOTERS</Text>
-            <Text style={styles.summaryValue}>{expectedVoters}</Text>
+            <Text style={styles.summaryValue}>{expectedVoters ?? "N/A"}</Text>
           </View>
           <View style={styles.summaryColLast}>
             <Text style={styles.summaryLabel}>TURNOUT</Text>
             <Text style={styles.summaryValue}>
-              {expectedVoters === 0 ? "—" : `${turnoutPercentage.toFixed(1)}%`}
+              {turnoutPercentage == null ? "N/A" : (expectedVoters === 0 ? "—" : `${turnoutPercentage.toFixed(1)}%`)}
             </Text>
           </View>
         </View>
 
-        <View style={quorumMet ? styles.quorumBox : styles.quorumBoxFail}>
+        <View style={quorumMet === true ? styles.quorumBox : (quorumMet === false ? styles.quorumBoxFail : styles.quorumBox)}>
           <Text style={styles.quorumText}>
-            {quorumMet ? "QUORUM ESTABLISHED" : "QUORUM NOT MET"} ({totalVotes} of {quorumTarget} required)
+            {quorumMet == null ? "QUORUM: N/A" : (quorumMet ? "QUORUM ESTABLISHED" : "QUORUM NOT MET")} ({totalVotes} of {quorumTarget ?? "N/A"} required)
           </Text>
         </View>
 

@@ -13,7 +13,12 @@ const eslintConfig = [
   {
     ignores: [".next/**", "node_modules/**"],
   },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends(
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended"
+  ),
 ];
 
 export default eslintConfig;
