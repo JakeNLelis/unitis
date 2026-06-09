@@ -119,6 +119,11 @@ export default async function ArchiveDetailPage({
   const quorumTarget = expected === 0 ? 0 : Math.floor(expected / 2) + 1;
   const quorumMet = total >= quorumTarget;
 
+  // Determine if the user is an officer, chairperson, or admin to allow PDF download
+  const { getCurrentProfile } = await import("@/lib/auth");
+  const profile = await getCurrentProfile();
+  const canDownloadPdf = profile?.role === "system-admin" || profile?.role === "seb-officer" || profile?.role === "chairperson";
+
   return (
     <main className="container max-w-4xl mx-auto px-4 py-10">
       <div className="space-y-6">
@@ -139,6 +144,7 @@ export default async function ArchiveDetailPage({
           quorumTarget={quorumTarget}
           quorumMet={quorumMet}
           candidateResults={results}
+          canDownloadPdf={canDownloadPdf}
         />
       </div>
     </main>

@@ -113,7 +113,7 @@ export async function getSEBOfficer(): Promise<SEBOfficer | null> {
   return getCurrentRoleRecord<SEBOfficer>("seb_officers");
 }
 
-export async function requireAuth() {
+async function requireAuth() {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -123,7 +123,7 @@ export async function requireAuth() {
   return user;
 }
 
-export async function requireRole(allowedRoles: UserRole[]) {
+async function requireRole(allowedRoles: UserRole[]) {
   const profile = await getCurrentProfile();
 
   if (!profile) {
@@ -141,7 +141,7 @@ export async function requireSystemAdmin() {
   return requireRole(["system-admin"]);
 }
 
-export async function requireSEBOfficer() {
+async function requireSEBOfficer() {
   const profile = await getCurrentProfile();
 
   if (!profile) {

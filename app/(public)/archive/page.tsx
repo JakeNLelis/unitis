@@ -175,6 +175,14 @@ export default async function ArchivePage() {
                       </div>
                     )}
                   </CardContent>
+                  <div className="px-6 pb-6 pt-2">
+                    <Link
+                      href={`/archive/${election.election_id}`}
+                      className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+                    >
+                      View Detailed Results & Graphs
+                    </Link>
+                  </div>
                 </Card>
               );
             })}

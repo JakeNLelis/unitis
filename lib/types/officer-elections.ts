@@ -73,6 +73,7 @@ export interface OfficerPositionResult {
 
 export interface ElectionResultsProps {
   electionId: string;
+  electionName: string;
 }
 
 export interface EditElectionDatesProps {

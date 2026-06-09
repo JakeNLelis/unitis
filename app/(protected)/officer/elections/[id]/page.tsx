@@ -418,7 +418,7 @@ function CandidateAuditSection({
   );
 }
 
-function ResultsSection({ electionId }: { electionId: string }) {
+function ResultsSection({ electionId, electionName }: { electionId: string, electionName: string }) {
   return (
     <section>
       <div className="mb-8 flex items-baseline justify-between group">
@@ -436,7 +436,7 @@ function ResultsSection({ electionId }: { electionId: string }) {
         </span>
       </div>
       <div className="bg-surface-low border border-border p-8 ring-1 ring-border shadow-sm">
-        <ElectionResults electionId={electionId} />
+        <ElectionResults electionId={electionId} electionName={electionName} />
       </div>
     </section>
   );
@@ -711,7 +711,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           permissions={permissions}
         />
 
-        {votingEnded && <ResultsSection electionId={electionId} />}
+        {votingEnded && <ResultsSection electionId={electionId} electionName={electionData.name} />}
 
         <LowerLedgerSections
           electionId={electionId}

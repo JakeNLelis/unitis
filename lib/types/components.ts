@@ -27,6 +27,7 @@ export interface ArchiveResultsBreakdownProps {
   quorumTarget: number;
   quorumMet: boolean;
   candidateResults: ArchiveCandidateResult[];
+  canDownloadPdf?: boolean;
 }
 
 export interface EligibilityCheckProps {

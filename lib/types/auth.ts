@@ -75,21 +75,21 @@ export interface ElectionPermissions {
   canManage: boolean;
 }
 
-export const ROLE_HIERARCHY: Record<UserRole, number> = {
+const ROLE_HIERARCHY: Record<UserRole, number> = {
   "system-admin": 3,
   "chairperson": 2,
   "seb-officer": 1,
   candidate: 0,
 };
 
-export const ROLE_LABELS: Record<UserRole, string> = {
+const ROLE_LABELS: Record<UserRole, string> = {
   "system-admin": "System Administrator",
   "chairperson": "Chairperson",
   "seb-officer": "SEB Officer",
   candidate: "Candidate",
 };
 
-export function canManageRole(
+function canManageRole(
   currentUserRole: UserRole,
   targetRole: UserRole,
 ): boolean {
@@ -100,6 +100,6 @@ export function canManageRole(
   );
 }
 
-export function isHigherOrEqualRole(role1: UserRole, role2: UserRole): boolean {
+function isHigherOrEqualRole(role1: UserRole, role2: UserRole): boolean {
   return ROLE_HIERARCHY[role1] >= ROLE_HIERARCHY[role2];
 }

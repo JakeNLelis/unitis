@@ -104,7 +104,7 @@ export async function unsubscribeTurnoutDeltas(
 /**
  * Unsubscribe by channel name (alternative approach)
  */
-export async function unsubscribeTurnoutDeltasByName(
+async function unsubscribeTurnoutDeltasByName(
   electionId: string,
 ): Promise<void> {
   const supabase = createClient();

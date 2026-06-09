@@ -713,9 +713,13 @@ export async function addVoterMasterlist(
       ? course.departments[0]?.faculty_id
       : (course.departments as Record<string, unknown>)?.faculty_id;
 
-    const courseFacultyAcronym = Array.isArray(course.departments)
-      ? (course.departments[0]?.faculties as any)?.acronym
-      : (course.departments as any)?.faculties?.acronym;
+    const facultiesData = Array.isArray(course.departments)
+      ? course.departments[0]?.faculties
+      : (course.departments as Record<string, unknown>)?.faculties;
+      
+    const courseFacultyAcronym = Array.isArray(facultiesData)
+      ? facultiesData[0]?.acronym
+      : (facultiesData as Record<string, unknown>)?.acronym;
 
     if (facultyId) {
       if (courseFacultyId !== facultyId) {

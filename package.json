@@ -10,9 +10,8 @@
   "dependencies": {
     "@lglab/react-qr-code": "^1.4.10",
     "@radix-ui/react-checkbox": "^1.3.1",
-    "@radix-ui/react-dropdown-menu": "^2.1.14",
+    "tailwind-merge": "^3.3.0",
     "@radix-ui/react-label": "^2.1.6",
-    "@radix-ui/react-slot": "^1.2.2",
     "@react-pdf/renderer": "^4.3.2",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
@@ -23,11 +22,12 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.511.0",
     "next": "latest",
+    "postcss-load-config": "^6.0.1",
     "radix-ui": "^1.4.3",
     "react": "^19.0.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.3.0"
+    "recharts": "^3.8.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -36,7 +36,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.3.1",
     "postcss": "^8",
     "tailwindcss": "^4.2.1",
     "tailwindcss-animate": "^1.0.7",

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { getElectionResults } from "@/app/(public)/elections/[id]/vote/actions";
 
 import type {
@@ -23,7 +24,7 @@ import type {
  * Designed so a future WebSocket/realtime subscription can push updates
  * by calling setResults / setTotalVoters directly.
  */
-export function ElectionResults({ electionId }: ElectionResultsProps) {
+export function ElectionResults({ electionId, electionName }: ElectionResultsProps) {
   const [results, setResults] = useState<OfficerPositionResult[]>([]);
   const [totalVoters, setTotalVoters] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -76,9 +77,58 @@ export function ElectionResults({ electionId }: ElectionResultsProps) {
             <span className="font-semibold">{totalVoters}</span>
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchResults}>
-          Refresh Results
-        </Button>
+        <div className="flex items-center gap-2">
+          {electionName && results.length > 0 && (
+            <Button variant="outline" size="sm" onClick={async () => {
+              try {
+                // We'll lazy import the PDF generator to avoid bloat if not used
+                const { pdf } = await import("@react-pdf/renderer");
+                const ElectionResultPDF = (await import("@/app/(protected)/officer/elections/[id]/results-pdf")).default;
+                
+                // Format results for the PDF which expects ArchiveCandidateResult[]
+                const formattedResults = results.flatMap(position => 
+                  position.candidates.map(c => ({
+                    candidate_id: c.candidate_id,
+                    full_name: c.full_name,
+                    position_title: position.title,
+                    vote_total: c.vote_count
+                  }))
+                );
+                
+                const blob = await pdf(
+                  <ElectionResultPDF
+                    electionName={electionName}
+                    totalVotes={totalVoters}
+                    // Since this is live tally, expectedVoters and turnout are hard to know precisely here without more data
+                    // We can pass placeholder values or adjust the PDF to handle nulls
+                    expectedVoters={0} 
+                    turnoutPercentage={0}
+                    quorumTarget={0}
+                    quorumMet={true} // Placeholder
+                    candidateResults={formattedResults}
+                  />
+                ).toBlob();
+
+                const objectUrl = URL.createObjectURL(blob);
+                const anchor = document.createElement("a");
+                anchor.href = objectUrl;
+                anchor.download = `election-results-${electionName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+                document.body.appendChild(anchor);
+                anchor.click();
+                document.body.removeChild(anchor);
+                URL.revokeObjectURL(objectUrl);
+              } catch (error) {
+                console.error("Error generating PDF:", error);
+              }
+            }}>
+              <Download className="w-4 h-4 mr-2" />
+              Export PDF
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={fetchResults}>
+            Refresh Results
+          </Button>
+        </div>
       </div>
 
       {results.map((position) => {
