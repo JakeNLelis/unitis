@@ -13,20 +13,28 @@ import {
 import { AlertCircle, ArrowLeft, Info } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { createElection } from "../actions";
+import { useState, useEffect } from "react";
+import { createElection, getFacultiesForSelect } from "../actions";
 import { ELECTION_TYPES } from "@/lib/types/election";
 import { DateTimeRangePicker } from "./date-time-range-picker";
 
 export default function NewElectionPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [electionType, setElectionType] = useState<string>("");
+  const [faculties, setFaculties] = useState<{name: string, acronym: string}[]>([]);
   const router = useRouter();
   const pathname = usePathname();
 
   const registryPath = pathname.startsWith("/admin/elections")
     ? "/admin/elections"
     : "/officer/elections";
+
+  useEffect(() => {
+    if (registryPath === "/admin/elections") {
+      getFacultiesForSelect().then(setFaculties);
+    }
+  }, [registryPath]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -102,7 +110,7 @@ export default function NewElectionPage() {
               >
                 Election Classification
               </Label>
-              <Select name="election_type" required>
+              <Select name="election_type" value={electionType} onValueChange={setElectionType} required>
                 <SelectTrigger className="h-14 border-2 border-foreground rounded-none text-lg font-bold focus:ring-0">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -119,6 +127,36 @@ export default function NewElectionPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {registryPath === "/admin/elections" && electionType === "Faculty-Wide" && (
+              <div className="space-y-2">
+                <Label
+                  htmlFor="owner_faculty_code"
+                  className="text-xs font-black uppercase tracking-widest text-muted-foreground"
+                >
+                  Linked Faculty
+                </Label>
+                <Select name="owner_faculty_code" required>
+                  <SelectTrigger className="h-14 border-2 border-foreground rounded-none text-lg font-bold focus:ring-0">
+                    <SelectValue placeholder="Select faculty" />
+                  </SelectTrigger>
+                  <SelectContent className="border-2 border-foreground rounded-none">
+                    {faculties.map((f) => (
+                      <SelectItem
+                        key={f.acronym}
+                        value={f.acronym}
+                        className="font-bold py-3"
+                      >
+                        {f.name} ({f.acronym})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">
+                  Required for faculty-wide elections. Determines which candidates can file their candidacy.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="p-6 bg-surface-lowest border-2 border-foreground relative overflow-hidden group">

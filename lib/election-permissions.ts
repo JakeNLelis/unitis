@@ -48,8 +48,7 @@ export function canActorCreateElectionType(
   const normalizedType = normalizeElectionType(electionType);
 
   if (role === "system-admin") {
-    // System admin can only create campus-wide (previously university-wide) elections
-    return normalizedType === "campus-wide" || normalizedType === "university-wide";
+    return normalizedType === "campus-wide" || normalizedType === "university-wide" || normalizedType === "faculty-wide";
   }
 
   if (role === "seb-officer" || role === "chairperson") {

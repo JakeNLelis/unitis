@@ -172,6 +172,28 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
     values.partylist_id && values.partylist_id !== "independent";
   const computedAge = calculateAgeFromBirthDate(values.birth_date);
 
+  const { data: election } = await adminSupabase
+    .from("elections")
+    .select("election_type, owner_faculty_code")
+    .eq("election_id", values.election_id)
+    .single();
+
+  if (election?.election_type?.toLowerCase() === "faculty-wide" && election.owner_faculty_code) {
+    const { data: course } = await adminSupabase
+      .from("courses")
+      .select("departments(faculties(acronym))")
+      .eq("course_id", values.course_id)
+      .single();
+
+    const courseFacultyAcronym = Array.isArray(course?.departments)
+      ? (Array.isArray(course.departments[0]?.faculties) ? course.departments[0].faculties[0]?.acronym : course.departments[0]?.faculties?.acronym)
+      : (Array.isArray((course?.departments as any)?.faculties) ? (course?.departments as any)?.faculties[0]?.acronym : (course?.departments as any)?.faculties?.acronym);
+      
+    if (courseFacultyAcronym !== election.owner_faculty_code) {
+       return { error: "You are not affiliated with the faculty for this election and cannot proceed with candidacy filing." };
+    }
+  }
+
   const application: CandidateApplication = {
     election_id: values.election_id,
     position_id: values.position_id,

@@ -97,10 +97,13 @@ export async function createElection(formData: FormData) {
   const supabase = await createAdminClient();
 
   const electionTypeNormalized = election_type.trim().toLowerCase();
+  const owner_faculty_code = formData.get("owner_faculty_code") as string;
   const scopeCampus =
     actor.role === "seb-officer" || actor.role === "chairperson" ? actor.officer?.campus : null;
   const scopeFacultyCode =
-    actor.role === "seb-officer" || actor.role === "chairperson" ? actor.officer?.faculty_code : null;
+    actor.role === "seb-officer" || actor.role === "chairperson" 
+      ? actor.officer?.faculty_code 
+      : (actor.role === "system-admin" && electionTypeNormalized === "faculty-wide" ? owner_faculty_code : null);
 
   const { data, error } = await supabase
     .from("elections")
@@ -940,4 +943,11 @@ export async function submitTurnoutAdjustment(
   );
 
   return { success: true, data: adjustment };
+}
+
+export async function getFacultiesForSelect() {
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const { data } = await supabase.from("faculties").select("faculty_id, name, acronym").order("name");
+  return data || [];
 }
