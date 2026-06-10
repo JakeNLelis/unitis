@@ -46,7 +46,7 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
 
   const { data: courses } = await adminSupabase
     .from("courses")
-    .select("course_id, name, acronym, departments(name, faculties(name))")
+    .select("course_id, name, acronym, departments(name, faculties(name, acronym))")
     .order("name", { ascending: true });
 
   const courseOptions: CourseOption[] = (courses || []).map((course) => {
@@ -63,6 +63,7 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
       acronym: course.acronym,
       department_name: departmentObj?.name || "",
       faculty_name: facultyObj?.name || "",
+      faculty_acronym: facultyObj?.acronym || "",
     };
   });
 
@@ -93,6 +94,7 @@ async function ApplyPageContent({ electionId }: ApplyPageContentProps) {
               courses={courseOptions}
               partylists={[]}
               ownerCampus={electionData.owner_campus}
+              ownerFacultyCode={electionData.owner_faculty_code}
             />
           ) : (
             <NoPositionsCard />

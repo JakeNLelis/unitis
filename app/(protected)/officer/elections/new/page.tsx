@@ -95,6 +95,7 @@ export default function NewElectionPage() {
                 name="name"
                 placeholder="e.g. SSC General Election 2026"
                 required
+                autoComplete="off"
                 className="h-14 border-2 border-foreground rounded-none text-xl font-bold placeholder:font-medium placeholder:text-muted-foreground/30 focus-visible:ring-0 focus-visible:border-primary"
               />
               <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">

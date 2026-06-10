@@ -20,6 +20,7 @@ export function ApplicationForm({
   positions,
   courses,
   ownerCampus,
+  ownerFacultyCode,
 }: ApplicationFormProps) {
   const defaultCouncil: CouncilType =
     electionType === "Campus-Wide" ? "USSC" : "FSSC";
@@ -229,10 +230,11 @@ export function ApplicationForm({
       return;
     }
 
-    if (electionType === "Faculty-Wide" && ownerCampus) {
-      if (formData.faculty !== ownerCampus) {
+    if (electionType === "Faculty-Wide" && ownerFacultyCode) {
+      const selectedCourse = courses.find((c) => c.course_id === courseId);
+      if (selectedCourse && selectedCourse.faculty_acronym !== ownerFacultyCode) {
         setError(
-          `You belong to ${formData.faculty}, which is not eligible for this ${ownerCampus} faculty-wide election.`,
+          `You belong to ${selectedCourse.faculty_name}, which is not eligible for this ${ownerCampus || "faculty"}-wide election.`,
         );
         return;
       }
