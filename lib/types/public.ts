@@ -42,6 +42,7 @@ export interface RegisterPartylistElection {
   candidacy_start_date: string | null;
   candidacy_end_date: string | null;
   is_archived: boolean;
+  owner_campus: string | null;
 }
 
 export interface RegisterPartylistContentProps {
@@ -52,6 +53,7 @@ export interface PartylistRegistrationPosition {
   position_id: string;
   title: string;
   required_for_partylist: boolean;
+  max_votes: number;
 }
 
 export interface PartylistRegistrationCandidateDraft {
@@ -72,6 +74,9 @@ export interface PartylistRegistrationCandidateDraft {
   faculty: string;
   department: string;
   has_two_failing_grades?: boolean;
+  bonafide?: boolean;
+  amaranth?: boolean;
+  convicted?: boolean;
 }
 
 export interface PartylistRegistrationPDFProps {

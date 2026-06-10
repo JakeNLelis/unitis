@@ -185,9 +185,10 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
       .eq("course_id", values.course_id)
       .single();
 
-    const courseFacultyAcronym = Array.isArray(course?.departments)
-      ? (Array.isArray(course.departments[0]?.faculties) ? course.departments[0].faculties[0]?.acronym : course.departments[0]?.faculties?.acronym)
-      : (Array.isArray((course?.departments as any)?.faculties) ? (course?.departments as any)?.faculties[0]?.acronym : (course?.departments as any)?.faculties?.acronym);
+    const depts = course?.departments as any;
+    const courseFacultyAcronym = Array.isArray(depts)
+      ? (Array.isArray(depts[0]?.faculties) ? depts[0].faculties[0]?.acronym : depts[0]?.faculties?.acronym)
+      : (Array.isArray(depts?.faculties) ? depts?.faculties[0]?.acronym : depts?.faculties?.acronym);
       
     if (courseFacultyAcronym !== election.owner_faculty_code) {
        return { error: "You are not affiliated with the faculty for this election and cannot proceed with candidacy filing." };

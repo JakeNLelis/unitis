@@ -45,7 +45,7 @@ async function RegisterPartylistContent({
 
   const { data: positions } = await supabase
     .from("positions")
-    .select("position_id, title, required_for_partylist")
+    .select("position_id, title, required_for_partylist, max_votes")
     .eq("election_id", electionId)
     .order("created_at", { ascending: true });
 
@@ -107,6 +107,7 @@ async function RegisterPartylistContent({
             electionType={electionData.election_type}
             positions={positions || []}
             courses={courseOptions}
+            ownerCampus={electionData.owner_campus}
           />
         ) : (
           <Card>

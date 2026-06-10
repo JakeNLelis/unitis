@@ -229,6 +229,15 @@ export function ApplicationForm({
       return;
     }
 
+    if (electionType === "Faculty-Wide" && ownerCampus) {
+      if (formData.faculty !== ownerCampus) {
+        setError(
+          `You belong to ${formData.faculty}, which is not eligible for this ${ownerCampus} faculty-wide election.`,
+        );
+        return;
+      }
+    }
+
     if (!cogLink.trim() || !corLink.trim() || !goodMoralLink.trim()) {
       setError("Please provide all document links (COG, COR, Good Moral).");
       return;

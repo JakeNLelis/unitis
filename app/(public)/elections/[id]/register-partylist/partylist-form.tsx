@@ -34,7 +34,7 @@ import type {
 } from "@/lib/types/public";
 import type { CandidacyFormData } from "@/lib/types/candidacy";
 import { calculateAgeFromBirthDate } from "@/lib/utils";
-import { Edit, Trash2, UserPlus, ShieldAlert, ChevronLeft } from "lucide-react";
+import { Edit, Trash2, UserPlus, ShieldAlert, ChevronLeft, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -77,12 +77,14 @@ export function PartylistRegistrationForm({
   electionType,
   positions,
   courses,
+  ownerCampus,
 }: {
   electionId: string;
   electionName: string;
   electionType: string;
   positions: PartylistRegistrationPosition[];
   courses: CourseOption[];
+  ownerCampus?: string | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -112,20 +114,18 @@ export function PartylistRegistrationForm({
   });
 
   const [candidateMap, setCandidateMap] = useState<
-    Record<string, PartylistRegistrationCandidateDraft>
+    Record<string, PartylistRegistrationCandidateDraft[]>
   >(() => {
-    const initial: Record<string, PartylistRegistrationCandidateDraft> = {};
+    const initial: Record<string, PartylistRegistrationCandidateDraft[]> = {};
     for (const position of positions) {
-      initial[position.position_id] = {
-        ...createEmptyCandidate(),
-        position_id: position.position_id,
-      };
+      initial[position.position_id] = [];
     }
     return initial;
   });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activePositionId, setActivePositionId] = useState<string | null>(null);
+  const [activeCandidateIndex, setActiveCandidateIndex] = useState<number | null>(null);
   const [dialogStep, setDialogStep] = useState<'screening' | 'details'>('screening');
   const [dialogScreeningStep, setDialogScreeningStep] = useState(0);
   const [dialogScreeningAnswers, setDialogScreeningAnswers] = useState({
@@ -140,6 +140,7 @@ export function PartylistRegistrationForm({
 
   const handleOpenAddDialog = (positionId: string) => {
     setActivePositionId(positionId);
+    setActiveCandidateIndex(null);
     setDialogStep('screening');
     setDialogScreeningStep(0);
     setDialogScreeningAnswers({
@@ -157,12 +158,13 @@ export function PartylistRegistrationForm({
     setDialogOpen(true);
   };
 
-  const handleOpenEditDialog = (positionId: string) => {
+  const handleOpenEditDialog = (positionId: string, index: number) => {
     setActivePositionId(positionId);
+    setActiveCandidateIndex(index);
     setDialogStep('screening');
     setDialogScreeningStep(0);
     setDialogScreeningPassed(null);
-    const existing = candidateMap[positionId];
+    const existing = candidateMap[positionId]?.[index];
     setDialogCandidateData(existing || {
       ...createEmptyCandidate(),
       position_id: positionId,
@@ -177,18 +179,13 @@ export function PartylistRegistrationForm({
     setDialogOpen(true);
   };
 
-  const handleRemoveCandidate = (positionId: string) => {
-    setCandidateMap(prev => ({
-      ...prev,
-      [positionId]: {
-        ...createEmptyCandidate(),
-        position_id: positionId,
-      }
-    }));
-    setEnabledMap(prev => ({
-      ...prev,
-      [positionId]: false
-    }));
+  const handleRemoveCandidate = (positionId: string, index: number) => {
+    const list = [...(candidateMap[positionId] || [])];
+    list.splice(index, 1);
+    setCandidateMap(prev => ({ ...prev, [positionId]: list }));
+    if (list.length === 0) {
+      setEnabledMap(prev => ({ ...prev, [positionId]: false }));
+    }
   };
 
   const handleDialogScreeningAnswer = (field: 'bonafide' | 'failingGrades' | 'amaranth' | 'convicted', value: boolean) => {
@@ -235,12 +232,20 @@ export function PartylistRegistrationForm({
     const finalCandidate = {
       ...dialogCandidateData,
       has_two_failing_grades: !!dialogScreeningAnswers.failingGrades,
+      bonafide: !!dialogScreeningAnswers.bonafide,
+      amaranth: !!dialogScreeningAnswers.amaranth,
+      convicted: !!dialogScreeningAnswers.convicted,
     };
     
-    setCandidateMap(prev => ({
-      ...prev,
-      [activePositionId!]: finalCandidate,
-    }));
+    setCandidateMap(prev => {
+      const list = [...(prev[activePositionId!] || [])];
+      if (activeCandidateIndex !== null) {
+        list[activeCandidateIndex] = finalCandidate;
+      } else {
+        list.push(finalCandidate);
+      }
+      return { ...prev, [activePositionId!]: list };
+    });
     setEnabledMap(prev => ({
       ...prev,
       [activePositionId!]: true,
@@ -337,6 +342,13 @@ export function PartylistRegistrationForm({
       return `Candidate email is invalid for ${positionTitle}.`;
     }
 
+    if (electionType === "Faculty-Wide" && ownerCampus) {
+      const course = courses.find((c) => c.course_id === candidate.course_id);
+      if (course && course.faculty_name !== ownerCampus) {
+        return `Candidate ${candidate.full_name} for ${positionTitle} belongs to ${course.faculty_name}, which is not eligible for this ${ownerCampus} faculty-wide election.`;
+      }
+    }
+
     return null;
   }
 
@@ -351,27 +363,23 @@ export function PartylistRegistrationForm({
     const selectedCandidates: PartylistRegistrationCandidateDraft[] = [];
 
     for (const position of positions) {
-      const enabled = enabledMap[position.position_id];
-      const candidate = candidateMap[position.position_id];
+      const candidates = candidateMap[position.position_id] || [];
 
-      if (!enabled) {
-        continue;
-      }
-
-      if (requiredPositionIds.has(position.position_id) && !enabled) {
+      if (requiredPositionIds.has(position.position_id) && candidates.length === 0) {
         setError(`A candidate is required for ${position.title}.`);
         setLoading(false);
         return;
       }
 
-      const candidateError = validateCandidate(position.title, candidate);
-      if (candidateError) {
-        setError(candidateError);
-        setLoading(false);
-        return;
+      for (const candidate of candidates) {
+        const candidateError = validateCandidate(position.title, candidate);
+        if (candidateError) {
+          setError(candidateError);
+          setLoading(false);
+          return;
+        }
+        selectedCandidates.push(candidate);
       }
-
-      selectedCandidates.push(candidate);
     }
 
     if (selectedCandidates.length === 0) {
@@ -380,86 +388,79 @@ export function PartylistRegistrationForm({
       return;
     }
 
-    for (const requiredPositionId of requiredPositionIds) {
-      if (!enabledMap[requiredPositionId]) {
-        const requiredPosition = positions.find(
-          (position) => position.position_id === requiredPositionId,
-        );
-        setError(
-          `A candidate is required for ${requiredPosition?.title || "a required position"}.`,
-        );
+    formData.set("candidate_slate", JSON.stringify(selectedCandidates));
+
+    try {
+      const result = await registerPartylist(formData);
+
+      if ("error" in result) {
+        setError(result.error || "Partylist registration failed.");
         setLoading(false);
         return;
       }
-    }
 
-    formData.set("candidate_slate", JSON.stringify(selectedCandidates));
+      const partylistName = String(formData.get("name") || "Partylist").trim();
+      const managerName = String(formData.get("registered_by_name") || "").trim();
+      const councilType = electionType === "Campus-Wide" ? "USSC" : "FSSC";
 
-    const result = await registerPartylist(formData);
+      const candidatesForPdf = selectedCandidates.map((candidate) => {
+        const course = courses.find(
+          (course) => course.course_id === candidate.course_id,
+        );
+        const position = positions.find(
+          (item) => item.position_id === candidate.position_id,
+        );
 
-    if ("error" in result) {
-      setError(result.error || "Partylist registration failed.");
+        const formDataPdf: CandidacyFormData = {
+          councilType,
+          photo: candidate.photo,
+          candidacyType: "Political Party",
+          partyName: partylistName,
+          campaignManager: managerName,
+          position: position?.title || "",
+          fullName: candidate.full_name,
+          age: calculateAgeFromBirthDate(candidate.birth_date),
+          birthday: toInputDate(candidate.birth_date),
+          studentId: candidate.student_id,
+          currentAddress: candidate.current_address,
+          permanentAddress: candidate.permanent_address,
+          faculty: candidate.faculty,
+          department: candidate.department,
+          email: candidate.email,
+          contactNumber: candidate.contact_number,
+          date: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        };
+
+        return {
+          position: position?.title || "",
+          fullName: candidate.full_name,
+          degreeProgram: course
+            ? course.acronym
+              ? `${course.acronym} - ${course.name}`
+              : course.name
+            : "",
+          formData: formDataPdf,
+        };
+      });
+
+      setPdfPayload({
+        electionName,
+        partylistName,
+        managerName,
+        candidates: candidatesForPdf,
+      });
+
+      setSuccess(true);
+    } catch (err) {
+      console.error("Partylist registration error:", err);
+      setError("An error occurred during submission. If you uploaded high-resolution images, please compress them and try again (Payload Too Large).");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const partylistName = String(formData.get("name") || "Partylist").trim();
-    const managerName = String(formData.get("registered_by_name") || "").trim();
-    const councilType = electionType === "Campus-Wide" ? "USSC" : "FSSC";
-
-    const candidatesForPdf = selectedCandidates.map((candidate) => {
-      const course = courses.find(
-        (course) => course.course_id === candidate.course_id,
-      );
-      const position = positions.find(
-        (item) => item.position_id === candidate.position_id,
-      );
-
-      const formData: CandidacyFormData = {
-        councilType,
-        photo: candidate.photo,
-        candidacyType: "Political Party",
-        partyName: partylistName,
-        campaignManager: managerName,
-        position: position?.title || "",
-        fullName: candidate.full_name,
-        age: calculateAgeFromBirthDate(candidate.birth_date),
-        birthday: toInputDate(candidate.birth_date),
-        studentId: candidate.student_id,
-        currentAddress: candidate.current_address,
-        permanentAddress: candidate.permanent_address,
-        faculty: candidate.faculty,
-        department: candidate.department,
-        email: candidate.email,
-        contactNumber: candidate.contact_number,
-        date: new Date().toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-      };
-
-      return {
-        position: position?.title || "",
-        fullName: candidate.full_name,
-        degreeProgram: course
-          ? course.acronym
-            ? `${course.acronym} - ${course.name}`
-            : course.name
-          : "",
-        formData,
-      };
-    });
-
-    setPdfPayload({
-      electionName,
-      partylistName,
-      managerName,
-      candidates: candidatesForPdf,
-    });
-
-    setSuccess(true);
-    setLoading(false);
   }
 
   if (success) {
@@ -579,82 +580,90 @@ export function PartylistRegistrationForm({
           ) : (
             <div className="space-y-4">
               {positions.map((position) => {
-                const candidate = candidateMap[position.position_id];
-                const isEnabled = enabledMap[position.position_id];
+                const candidates = candidateMap[position.position_id] || [];
                 const isRequired = requiredPositionIds.has(position.position_id);
-                const hasCandidate = isEnabled && candidate && candidate.full_name;
+                const maxVotes = position.max_votes || 1;
+                const isFilled = candidates.length > 0;
+                const canAddMore = candidates.length < maxVotes;
 
                 return (
-                  <div key={position.position_id} className="border border-border p-5 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-muted/5">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-foreground text-sm">{position.title}</h3>
-                        {isRequired && <Badge variant="outline" className="text-[10px] uppercase tracking-wider h-5">Required</Badge>}
-                        {hasCandidate ? (
-                          <Badge className="bg-green-600 hover:bg-green-700 text-white text-[10px] uppercase tracking-wider h-5">Filled</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-[10px] uppercase tracking-wider h-5">Empty</Badge>
-                        )}
-                      </div>
-                      {hasCandidate ? (
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <p className="font-semibold text-foreground text-sm">{candidate.full_name} ({candidate.student_id})</p>
-                          <p className="text-muted-foreground">
-                            Course: {courses.find(c => c.course_id === candidate.course_id)?.acronym || "N/A"} | Email: {candidate.email}
-                          </p>
-                          {candidate.has_two_failing_grades && (
-                            <Badge variant="destructive" className="text-[9px] uppercase font-bold tracking-widest mt-1">
-                              Flagged: Failing Grades
-                            </Badge>
+                  <div key={position.position_id} className="border border-border p-5 bg-card flex flex-col gap-4 transition-all hover:bg-muted/5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-foreground text-sm">{position.title}</h3>
+                          {isRequired && <Badge variant="outline" className="text-[10px] uppercase tracking-wider h-5">Required</Badge>}
+                          {isFilled ? (
+                            <Badge className="bg-green-600 hover:bg-green-700 text-white text-[10px] uppercase tracking-wider h-5">Filled ({candidates.length}/{maxVotes})</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px] uppercase tracking-wider h-5">Empty (0/{maxVotes})</Badge>
                           )}
                         </div>
-                      ) : (
                         <p className="text-xs text-muted-foreground">
                           {isRequired 
                             ? "This position requires a candidate slate nominee." 
                             : "Optional candidate position slot."}
                         </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {hasCandidate ? (
-                        <>
+                      </div>
+                      {canAddMore && (
+                        <div className="shrink-0">
                           <Button
                             type="button"
-                            variant="outline"
+                            variant={isRequired && candidates.length === 0 ? "default" : "outline"}
                             size="sm"
-                            onClick={() => handleOpenEditDialog(position.position_id)}
+                            onClick={() => handleOpenAddDialog(position.position_id)}
                             className="cursor-pointer"
                           >
-                            <Edit className="size-3.5 mr-1.5" />
-                            Edit
+                            <UserPlus className="size-3.5 mr-1.5" />
+                            Add Nominee
                           </Button>
-                          {!isRequired && (
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleRemoveCandidate(position.position_id)}
-                              className="cursor-pointer"
-                            >
-                              <Trash2 className="size-3.5 mr-1.5" />
-                              Remove
-                            </Button>
-                          )}
-                        </>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenAddDialog(position.position_id)}
-                          className="border-2 border-foreground hover:bg-foreground hover:text-background font-black uppercase tracking-wider text-[11px] cursor-pointer h-9"
-                        >
-                          <UserPlus className="size-3.5 mr-1.5" />
-                          Add Nominee
-                        </Button>
+                        </div>
                       )}
                     </div>
+                    
+                    {candidates.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                        {candidates.map((candidate, index) => (
+                          <div key={index} className="flex flex-col gap-2 p-3 border border-border bg-background rounded-md">
+                            <div className="flex justify-between items-start">
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                <p className="font-semibold text-foreground text-sm">{candidate.full_name} ({candidate.student_id})</p>
+                                <p className="text-muted-foreground">
+                                  Course: {courses.find(c => c.course_id === candidate.course_id)?.acronym || "N/A"} | Email: {candidate.email}
+                                </p>
+                                {candidate.has_two_failing_grades && (
+                                  <Badge variant="destructive" className="text-[9px] uppercase font-bold tracking-widest mt-1">
+                                    Flagged: Failing Grades
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenEditDialog(position.position_id, index)}
+                                className="cursor-pointer flex-1"
+                              >
+                                <Edit className="size-3.5 mr-1.5" />
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:bg-destructive/10 cursor-pointer flex-1"
+                                onClick={() => handleRemoveCandidate(position.position_id, index)}
+                              >
+                                <X className="size-3.5 mr-1.5" />
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
