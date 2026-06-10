@@ -43,6 +43,7 @@ export interface RegisterPartylistElection {
   candidacy_end_date: string | null;
   is_archived: boolean;
   owner_campus: string | null;
+  owner_faculty_code: string | null;
 }
 
 export interface RegisterPartylistContentProps {
@@ -101,6 +102,7 @@ export interface ApplyPageElection {
   candidacy_end_date: string | null;
   is_archived: boolean;
   owner_campus: string | null;
+  owner_faculty_code: string | null;
 }
 
 export interface CourseOption {
@@ -109,6 +111,7 @@ export interface CourseOption {
   acronym: string | null;
   department_name: string;
   faculty_name: string;
+  faculty_acronym: string;
 }
 
 export interface ApplyPageContentProps {
@@ -130,6 +133,7 @@ export interface ApplicationFormCourse {
   acronym: string | null;
   department_name: string;
   faculty_name: string;
+  faculty_acronym: string;
 }
 
 export interface ApplicationFormPartylist {
@@ -146,6 +150,7 @@ export interface ApplicationFormProps {
   courses: ApplicationFormCourse[];
   partylists: ApplicationFormPartylist[];
   ownerCampus?: string | null;
+  ownerFacultyCode?: string | null;
 }
 
 export interface ElectionPageProps {

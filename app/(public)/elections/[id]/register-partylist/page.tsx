@@ -51,7 +51,7 @@ async function RegisterPartylistContent({
 
   const { data: courses } = await adminSupabase
     .from("courses")
-    .select("course_id, name, acronym, departments(name, faculties(name))")
+    .select("course_id, name, acronym, departments(name, faculties(name, acronym))")
     .order("name", { ascending: true });
 
   const courseOptions: CourseOption[] = (courses || []).map((course) => {
@@ -68,6 +68,7 @@ async function RegisterPartylistContent({
       acronym: course.acronym,
       department_name: departmentObj?.name || "",
       faculty_name: facultyObj?.name || "",
+      faculty_acronym: facultyObj?.acronym || "",
     };
   });
 
@@ -108,6 +109,7 @@ async function RegisterPartylistContent({
             positions={positions || []}
             courses={courseOptions}
             ownerCampus={electionData.owner_campus}
+            ownerFacultyCode={electionData.owner_faculty_code}
           />
         ) : (
           <Card>

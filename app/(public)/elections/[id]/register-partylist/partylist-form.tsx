@@ -78,6 +78,7 @@ export function PartylistRegistrationForm({
   positions,
   courses,
   ownerCampus,
+  ownerFacultyCode,
 }: {
   electionId: string;
   electionName: string;
@@ -85,6 +86,7 @@ export function PartylistRegistrationForm({
   positions: PartylistRegistrationPosition[];
   courses: CourseOption[];
   ownerCampus?: string | null;
+  ownerFacultyCode?: string | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -342,10 +344,10 @@ export function PartylistRegistrationForm({
       return `Candidate email is invalid for ${positionTitle}.`;
     }
 
-    if (electionType === "Faculty-Wide" && ownerCampus) {
+    if (electionType === "Faculty-Wide" && ownerFacultyCode) {
       const course = courses.find((c) => c.course_id === candidate.course_id);
-      if (course && course.faculty_name !== ownerCampus) {
-        return `Candidate ${candidate.full_name} for ${positionTitle} belongs to ${course.faculty_name}, which is not eligible for this ${ownerCampus} faculty-wide election.`;
+      if (course && course.faculty_acronym !== ownerFacultyCode) {
+        return `Candidate ${candidate.full_name} for ${positionTitle} belongs to ${course.faculty_name}, which is not eligible for this ${ownerCampus || "faculty"}-wide election.`;
       }
     }
 
@@ -538,8 +540,10 @@ export function PartylistRegistrationForm({
               <Input
                 id="name"
                 name="name"
-                placeholder="Unity Movement"
+                placeholder="e.g. SAMAHAN Partylist"
                 required
+                autoComplete="off"
+                className="h-14 border-2 border-foreground rounded-none text-xl font-bold placeholder:font-medium placeholder:text-muted-foreground/30 focus-visible:ring-0 focus-visible:border-primary"
               />
             </div>
             <div className="space-y-2">
