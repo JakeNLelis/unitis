@@ -233,8 +233,10 @@ export function ApplicationForm({
     if (electionType === "Faculty-Wide" && ownerFacultyCode) {
       const selectedCourse = courses.find((c) => c.course_id === courseId);
       if (selectedCourse && selectedCourse.faculty_acronym !== ownerFacultyCode) {
+        const ownerCourse = courses.find((c) => c.faculty_acronym === ownerFacultyCode);
+        const ownerFacultyName = ownerCourse ? ownerCourse.faculty_name : ownerFacultyCode;
         setError(
-          `You belong to ${selectedCourse.faculty_name}, which is not eligible for this ${ownerCampus || "faculty"}-wide election.`,
+          `You belong to ${selectedCourse.faculty_name}, which is not eligible for this ${ownerFacultyName} faculty-wide election.`,
         );
         return;
       }

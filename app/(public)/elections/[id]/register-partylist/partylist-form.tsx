@@ -1,23 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { pdf } from "@react-pdf/renderer";
+import { useMemo, useState } from "react";
 import { registerPartylist } from "../actions";
-import PartylistRegistrationPDF from "./partylist-registration-pdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { StudentIdInput } from "@/components/ui/student-id-input";
-import { ContactNumberInput } from "@/components/ui/contact-number-input";
 import { Textarea } from "@/components/ui/textarea";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -29,48 +18,16 @@ import { Badge } from "@/components/ui/badge";
 import type {
   CourseOption,
   PartylistRegistrationCandidateDraft,
-  PartylistRegistrationPDFProps,
   PartylistRegistrationPosition,
 } from "@/lib/types/public";
 import type { CandidacyFormData } from "@/lib/types/candidacy";
 import { calculateAgeFromBirthDate } from "@/lib/utils";
-import { Edit, Trash2, UserPlus, ShieldAlert, ChevronLeft, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Edit, Trash2, UserPlus, ShieldAlert } from "lucide-react";
+import CandidateDialogWizard from "./candidate-dialog-wizard";
+import createEmptyCandidate from "./create-empty-candidate";
+import toInputDate from "./to-input-date";
+import usePartylistPdf from "./use-partylist-pdf";
 
-function toInputDate(value: string) {
-  return value ? new Date(value).toISOString().slice(0, 10) : "";
-}
-
-function createEmptyCandidate(): PartylistRegistrationCandidateDraft {
-  return {
-    position_id: "",
-    course_id: "",
-    full_name: "",
-    student_id: "",
-    email: "",
-    age: "",
-    birth_date: "",
-    current_address: "",
-    permanent_address: "",
-    contact_number: "",
-    photo: "",
-    cog_link: "",
-    cor_link: "",
-    good_moral_link: "",
-    faculty: "",
-    department: "",
-    has_two_failing_grades: false,
-  };
-}
-
-// CandidateCard was replaced by the dialog wizard modal.
-
-// @CodeScene(disable:"Large Method")
 export function PartylistRegistrationForm({
   electionId,
   electionName,
@@ -91,11 +48,7 @@ export function PartylistRegistrationForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [downloadState, setDownloadState] = useState<
-    "idle" | "generating" | "done" | "failed"
-  >("idle");
-  const [pdfPayload, setPdfPayload] =
-    useState<PartylistRegistrationPDFProps | null>(null);
+  const { downloadState, pdfPayload, setPdfPayload } = usePartylistPdf();
 
   const requiredPositionIds = useMemo(
     () =>
@@ -128,56 +81,45 @@ export function PartylistRegistrationForm({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activePositionId, setActivePositionId] = useState<string | null>(null);
   const [activeCandidateIndex, setActiveCandidateIndex] = useState<number | null>(null);
-  const [dialogStep, setDialogStep] = useState<'screening' | 'details'>('screening');
-  const [dialogScreeningStep, setDialogScreeningStep] = useState(0);
-  const [dialogScreeningAnswers, setDialogScreeningAnswers] = useState({
+
+  const [dialogInitialData, setDialogInitialData] = useState<PartylistRegistrationCandidateDraft>(createEmptyCandidate());
+  const [dialogInitialAnswers, setDialogInitialAnswers] = useState({
     bonafide: null as boolean | null,
     failingGrades: null as boolean | null,
     amaranth: null as boolean | null,
     convicted: null as boolean | null,
   });
-  const [dialogScreeningPassed, setDialogScreeningPassed] = useState<boolean | null>(null);
-  const [dialogCandidateData, setDialogCandidateData] = useState<PartylistRegistrationCandidateDraft>(createEmptyCandidate());
-  const [dialogError, setDialogError] = useState<string | null>(null);
 
   const handleOpenAddDialog = (positionId: string) => {
     setActivePositionId(positionId);
     setActiveCandidateIndex(null);
-    setDialogStep('screening');
-    setDialogScreeningStep(0);
-    setDialogScreeningAnswers({
+    setDialogInitialAnswers({
       bonafide: null,
       failingGrades: null,
       amaranth: null,
       convicted: null,
     });
-    setDialogScreeningPassed(null);
-    setDialogCandidateData({
+    setDialogInitialData({
       ...createEmptyCandidate(),
       position_id: positionId,
     });
-    setDialogError(null);
     setDialogOpen(true);
   };
 
   const handleOpenEditDialog = (positionId: string, index: number) => {
     setActivePositionId(positionId);
     setActiveCandidateIndex(index);
-    setDialogStep('screening');
-    setDialogScreeningStep(0);
-    setDialogScreeningPassed(null);
     const existing = candidateMap[positionId]?.[index];
-    setDialogCandidateData(existing || {
+    setDialogInitialData(existing || {
       ...createEmptyCandidate(),
       position_id: positionId,
     });
-    setDialogScreeningAnswers({
+    setDialogInitialAnswers({
       bonafide: true,
       failingGrades: existing?.has_two_failing_grades || false,
       amaranth: false,
       convicted: false,
     });
-    setDialogError(null);
     setDialogOpen(true);
   };
 
@@ -190,61 +132,21 @@ export function PartylistRegistrationForm({
     }
   };
 
-  const handleDialogScreeningAnswer = (field: 'bonafide' | 'failingGrades' | 'amaranth' | 'convicted', value: boolean) => {
-    const updated = { ...dialogScreeningAnswers, [field]: value };
-    setDialogScreeningAnswers(updated);
-
-    if (field === 'bonafide' && value === false) {
-      setDialogScreeningPassed(false);
-      return;
-    }
-    if (field === 'amaranth' && value === true) {
-      setDialogScreeningPassed(false);
-      return;
-    }
-    if (field === 'convicted' && value === true) {
-      setDialogScreeningPassed(false);
-      return;
-    }
-
-    if (dialogScreeningStep < 3) {
-      setDialogScreeningStep(prev => prev + 1);
-    } else {
-      setDialogScreeningPassed(true);
-      setDialogStep('details');
-    }
-  };
-
-  const handleDialogBack = () => {
-    if (dialogScreeningStep > 0) {
-      setDialogScreeningStep(prev => prev - 1);
-    }
-  };
-
-  const handleSaveCandidate = () => {
-    const position = positions.find(p => p.position_id === activePositionId);
-    const positionTitle = position ? position.title : "this position";
-    const validationError = validateCandidate(positionTitle, dialogCandidateData);
-    
-    if (validationError) {
-      setDialogError(validationError);
-      return;
-    }
-    
-    const finalCandidate = {
-      ...dialogCandidateData,
-      has_two_failing_grades: !!dialogScreeningAnswers.failingGrades,
-      bonafide: !!dialogScreeningAnswers.bonafide,
-      amaranth: !!dialogScreeningAnswers.amaranth,
-      convicted: !!dialogScreeningAnswers.convicted,
+  const handleSaveCandidate = (finalCandidate: PartylistRegistrationCandidateDraft, answers: any) => {
+    const candidateToSave = {
+      ...finalCandidate,
+      has_two_failing_grades: !!answers.failingGrades,
+      bonafide: !!answers.bonafide,
+      amaranth: !!answers.amaranth,
+      convicted: !!answers.convicted,
     };
     
     setCandidateMap(prev => {
       const list = [...(prev[activePositionId!] || [])];
       if (activeCandidateIndex !== null) {
-        list[activeCandidateIndex] = finalCandidate;
+        list[activeCandidateIndex] = candidateToSave;
       } else {
-        list.push(finalCandidate);
+        list.push(candidateToSave);
       }
       return { ...prev, [activePositionId!]: list };
     });
@@ -254,105 +156,6 @@ export function PartylistRegistrationForm({
     }));
     setDialogOpen(false);
   };
-
-  const handlePhotoUploadInDialog = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setDialogCandidateData(prev => ({
-        ...prev,
-        photo: String(reader.result || ""),
-      }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-
-  useEffect(() => {
-    if (!pdfPayload) {
-      return;
-    }
-
-    const payload = pdfPayload;
-
-    let revokedUrl = "";
-
-    async function generateAndDownload() {
-      setDownloadState("generating");
-      try {
-        const blob = await pdf(
-          <PartylistRegistrationPDF
-            electionName={payload.electionName}
-            partylistName={payload.partylistName}
-            managerName={payload.managerName}
-            candidates={payload.candidates}
-          />,
-        ).toBlob();
-
-        const objectUrl = URL.createObjectURL(blob);
-        revokedUrl = objectUrl;
-
-        const anchor = document.createElement("a");
-        anchor.href = objectUrl;
-        anchor.download = `${payload.partylistName.replace(/\s+/g, "-").toLowerCase()}-partylist-registration.pdf`;
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
-
-        setDownloadState("done");
-      } catch (downloadError) {
-        console.error(downloadError);
-        setDownloadState("failed");
-      }
-    }
-
-    generateAndDownload();
-
-    return () => {
-      if (revokedUrl) {
-        URL.revokeObjectURL(revokedUrl);
-      }
-    };
-  }, [pdfPayload]);
-
-
-
-  function validateCandidate(
-    positionTitle: string,
-    candidate: PartylistRegistrationCandidateDraft,
-  ) {
-    if (
-      !candidate.full_name ||
-      !candidate.student_id ||
-      !candidate.email ||
-      !candidate.position_id ||
-      !candidate.course_id ||
-      !candidate.birth_date ||
-      !candidate.current_address ||
-      !candidate.permanent_address ||
-      !candidate.contact_number ||
-      !candidate.photo ||
-      !candidate.cog_link ||
-      !candidate.cor_link ||
-      !candidate.good_moral_link
-    ) {
-      return `Candidate details are incomplete for ${positionTitle}.`;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate.email)) {
-      return `Candidate email is invalid for ${positionTitle}.`;
-    }
-
-    if (electionType === "Faculty-Wide" && ownerFacultyCode) {
-      const course = courses.find((c) => c.course_id === candidate.course_id);
-      if (course && course.faculty_acronym !== ownerFacultyCode) {
-        return `Candidate ${candidate.full_name} for ${positionTitle} belongs to ${course.faculty_name}, which is not eligible for this ${ownerCampus || "faculty"}-wide election.`;
-      }
-    }
-
-    return null;
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -374,12 +177,6 @@ export function PartylistRegistrationForm({
       }
 
       for (const candidate of candidates) {
-        const candidateError = validateCandidate(position.title, candidate);
-        if (candidateError) {
-          setError(candidateError);
-          setLoading(false);
-          return;
-        }
         selectedCandidates.push(candidate);
       }
     }
@@ -457,9 +254,8 @@ export function PartylistRegistrationForm({
       });
 
       setSuccess(true);
-    } catch (err) {
-      console.error("Partylist registration error:", err);
-      setError("An error occurred during submission. If you uploaded high-resolution images, please compress them and try again (Payload Too Large).");
+    } catch {
+      setError("An unexpected error occurred. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -467,34 +263,86 @@ export function PartylistRegistrationForm({
 
   if (success) {
     return (
-      <Card className="max-w-2xl mx-auto">
-        <CardContent className="pt-6 text-center space-y-4">
-          <div className="mx-auto size-12 rounded-full bg-green-600/10 flex items-center justify-center">
-            <span className="text-lg font-bold text-green-600">&#10003;</span>
+      <Card className="w-full max-w-2xl mx-auto shadow-lg border-primary/20 bg-card overflow-hidden">
+        <div className="h-2 bg-gradient-to-r from-primary to-primary/60 w-full" />
+        <CardContent className="pt-10 pb-10 flex flex-col items-center text-center space-y-6">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-2 shadow-inner">
+            <svg
+              className="w-10 h-10 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
           </div>
-          <h2 className="text-xl font-bold">Partylist registered</h2>
-          <p className="text-muted-foreground">
-            Your partylist has been successfully registered for{" "}
-            <strong>{electionName}</strong>.
-          </p>
-          <Badge variant="secondary">Status: Active</Badge>
-          <p className="text-sm text-muted-foreground">
-            {downloadState === "generating" &&
-              "Generating your registration PDF..."}
-            {downloadState === "done" &&
-              "PDF downloaded. Print and submit signed hard copies to the election board."}
-            {downloadState === "failed" &&
-              "PDF generation failed. Please reload this page and re-submit."}
-          </p>
+          <div className="space-y-3 max-w-md">
+            <h2 className="text-3xl font-extrabold tracking-tight text-foreground">
+              Registration Submitted
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Your partylist registration has been submitted successfully and is
+              now pending review by the electoral board.
+            </p>
+          </div>
+
+          <div className="pt-4 flex flex-col gap-3 w-full max-w-sm">
+            <Button
+              className="w-full font-semibold shadow-sm"
+              size="lg"
+              variant="outline"
+              disabled={downloadState === "generating"}
+              onClick={() => {
+                if (pdfPayload) {
+                  setPdfPayload({ ...pdfPayload });
+                }
+              }}
+            >
+              {downloadState === "generating"
+                ? "Generating PDF..."
+                : "Re-download Registration PDF"}
+            </Button>
+            <Button
+              className="w-full font-semibold shadow-sm"
+              size="lg"
+              onClick={() => window.location.reload()}
+            >
+              Register Another Partylist
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full mt-2 text-muted-foreground hover:text-foreground"
+              asChild
+            >
+              <a href={`/elections/${electionId}`}>Return to Election Page</a>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
+          Partylist Registration
+        </h1>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          Register your political party and submit your slate of candidates for
+          the upcoming election.
+        </p>
+      </div>
+
       {error && (
-        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/20">
+        <div className="bg-destructive/10 text-destructive p-4 rounded-md border border-destructive/20 font-medium shadow-sm flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 mt-0.5 flex-shrink-0" />
           {error}
         </div>
       )}
@@ -596,72 +444,75 @@ export function PartylistRegistrationForm({
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-bold text-foreground text-sm">{position.title}</h3>
-                          {isRequired && <Badge variant="outline" className="text-[10px] uppercase tracking-wider h-5">Required</Badge>}
-                          {isFilled ? (
-                            <Badge className="bg-green-600 hover:bg-green-700 text-white text-[10px] uppercase tracking-wider h-5">Filled ({candidates.length}/{maxVotes})</Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-[10px] uppercase tracking-wider h-5">Empty (0/{maxVotes})</Badge>
+                          {isRequired && (
+                            <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-destructive border-destructive/30 bg-destructive/5 font-bold">
+                              Required
+                            </Badge>
                           )}
+                          <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-semibold">
+                            {candidates.length} / {maxVotes} Slot{maxVotes !== 1 ? 's' : ''}
+                          </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {isRequired 
-                            ? "This position requires a candidate slate nominee." 
-                            : "Optional candidate position slot."}
-                        </p>
+                        {isRequired && !isFilled && (
+                          <p className="text-xs text-destructive flex items-center gap-1 font-medium">
+                            <ShieldAlert className="w-3 h-3" /> Minimum 1 candidate required
+                          </p>
+                        )}
                       </div>
-                      {canAddMore && (
-                        <div className="shrink-0">
-                          <Button
-                            type="button"
-                            variant={isRequired && candidates.length === 0 ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handleOpenAddDialog(position.position_id)}
-                            className="cursor-pointer"
-                          >
-                            <UserPlus className="size-3.5 mr-1.5" />
-                            Add Nominee
-                          </Button>
-                        </div>
-                      )}
+                      
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isRequired && !isFilled ? "default" : "outline"}
+                        className="w-full sm:w-auto shadow-sm"
+                        onClick={() => handleOpenAddDialog(position.position_id)}
+                        disabled={!canAddMore}
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Add Nominee
+                      </Button>
                     </div>
-                    
+
                     {candidates.length > 0 && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                        {candidates.map((candidate, index) => (
-                          <div key={index} className="flex flex-col gap-2 p-3 border border-border bg-background rounded-md">
-                            <div className="flex justify-between items-start">
-                              <div className="text-xs text-muted-foreground space-y-1">
-                                <p className="font-semibold text-foreground text-sm">{candidate.full_name} ({candidate.student_id})</p>
-                                <p className="text-muted-foreground">
-                                  Course: {courses.find(c => c.course_id === candidate.course_id)?.acronym || "N/A"} | Email: {candidate.email}
+                        {candidates.map((candidate, idx) => (
+                          <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-md border bg-background hover:border-primary/50 transition-colors group">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {candidate.photo ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={candidate.photo} alt={candidate.full_name} className="w-12 h-12 rounded object-cover border shrink-0" />
+                              ) : (
+                                <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0 border">
+                                  <UserPlus className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold truncate" title={candidate.full_name}>{candidate.full_name}</p>
+                                <p className="text-xs text-muted-foreground truncate" title={`${candidate.faculty} / ${candidate.department}`}>
+                                  {candidate.faculty} / {candidate.department}
                                 </p>
-                                {candidate.has_two_failing_grades && (
-                                  <Badge variant="destructive" className="text-[9px] uppercase font-bold tracking-widest mt-1">
-                                    Flagged: Failing Grades
-                                  </Badge>
-                                )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+                            <div className="flex gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenEditDialog(position.position_id, index)}
-                                className="cursor-pointer flex-1"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                onClick={() => handleOpenEditDialog(position.position_id, idx)}
+                                title="Edit Nominee"
                               >
-                                <Edit className="size-3.5 mr-1.5" />
-                                Edit
+                                <Edit className="w-4 h-4" />
                               </Button>
                               <Button
                                 type="button"
+                                size="icon"
                                 variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:bg-destructive/10 cursor-pointer flex-1"
-                                onClick={() => handleRemoveCandidate(position.position_id, index)}
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleRemoveCandidate(position.position_id, idx)}
+                                title="Remove Nominee"
                               >
-                                <X className="size-3.5 mr-1.5" />
-                                Remove
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -676,329 +527,32 @@ export function PartylistRegistrationForm({
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="uppercase tracking-tight font-black">
-              {positions.find(p => p.position_id === activePositionId)?.title || "Candidate Details"}
-            </DialogTitle>
-          </DialogHeader>
+      <div className="flex justify-end pt-6 border-t border-border">
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full md:w-auto h-12 px-8 font-bold text-base shadow-md"
+          disabled={loading || downloadState === "generating"}
+        >
+          {loading || downloadState === "generating" ? "Processing..." : "Submit Partylist Registration"}
+        </Button>
+      </div>
 
-          {dialogStep === 'screening' && (
-            <div className="space-y-6 py-4">
-              {dialogScreeningPassed === false ? (
-                <div className="text-center space-y-4 border border-destructive/30 p-6 bg-destructive/5 rounded-md">
-                  <div className="inline-flex items-center justify-center size-12 rounded-full bg-destructive/10 text-destructive mb-1">
-                    <ShieldAlert className="size-6" />
-                  </div>
-                  <h3 className="text-lg font-black uppercase tracking-tight text-destructive">Nominee Disqualified</h3>
-                  <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                    Based on the screening answers, this nominee does not meet the eligibility qualifications for candidacy.
-                  </p>
-                  <div className="bg-background border p-4 rounded text-left text-xs font-semibold text-foreground/80 space-y-2">
-                    {dialogScreeningAnswers.bonafide === false && (
-                      <p>• The nominee must be a bonafide undergraduate student of this campus.</p>
-                    )}
-                    {dialogScreeningAnswers.amaranth === true && (
-                      <p>• The nominee must not be a staff member of the Amaranth Board.</p>
-                    )}
-                    {dialogScreeningAnswers.convicted === true && (
-                      <p>• The nominee must not have been convicted of violations of University Rules and Regulations.</p>
-                    )}
-                  </div>
-                  <Button type="button" onClick={() => setDialogOpen(false)} className="w-full">
-                    Close Dialog
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <span>Nominee Screening Questions</span>
-                      <span>Question {dialogScreeningStep + 1} of 4</span>
-                    </div>
-                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-foreground h-full transition-all duration-300"
-                        style={{ width: `${(dialogScreeningStep / 4) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="min-h-[100px] flex flex-col justify-center space-y-2">
-                    <h3 className="text-lg font-bold leading-snug">
-                      {dialogScreeningStep === 0 && "Is the nominee a bonafide VSU undergraduate student of this campus?"}
-                      {dialogScreeningStep === 1 && "Has the nominee incurred two (2) previous failing grades from the last semester?"}
-                      {dialogScreeningStep === 2 && "Is the nominee currently a staff member of the Amaranth Board?"}
-                      {dialogScreeningStep === 3 && "Has the nominee been convicted of any violations of the University Rules and Regulations?"}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {dialogScreeningStep === 0 && "Requires student enrollment and registration verification."}
-                      {dialogScreeningStep === 1 && "Note: Incuring failing grades flags the nominee but does not disqualify them."}
-                      {dialogScreeningStep === 2 && "Amaranth Board staff members are ineligible to hold student council slots."}
-                      {dialogScreeningStep === 3 && "Requires clean disciplinary record with the university."}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleDialogScreeningAnswer(
-                        dialogScreeningStep === 0 ? 'bonafide' :
-                        dialogScreeningStep === 1 ? 'failingGrades' :
-                        dialogScreeningStep === 2 ? 'amaranth' : 'convicted',
-                        true
-                      )}
-                      className="h-14 font-black uppercase text-xs tracking-wider border-2"
-                    >
-                      Yes
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleDialogScreeningAnswer(
-                        dialogScreeningStep === 0 ? 'bonafide' :
-                        dialogScreeningStep === 1 ? 'failingGrades' :
-                        dialogScreeningStep === 2 ? 'amaranth' : 'convicted',
-                        false
-                      )}
-                      className="h-14 font-black uppercase text-xs tracking-wider border-2"
-                    >
-                      No
-                    </Button>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-4 border-t text-xs">
-                    {dialogScreeningStep > 0 ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleDialogBack}
-                        className="font-bold uppercase tracking-wider text-xs"
-                      >
-                        <ChevronLeft className="size-4 mr-1" /> Back
-                      </Button>
-                    ) : <span />}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDialogOpen(false)}
-                      className="font-bold uppercase tracking-wider text-xs text-muted-foreground"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {dialogStep === 'details' && (
-            <div className="space-y-4 py-2">
-              {dialogError && (
-                <div className="bg-destructive/10 text-destructive text-xs p-3 rounded border border-destructive/20 font-medium">
-                  {dialogError}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">Full Name *</Label>
-                  <Input
-                    value={dialogCandidateData.full_name}
-                    onChange={(event) =>
-                      setDialogCandidateData(prev => ({ ...prev, full_name: event.target.value }))
-                    }
-                    placeholder="Last Name, First Name, Middle Name"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">Student ID *</Label>
-                  <StudentIdInput
-                    value={dialogCandidateData.student_id}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                      setDialogCandidateData(prev => ({ ...prev, student_id: event.target.value }))
-                    }
-                    placeholder="23-1-01457"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">Email *</Label>
-                  <Input
-                    type="email"
-                    value={dialogCandidateData.email}
-                    onChange={(event) =>
-                      setDialogCandidateData(prev => ({ ...prev, email: event.target.value }))
-                    }
-                    placeholder="candidate@vsu.edu.ph"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">Contact Number *</Label>
-                  <ContactNumberInput
-                    value={dialogCandidateData.contact_number}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                      setDialogCandidateData(prev => ({ ...prev, contact_number: event.target.value }))
-                    }
-                    placeholder="09XXXXXXXXX"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1 md:col-span-2">
-                  <Label className="text-xs font-bold uppercase">Date of Birth *</Label>
-                  <Input
-                    type="date"
-                    value={dialogCandidateData.birth_date}
-                    onChange={(event) =>
-                      setDialogCandidateData(prev => ({
-                        ...prev,
-                        birth_date: event.target.value,
-                        age: calculateAgeFromBirthDate(event.target.value),
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">Age (Auto-computed)</Label>
-                  <Input 
-                    value={calculateAgeFromBirthDate(dialogCandidateData.birth_date) || ""} 
-                    readOnly 
-                    className="bg-muted/60" 
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs font-bold uppercase">Course / Degree Program *</Label>
-                <Select
-                  value={dialogCandidateData.course_id}
-                  onValueChange={(value) => {
-                    const selected = courses.find((course) => course.course_id === value);
-                    setDialogCandidateData(prev => ({
-                      ...prev,
-                      course_id: value,
-                      faculty: selected?.faculty_name || "",
-                      department: selected?.department_name || "",
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.course_id} value={course.course_id}>
-                        {course.acronym
-                          ? `${course.acronym} - ${course.name}`
-                          : course.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {dialogCandidateData.course_id && (
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                    {dialogCandidateData.faculty} / {dialogCandidateData.department}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs font-bold uppercase">Current Address *</Label>
-                <Input
-                  value={dialogCandidateData.current_address}
-                  onChange={(event) =>
-                    setDialogCandidateData(prev => ({ ...prev, current_address: event.target.value }))
-                  }
-                  placeholder="Current address"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs font-bold uppercase">Permanent Address *</Label>
-                <Input
-                  value={dialogCandidateData.permanent_address}
-                  onChange={(event) =>
-                    setDialogCandidateData(prev => ({ ...prev, permanent_address: event.target.value }))
-                  }
-                  placeholder="Permanent address"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs font-bold uppercase">1x1 Photo *</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUploadInDialog}
-                  className="cursor-pointer border border-input bg-background file:border-r file:border-input file:bg-muted file:px-3 file:mr-3 hover:bg-muted/10 transition-all text-xs"
-                />
-                {dialogCandidateData.photo && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={dialogCandidateData.photo}
-                    alt="Nominee preview"
-                    className="w-12 h-12 rounded object-cover border mt-1"
-                  />
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">COG Link *</Label>
-                  <Input
-                    value={dialogCandidateData.cog_link}
-                    onChange={(event) =>
-                      setDialogCandidateData(prev => ({ ...prev, cog_link: event.target.value }))
-                    }
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">COR Link *</Label>
-                  <Input
-                    value={dialogCandidateData.cor_link}
-                    onChange={(event) =>
-                      setDialogCandidateData(prev => ({ ...prev, cor_link: event.target.value }))
-                    }
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold uppercase">Good Moral Link *</Label>
-                  <Input
-                    value={dialogCandidateData.good_moral_link}
-                    onChange={(event) =>
-                      setDialogCandidateData(prev => ({ ...prev, good_moral_link: event.target.value }))
-                    }
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="button" onClick={handleSaveCandidate}>
-                  Save Nominee
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Button type="submit" className="w-full" size="lg" disabled={loading}>
-        {loading ? "Registering..." : "Register Partylist"}
-      </Button>
+      {dialogOpen && activePositionId && (
+        <CandidateDialogWizard
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          initialData={dialogInitialData}
+          initialScreeningAnswers={dialogInitialAnswers}
+          courses={courses}
+          positionTitle={positions.find(p => p.position_id === activePositionId)?.title || "this position"}
+          electionType={electionType}
+          ownerFacultyCode={ownerFacultyCode}
+          onSave={handleSaveCandidate}
+        />
+      )}
     </form>
   );
 }
+
+export default PartylistRegistrationForm;
