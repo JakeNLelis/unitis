@@ -40,7 +40,7 @@ export const StudentIdInput = React.forwardRef<HTMLInputElement, React.Component
         ref={ref}
         value={value}
         onChange={handleChange}
-        pattern="^\\d{2}-\\d-\\d{5}$"
+        pattern="^[0-9]{2}-[0-9]-[0-9]{5}$"
         title={`Format: xx-x-xxxxx (First two digits cannot exceed ${maxYear})`}
       />
     );
