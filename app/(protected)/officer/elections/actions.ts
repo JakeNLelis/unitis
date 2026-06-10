@@ -632,11 +632,14 @@ export async function deleteElection(electionId: string) {
   revalidatePath("/admin/elections");
   revalidateElectionManagementPaths(electionId);
 
-  await logAdminAction(
-    "election.deleted",
-    `Deleted election ${electionId}`,
+  await logAdminAction({
+    actionType: "election.deleted",
+    description: `Deleted election ${electionId}`,
     electionId,
-  );
+    actorId: actorResult.actor.id,
+    actorEmail: actorResult.actor.email,
+    actorRole: actorResult.actorRole,
+  });
 
   return { success: true };
 }
