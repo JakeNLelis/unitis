@@ -165,7 +165,37 @@ export function ApplicationForm({
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      update("photo", reader.result as string);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_DIMENSION = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIMENSION) {
+            height *= MAX_DIMENSION / width;
+            width = MAX_DIMENSION;
+          }
+        } else {
+          if (height > MAX_DIMENSION) {
+            width *= MAX_DIMENSION / height;
+            height = MAX_DIMENSION;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+          update("photo", compressedBase64);
+        } else {
+          update("photo", String(reader.result || ""));
+        }
+      };
+      img.src = String(reader.result || "");
     };
     reader.readAsDataURL(file);
   };
@@ -274,9 +304,16 @@ export function ApplicationForm({
     fd.set("amaranth", screeningAnswers.amaranth ? "true" : "false");
     fd.set("convicted", screeningAnswers.convicted ? "true" : "false");
 
-    const result = await submitCandidacyApplication(fd);
-    if (result.error) {
-      setError(result.error);
+    try {
+      const result = await submitCandidacyApplication(fd);
+      if (result.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+    } catch (err: any) {
+      console.error("Application submission error:", err);
+      setError("The uploaded images are way too big. Even after compression, the total size exceeds the server's 4.5MB limit. Please upload a smaller image.");
       setLoading(false);
       return;
     }

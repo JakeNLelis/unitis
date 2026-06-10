@@ -254,8 +254,9 @@ export function PartylistRegistrationForm({
       });
 
       setSuccess(true);
-    } catch {
-      setError("An unexpected error occurred. Please try again later.");
+    } catch (err: any) {
+      console.error("Partylist submission error:", err);
+      setError("The uploaded images are way too big. Even after compression, the total size exceeds the server's 4.5MB limit. Please upload a smaller image.");
     } finally {
       setLoading(false);
     }
