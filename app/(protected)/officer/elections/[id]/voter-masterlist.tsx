@@ -57,7 +57,7 @@ export function VoterMasterlist({
   const effectiveFacultyId = electionType === "Faculty-Wide" ? electionFacultyId : selectedFacultyId;
   const filteredCoursesForAdd = effectiveFacultyId
     ? courses.filter((c) => c.faculty_id === effectiveFacultyId)
-    : electionType === "Faculty-Wide" ? [] : courses;
+    : [];
 
   async function handleAdd() {
     if (!canEdit) return;
