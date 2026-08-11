@@ -636,9 +636,9 @@ export async function deleteElection(electionId: string) {
     actionType: "election.deleted",
     description: `Deleted election ${electionId}`,
     electionId,
-    actorId: actorResult.actor.id,
-    actorEmail: actorResult.actor.email,
-    actorRole: actorResult.actorRole,
+    actorId: actorResult.userId,
+    actorEmail: actorResult.email,
+    actorRole: actorResult.role,
   });
 
   return { success: true };
