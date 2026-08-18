@@ -141,6 +141,10 @@ export async function requireSystemAdmin() {
   return requireRole(["system-admin"]);
 }
 
+export async function requireAdminOrChairperson() {
+  return requireSystemAdmin();
+}
+
 export async function requireSEBOfficer() {
   const profile = await getCurrentProfile();
 

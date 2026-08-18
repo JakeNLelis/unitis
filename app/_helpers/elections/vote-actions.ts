@@ -49,7 +49,7 @@ export async function getVotingUser(): Promise<VotingUser | { error: string }> {
     };
   }
 
-  return { email: emailRaw } satisfies VotingUser;
+  return { email } satisfies VotingUser;
 }
 
 export async function getVotingElection(electionId: string) {
