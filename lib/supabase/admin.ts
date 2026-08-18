@@ -1,10 +1,10 @@
+import { createClient } from "@/lib/supabase/server";
+
 /**
- * Service-role access is intentionally disabled for this project.
- * All database access must go through the authenticated app client and
- * row-level security policies instead of the service-role key.
+ * Backward-compatible admin client helper.
+ * Service-role access is disabled in this project, so this returns the
+ * authenticated server client and relies on RLS + role checks.
  */
-export async function createAdminClient(): Promise<any> {
-  throw new Error(
-    "Service-role client is disabled in this project. Use the authenticated Supabase client and RLS instead.",
-  );
+export async function createAdminClient() {
+  return createClient();
 }
