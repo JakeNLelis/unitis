@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getElectionState } from "@/lib/utils";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import {
   Card,
   CardContent,
@@ -14,9 +14,9 @@ import { getElectionResults } from "../elections/[id]/vote/actions";
 import type { ConcludedElection } from "@/lib/types/public";
 
 export default async function ArchivePage() {
-  const adminSupabase = await createAdminClient();
+  const supabase = await createClient();
 
-  const { data: elections, error } = await adminSupabase
+  const { data: elections, error } = await supabase
     .from("elections")
     .select(
       "election_id, name, election_type, start_date, end_date, is_archived",

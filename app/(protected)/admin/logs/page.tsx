@@ -1,4 +1,5 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdminOrChairperson } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { archivo } from "@/lib/fonts";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,9 @@ interface AdminLog {
 }
 
 export default async function AdminLogsPage() {
-  const supabase = await createAdminClient();
+  await requireAdminOrChairperson();
+
+  const supabase = await createClient();
 
   const { data: logs, error } = await supabase
     .from("admin_logs")

@@ -1,19 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-
 /**
- * Creates a Supabase client with service role key for admin operations.
- * Use this only in server-side code for operations like creating/deleting users.
- * This client bypasses RLS.
+ * Service-role access is intentionally disabled for this project.
+ * All database access must go through the authenticated app client and
+ * row-level security policies instead of the service-role key.
  */
-export function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
+export async function createAdminClient() {
+  throw new Error(
+    "Service-role client is disabled in this project. Use the authenticated Supabase client and RLS instead.",
   );
 }
