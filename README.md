@@ -13,6 +13,35 @@ An election management system designed to modernize student elections at Visayas
 | UN.010.007                                             | 2026-04-19    |
 | UN.010.008                                             | 2026-04-26    |
 | UN.010.009                                             | 2026-05-03    |
+| UN.010.010                                             | 2026-06-04    |
+| UN.010.011                                             | 2026-06-05    |
+| UN.010.012                                             | 2026-06-09    |
+
+## UN.010.012 Release Notes
+- Resolved SEO and AEO scanner issues by implementing native Next.js `robots.ts` and a dynamic `sitemap.ts` to dramatically improve search engine and AI crawler indexing.
+- Addressed comprehensive code review findings: added robust error handling to the React PDF generation, incorporated "N/A" sentinels for null turnout metrics, and lazily loaded heavy dependencies (`@react-pdf/renderer`) to reduce client bundle size.
+- Cleaned up dead codebase components identified by Fallow (e.g., outdated auth roles and turnout unsubscription logic) and resolved ESLint flat config compatibility issues.
+- Fixed Recharts legend lookup type errors and updated components to properly handle missing metrics in the detailed election archive graphs.
+- Addressed email spoofing security risk by providing the necessary SPF DNS record configuration for the Resend integration.
+
+## UN.010.011 Release Notes
+- Optimized database fetching by parallelizing independent queries with `Promise.all` to significantly reduce request waterfall latency and speed up page loads.
+- Resolved all remaining ESLint issues by strictly enforcing typing (replacing `any` with `Record<string, unknown>`) and removing all orphaned imports, types, and unreachable code based on Fallow analysis.
+- Implemented the Audit Log system, automatically tracking and logging all administrative actions (like CRUD operations on elections, turnout adjustments) into the database, with a new dedicated viewer interface on the Admin dashboard.
+- Integrated comprehensive Quorum verification and display across Turnout and Archive modules, ensuring election validity according to organizational requirements.
+
+## UN.010.010 Release Notes
+- Optimized mobile responsiveness and fixed layout overflows across the admin, officer, and voter portals.
+- Configured dynamic calendar scaling to show one month on mobile viewports and two months on desktops to prevent double calendar overflow.
+- Refactored page headers on elections dashboards and inline edit forms in the Academics Manager to stack vertically on smaller viewports.
+- Integrated same-page anchor navigation on the landing page for smooth, reload-free auto-scrolling to active and upcoming elections.
+- Replaced the copy URL icon with a text-labeled Copy Link button for clearer and more accessible user interaction.
+- Resolved turnout ledger redirection for upcoming/candidacy elections, rendering a friendly "voting has not commenced" notice.
+- Corrected the document redirect tooltip for Good Moral Character in candidate review tables and added target safety rel parameters.
+- Constrained the Live Vote Tally visibility to only display after the voting period has officially ended.
+- Updated voter masterlist editing rules to permit voter management prior to configuring election dates.
+- Secured candidate status lookup action by utilizing a request-scoped Supabase client, restricting profile lookups to verified user sessions, and stripping out PII query projections.
+- Fixed Candidate TypeScript interface definitions to support optional photo fields and resolved Next.js compilation issues.
 
 ## UN.010.009 Release Notes
 - Implemented age calculation from birth date during candidate application insertion.

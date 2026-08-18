@@ -5,29 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { archivo } from "@/lib/fonts";
 import { OfficerElectionRegistry } from "@/components/officer/election-registry";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ElectionsPage() {
   return (
     <div className="container max-w-6xl mx-auto px-6 space-y-16 py-12">
-      <div className="flex justify-between items-end border-b-2 border-foreground pb-10">
+      <div className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-end border-b-2 border-foreground pb-10">
         <div className="space-y-4">
           <h1
             className={cn(
-              "text-6xl font-black uppercase tracking-tighter leading-none",
+              "text-5xl sm:text-6xl font-black uppercase tracking-tighter leading-none",
               archivo.className,
             )}
           >
             Elections
           </h1>
           <p className="text-sm font-medium text-muted-foreground max-w-md">
-            The authoritative registry of all university-wide and localized
+            The authoritative registry of all campus-wide and localized
             election cycles managed by the Student Election Board.
           </p>
         </div>
         <Button
           asChild
           size="lg"
-          className="rounded-none font-black uppercase tracking-widest h-14 px-8"
+          className="w-full sm:w-auto rounded-none font-black uppercase tracking-widest h-14 px-8 shrink-0"
         >
           <Link href="/officer/elections/new">
             <Plus className="size-5 mr-3" />
@@ -52,7 +53,17 @@ export default function ElectionsPage() {
           fallback={
             <div className="space-y-4 border-y border-border divide-y divide-border">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-surface-low animate-pulse" />
+                <div key={i} className="py-4 space-y-3">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-1/4" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
               ))}
             </div>
           }

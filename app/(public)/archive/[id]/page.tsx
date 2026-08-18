@@ -83,20 +83,46 @@ export default async function ArchiveDetailPage({
     });
   }
 
-  const { count: totalVotes } = await supabase
-    .from("voters")
-    .select("*", { count: "exact", head: true })
-    .eq("election_id", id)
-    .eq("is_voted", true);
+  const [
+    { count: totalVotes },
+    { count: expectedVoters },
+    { data: expectedAdjustments }
+  ] = await Promise.all([
+    supabase
+      .from("voters")
+      .select("*", { count: "exact", head: true })
+      .eq("election_id", id)
+      .eq("is_voted", true),
+    supabase
+      .from("voters")
+      .select("*", { count: "exact", head: true })
+      .eq("election_id", id),
+    supabase
+      .from("turnout_adjustments")
+      .select("expected_voters_delta, casted_votes_delta")
+      .eq("election_id", id)
+  ]);
 
-  const { count: expectedVoters } = await supabase
-    .from("voters")
-    .select("*", { count: "exact", head: true })
-    .eq("election_id", id);
+  const castedDelta = (expectedAdjustments || []).reduce(
+    (sum, adjustment) => sum + (adjustment.casted_votes_delta ?? 0),
+    0,
+  );
+  const expectedDelta = (expectedAdjustments || []).reduce(
+    (sum, adjustment) => sum + (adjustment.expected_voters_delta ?? 0),
+    0,
+  );
 
-  const total = totalVotes ?? 0;
-  const expected = expectedVoters ?? 0;
+  const total = Math.max(0, (totalVotes ?? 0) + castedDelta);
+  const expectedBase = expectedVoters ?? 0;
+  const expected = Math.max(0, expectedBase + expectedDelta);
   const turnout = expected === 0 ? 0 : (total / expected) * 100;
+  const quorumTarget = expected === 0 ? 0 : Math.floor(expected / 2) + 1;
+  const quorumMet = total >= quorumTarget;
+
+  // Determine if the user is an officer, chairperson, or admin to allow PDF download
+  const { getCurrentProfile } = await import("@/lib/auth");
+  const profile = await getCurrentProfile();
+  const canDownloadPdf = profile?.role === "system-admin" || profile?.role === "seb-officer" || profile?.role === "chairperson";
 
   return (
     <main className="container max-w-4xl mx-auto px-4 py-10">
@@ -115,7 +141,10 @@ export default async function ArchiveDetailPage({
           totalVotes={total}
           expectedVoters={expected}
           turnoutPercentage={turnout}
+          quorumTarget={quorumTarget}
+          quorumMet={quorumMet}
           candidateResults={results}
+          canDownloadPdf={canDownloadPdf}
         />
       </div>
     </main>

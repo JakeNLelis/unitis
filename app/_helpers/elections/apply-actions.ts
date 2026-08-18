@@ -23,6 +23,10 @@ type CandidacyFormValues = {
   faculty: string;
   department: string;
   campaign_manager: string;
+  has_two_failing_grades: boolean;
+  bonafide: boolean;
+  amaranth: boolean;
+  convicted: boolean;
 };
 
 type CandidateApplication = {
@@ -48,6 +52,7 @@ type CandidateApplication = {
   faculty: string | null;
   department: string | null;
   campaign_manager: string | null;
+  has_two_failing_grades: boolean;
 };
 
 export function readCandidacyFormValues(
@@ -73,6 +78,10 @@ export function readCandidacyFormValues(
     faculty: String(formData.get("faculty") || ""),
     department: String(formData.get("department") || ""),
     campaign_manager: String(formData.get("campaign_manager") || ""),
+    has_two_failing_grades: formData.get("has_two_failing_grades") === "true",
+    bonafide: formData.get("bonafide") === "true",
+    amaranth: formData.get("amaranth") === "true",
+    convicted: formData.get("convicted") === "true",
   };
 }
 
@@ -100,6 +109,10 @@ export function validateCandidacyFormValues(values: CandidacyFormValues) {
 
   if (!values.birth_date) {
     return { error: "Please provide your date of birth." };
+  }
+
+  if (!values.bonafide || values.amaranth || values.convicted) {
+    return { error: "You do not meet the eligibility requirements to file a candidacy." };
   }
 
   return { values };
@@ -159,6 +172,29 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
     values.partylist_id && values.partylist_id !== "independent";
   const computedAge = calculateAgeFromBirthDate(values.birth_date);
 
+  const { data: election } = await adminSupabase
+    .from("elections")
+    .select("election_type, owner_faculty_code")
+    .eq("election_id", values.election_id)
+    .single();
+
+  if (election?.election_type?.toLowerCase() === "faculty-wide" && election.owner_faculty_code) {
+    const { data: course } = await adminSupabase
+      .from("courses")
+      .select("departments(faculties(acronym))")
+      .eq("course_id", values.course_id)
+      .single();
+
+    const depts = course?.departments as any;
+    const courseFacultyAcronym = Array.isArray(depts)
+      ? (Array.isArray(depts[0]?.faculties) ? depts[0].faculties[0]?.acronym : depts[0]?.faculties?.acronym)
+      : (Array.isArray(depts?.faculties) ? depts?.faculties[0]?.acronym : depts?.faculties?.acronym);
+      
+    if (courseFacultyAcronym !== election.owner_faculty_code) {
+       return { error: "You are not affiliated with the faculty for this election and cannot proceed with candidacy filing." };
+    }
+  }
+
   const application: CandidateApplication = {
     election_id: values.election_id,
     position_id: values.position_id,
@@ -182,6 +218,7 @@ export async function insertCandidateApplication(values: CandidacyFormValues) {
     faculty: values.faculty || null,
     department: values.department || null,
     campaign_manager: values.campaign_manager || null,
+    has_two_failing_grades: values.has_two_failing_grades,
   };
 
   const { error } = await adminSupabase.from("candidates").insert(application);

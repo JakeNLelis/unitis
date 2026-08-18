@@ -43,7 +43,7 @@ export function AddPositionForm({
 
     const result = await createPosition(formData);
     if (!result || (typeof result === "object" && "error" in result)) {
-      setError((result as any)?.error ?? "Unknown error");
+      setError(((result as Record<string, unknown>)?.error as string) ?? "Unknown error");
       setIsLoading(false);
       return;
     }
@@ -56,7 +56,7 @@ export function AddPositionForm({
 
   return (
     <form onSubmit={handleSubmit} className="border rounded-lg p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label htmlFor="title" className="text-sm">
             Position Title

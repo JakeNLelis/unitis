@@ -141,6 +141,19 @@ export function NewOfficerForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="is_chairperson">Role</Label>
+            <Select name="is_chairperson" defaultValue="false">
+              <SelectTrigger id="is_chairperson">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="false">SEB Officer</SelectItem>
+                <SelectItem value="true">Chairperson</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"

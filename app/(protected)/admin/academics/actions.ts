@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth";
+import { logAdminAction } from "@/lib/logging";
 
 type ActionResult = { error?: string; success?: boolean };
 
@@ -40,6 +41,8 @@ export async function createFaculty(formData: FormData): Promise<ActionResult> {
     return { error: error.message };
   }
 
+  await logAdminAction("faculty.created", `Created faculty: ${name}`);
+
   return { success: true };
 }
 
@@ -71,6 +74,11 @@ export async function updateFacultyName(
     return { error: error.message };
   }
 
+  await logAdminAction(
+    "faculty.updated",
+    `Updated faculty ${facultyId} name to ${nextName}`,
+  );
+
   return { success: true };
 }
 
@@ -100,6 +108,7 @@ export async function deleteFaculty(facultyId: string): Promise<ActionResult> {
     .eq("faculty_id", facultyId);
 
   if (error) return { error: error.message };
+  await logAdminAction("faculty.deleted", `Deleted faculty ${facultyId}`);
   return { success: true };
 }
 
@@ -124,6 +133,7 @@ export async function createDepartment(
     .insert({ faculty_id, name, acronym });
 
   if (error) return { error: error.message };
+  await logAdminAction("department.created", `Created department: ${name}`);
   return { success: true };
 }
 
@@ -147,6 +157,10 @@ export async function updateDepartmentName(
     .eq("department_id", departmentId);
 
   if (error) return { error: error.message };
+  await logAdminAction(
+    "department.updated",
+    `Updated department ${departmentId} name to ${nextName}`,
+  );
   return { success: true };
 }
 
@@ -178,6 +192,10 @@ export async function deleteDepartment(
     .eq("department_id", departmentId);
 
   if (error) return { error: error.message };
+  await logAdminAction(
+    "department.deleted",
+    `Deleted department ${departmentId}`,
+  );
   return { success: true };
 }
 
@@ -200,6 +218,7 @@ export async function createCourse(formData: FormData): Promise<ActionResult> {
     .insert({ department_id, name, acronym });
 
   if (error) return { error: error.message };
+  await logAdminAction("course.created", `Created course: ${name}`);
   return { success: true };
 }
 
@@ -223,6 +242,10 @@ export async function updateCourseName(
     .eq("course_id", courseId);
 
   if (error) return { error: error.message };
+  await logAdminAction(
+    "course.updated",
+    `Updated course ${courseId} name to ${nextName}`,
+  );
   return { success: true };
 }
 
@@ -237,6 +260,7 @@ export async function deleteCourse(courseId: string): Promise<ActionResult> {
     .eq("course_id", courseId);
 
   if (error) return { error: error.message };
+  await logAdminAction("course.deleted", `Deleted course ${courseId}`);
   return { success: true };
 }
 
@@ -259,6 +283,8 @@ export async function createCampus(formData: FormData): Promise<ActionResult> {
     }
     return { error: error.message };
   }
+
+  await logAdminAction("campus.created", `Created campus: ${name}`);
 
   return { success: true };
 }
@@ -309,6 +335,8 @@ export async function updateCampusName(
     return { error: updateOfficersError.message };
   }
 
+  await logAdminAction("campus.updated", `Updated campus ${campusId} name from ${previousName} to ${nextName}`);
+
   return { success: true };
 }
 
@@ -356,5 +384,8 @@ export async function deleteCampus(campusId: string): Promise<ActionResult> {
     .eq("campus_id", campusId);
 
   if (error) return { error: error.message };
+
+  await logAdminAction("campus.deleted", `Deleted campus ${campusId} (${campus.name})`);
+
   return { success: true };
 }

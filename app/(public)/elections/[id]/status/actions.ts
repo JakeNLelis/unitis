@@ -11,30 +11,15 @@ export async function lookupCandidateStatus(email: string, electionId: string) {
 
   const supabase = await createClient();
 
-  const { data: managedPartylists } = await supabase
-    .from("partylists")
-    .select("partylist_id")
-    .eq("election_id", electionId)
-    .eq("representative_email", normalizedEmail);
-
-  const managedPartylistIds = (managedPartylists || []).map(
-    (item) => item.partylist_id,
-  );
-
-  let query = supabase
+  const query = supabase
     .from("candidates")
     .select(
       `
       candidate_id,
       full_name,
-      student_id,
-      email,
       application_status,
       rejection_reason,
       affiliation_status,
-      cog_link,
-      cor_link,
-      good_moral_link,
       created_at,
       positions(title),
       courses(name, acronym),
@@ -42,13 +27,8 @@ export async function lookupCandidateStatus(email: string, electionId: string) {
     `,
     )
     .eq("election_id", electionId)
+    .eq("email", normalizedEmail)
     .order("created_at", { ascending: false });
-
-  if (managedPartylistIds.length > 0) {
-    query = query.in("partylist_id", managedPartylistIds);
-  } else {
-    query = query.eq("email", normalizedEmail);
-  }
 
   const { data: candidates, error } = await query;
 

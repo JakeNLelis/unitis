@@ -20,7 +20,7 @@ import type {
 
 export interface TurnoutDeltaCallback {
   (
-    adjustment: RealtimePostgresInsertPayload<Record<string, unknown>>["new"],
+    adjustment: RealtimePostgresInsertPayload<Record<string, unknown>>["new"] | RealtimePostgresInsertPayload<Record<string, unknown>>["old"],
   ): void;
 }
 
@@ -55,7 +55,7 @@ export function subscribeTurnoutDeltas(
     .on(
       "postgres_changes",
       {
-        event: "UPDATE",
+        event: "*",
         schema: "public",
         table: "voters",
         filter: `election_id=eq.${electionId}`,
@@ -64,6 +64,8 @@ export function subscribeTurnoutDeltas(
         // Voter status changes impact turnout counts
         if (payload.new) {
           onUpdate(payload.new);
+        } else if (payload.old) {
+          onUpdate(payload.old);
         }
       },
     )
@@ -98,24 +100,5 @@ export async function unsubscribeTurnoutDeltas(
     await supabase.removeChannel(channel);
   } catch (error) {
     console.error("Error unsubscribing from turnout channel:", error);
-  }
-}
-
-/**
- * Unsubscribe by channel name (alternative approach)
- */
-export async function unsubscribeTurnoutDeltasByName(
-  electionId: string,
-): Promise<void> {
-  const supabase = createClient();
-  try {
-    const channel = supabase
-      .getChannels()
-      .find((c) => c.topic === `turnout:${electionId}`);
-    if (channel) {
-      await supabase.removeChannel(channel);
-    }
-  } catch (error) {
-    console.error("Error removing turnout channel by name:", error);
   }
 }

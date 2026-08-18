@@ -31,7 +31,7 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
       maxVotes,
     );
     if (result && typeof result === "object" && "error" in result) {
-      setError((result as any).error);
+      setError((result as Record<string, unknown>).error as string);
     } else {
       setIsEditing(false);
       router.refresh();
@@ -44,7 +44,7 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
     setError(null);
     const result = await deletePosition(position.position_id);
     if (result && typeof result === "object" && "error" in result) {
-      setError((result as any).error);
+      setError((result as Record<string, unknown>).error as string);
       setIsDeleting(false);
     } else {
       router.refresh();
@@ -54,7 +54,7 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
   if (isEditing) {
     return (
       <div className="border rounded-lg p-3 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Title</Label>
             <Input
@@ -110,7 +110,7 @@ function PositionItem({ position, electionId, canEdit }: PositionItemProps) {
         )}
         {position.max_votes > 1 && (
           <Badge variant="secondary" className="text-xs">
-            max {position.max_votes} votes
+            Max {position.max_votes} votes
           </Badge>
         )}
       </div>

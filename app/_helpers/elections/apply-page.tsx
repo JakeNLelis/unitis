@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CourseOption } from "@/lib/types/public";
+
 import type { ApplicationFormProps } from "@/lib/types/public";
 import { ApplicationForm } from "@/app/(public)/elections/[id]/apply/application-form";
 

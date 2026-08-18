@@ -42,6 +42,8 @@ export interface RegisterPartylistElection {
   candidacy_start_date: string | null;
   candidacy_end_date: string | null;
   is_archived: boolean;
+  owner_campus: string | null;
+  owner_faculty_code: string | null;
 }
 
 export interface RegisterPartylistContentProps {
@@ -52,6 +54,7 @@ export interface PartylistRegistrationPosition {
   position_id: string;
   title: string;
   required_for_partylist: boolean;
+  max_votes: number;
 }
 
 export interface PartylistRegistrationCandidateDraft {
@@ -71,6 +74,10 @@ export interface PartylistRegistrationCandidateDraft {
   good_moral_link: string;
   faculty: string;
   department: string;
+  has_two_failing_grades?: boolean;
+  bonafide?: boolean;
+  amaranth?: boolean;
+  convicted?: boolean;
 }
 
 export interface PartylistRegistrationPDFProps {
@@ -94,6 +101,8 @@ export interface ApplyPageElection {
   candidacy_start_date: string | null;
   candidacy_end_date: string | null;
   is_archived: boolean;
+  owner_campus: string | null;
+  owner_faculty_code: string | null;
 }
 
 export interface CourseOption {
@@ -102,6 +111,7 @@ export interface CourseOption {
   acronym: string | null;
   department_name: string;
   faculty_name: string;
+  faculty_acronym: string;
 }
 
 export interface ApplyPageContentProps {
@@ -123,6 +133,7 @@ export interface ApplicationFormCourse {
   acronym: string | null;
   department_name: string;
   faculty_name: string;
+  faculty_acronym: string;
 }
 
 export interface ApplicationFormPartylist {
@@ -138,6 +149,8 @@ export interface ApplicationFormProps {
   positions: ApplicationFormPosition[];
   courses: ApplicationFormCourse[];
   partylists: ApplicationFormPartylist[];
+  ownerCampus?: string | null;
+  ownerFacultyCode?: string | null;
 }
 
 export interface ElectionPageProps {
@@ -151,6 +164,10 @@ export type NormalizedCandidate = {
   position_title: string;
   partylist_name: string | null;
   partylist_acronym: string | null;
+  course_name: string | null;
+  course_acronym: string | null;
+  partylist_platform: string | null;
+  partylist_logo_url: string | null;
 };
 
 export interface CandidateOption {
