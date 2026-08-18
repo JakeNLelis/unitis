@@ -596,7 +596,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
   const coursesData = coursesRes.data;
   const auditLogs = auditLogsRes.data;
 
-  const coursesList = (coursesData || []).map((c) => {
+  const coursesList = (coursesData || []).map((c: any) => {
     const dept = Array.isArray(c.departments)
       ? c.departments[0]
       : c.departments;
@@ -662,7 +662,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
   const proto = headersList.get("x-forwarded-proto") || "http";
   const baseUrl = `${proto}://${host}`;
 
-  const auditLogData = (auditLogs || []).map((log) => ({
+  const auditLogData = (auditLogs || []).map((log: any) => ({
     Date: new Date(log.created_at).toLocaleString(),
     Actor: log.actor_email,
     Role: (
@@ -728,7 +728,7 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           faculties={faculties || []}
           courses={coursesList}
           electionType={electionData.election_type}
-          electionFacultyId={(faculties || []).find((f) => f.acronym === electionData.owner_faculty_code)?.faculty_id || null}
+          electionFacultyId={(faculties || []).find((f: any) => f.acronym === electionData.owner_faculty_code)?.faculty_id || null}
         />
 
         <section>

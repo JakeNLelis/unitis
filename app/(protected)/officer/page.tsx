@@ -115,7 +115,7 @@ export default async function OfficerDashboardPage() {
 
         <div className="border-2 border-foreground overflow-hidden">
           <div className="divide-y-2 divide-foreground">
-            {recentApplications?.map((app) => {
+            {recentApplications?.map((app: any) => {
               const election = app.elections as unknown as
                 | { name: string }
                 | { name: string }[]

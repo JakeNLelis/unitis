@@ -439,7 +439,7 @@ export async function updatePartylistRequiredPositions(
   }
 
   const validPositionIds = new Set(
-    (electionPositions || []).map((item) => item.position_id),
+    (electionPositions || []).map((item: any) => item.position_id),
   );
 
   const hasInvalidPositionId = distinctRequiredIds.some(
@@ -744,7 +744,7 @@ export async function addVoterMasterlist(
     .select("student_id")
     .eq("election_id", electionId);
 
-  const existingSet = new Set((existing || []).map((v) => v.student_id));
+  const existingSet = new Set((existing || []).map((v: any) => v.student_id));
 
   const newIds = uniqueIds.filter((id) => !existingSet.has(id));
 

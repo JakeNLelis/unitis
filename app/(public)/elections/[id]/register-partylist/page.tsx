@@ -54,7 +54,7 @@ async function RegisterPartylistContent({
     .select("course_id, name, acronym, departments(name, faculties(name, acronym))")
     .order("name", { ascending: true });
 
-  const courseOptions: CourseOption[] = (courses || []).map((course) => {
+  const courseOptions: CourseOption[] = (courses || []).map((course: any) => {
     const departmentObj = Array.isArray(course.departments)
       ? course.departments[0]
       : course.departments;

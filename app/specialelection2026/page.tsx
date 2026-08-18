@@ -1,55 +1,28 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { SpecialElectionAccess } from "@/components/special-election-access";
 
-async function getFacultyOptions() {
-  const supabase = await createClient();
+const requiredFacultyList = [
+  "FC",
+  "FAFS",
+  "FE",
+  "FFES",
+  "FHSS",
+  "FME",
+  "FNMS",
+  "FON",
+  "FTE",
+  "FVM",
+];
 
-  for (const column of ["faculty", "faculty_assigned"]) {
-    const { data, error } = await supabase
-      .from("specialelection2026")
-      .select(column)
-      .not(column, "is", null);
-
-    if (!error && data) {
-      const uniqueFaculties = Array.from(
-        new Set(
-          data
-            .map((row) => String((row as Record<string, unknown>)[column] ?? "").trim())
-            .filter(Boolean),
-        ),
-      )
-        .map((faculty) => faculty.toUpperCase())
-        .sort();
-
-      if (uniqueFaculties.length > 0) {
-        return uniqueFaculties.map((faculty) => ({
-          value: faculty,
-          label: faculty,
-        }));
-      }
-    }
-  }
-
-  const { data, error } = await supabase
-    .from("faculties")
-    .select("acronym, name")
-    .order("name");
-
-  if (error || !data) {
-    return [] as { value: string; label: string }[];
-  }
-
-  return data
-    .filter((faculty) => faculty.acronym)
-    .map((faculty) => ({
-      value: faculty.acronym,
-      label: `${faculty.name} (${faculty.acronym})`,
-    }));
+function getFacultyOptions() {
+  return requiredFacultyList.map((faculty) => ({
+    value: faculty,
+    label: faculty,
+  }));
 }
 
-export default async function SpecialElection2026Page() {
-  const faculties = await getFacultyOptions();
+export default function SpecialElection2026Page() {
+  const faculties = getFacultyOptions();
 
   return (
     <div className="min-h-screen bg-background">

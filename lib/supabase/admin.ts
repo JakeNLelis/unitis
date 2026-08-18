@@ -3,7 +3,7 @@
  * All database access must go through the authenticated app client and
  * row-level security policies instead of the service-role key.
  */
-export async function createAdminClient() {
+export async function createAdminClient(): Promise<any> {
   throw new Error(
     "Service-role client is disabled in this project. Use the authenticated Supabase client and RLS instead.",
   );

@@ -222,8 +222,8 @@ export async function getElectionDependencyIds(electionId: string) {
   }
 
   return {
-    candidateIds: (candidates || []).map((row) => row.candidate_id),
-    voterIds: (voters || []).map((row) => row.voter_id),
+    candidateIds: (candidates || []).map((row: any) => row.candidate_id),
+    voterIds: (voters || []).map((row: any) => row.voter_id),
   };
 }
 
@@ -262,7 +262,7 @@ export async function deleteVotesAndSelectionsForVoters(
     return votesFetchError.message;
   }
 
-  const voteIds = (votes || []).map((row) => row.vote_id);
+  const voteIds = (votes || []).map((row: any) => row.vote_id);
   if (voteIds.length === 0) {
     return null;
   }

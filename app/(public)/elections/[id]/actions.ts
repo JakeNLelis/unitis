@@ -91,7 +91,7 @@ export async function registerPartylist(formData: FormData) {
   );
 
   const missingRequiredPosition = requiredPositionsResult.positionIds.find(
-    (positionId) => !candidatePositionIds.has(positionId),
+    (positionId: any) => !candidatePositionIds.has(positionId),
   );
 
   if (missingRequiredPosition) {

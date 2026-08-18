@@ -193,5 +193,5 @@ export async function getRequiredPartylistPositionIds(electionId: string) {
     return { error: "Failed to fetch partylist position requirements." };
   }
 
-  return { positionIds: (data || []).map((item) => item.position_id) };
+  return { positionIds: (data || []).map((item: any) => item.position_id) };
 }
