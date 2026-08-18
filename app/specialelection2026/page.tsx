@@ -15,7 +15,10 @@ async function getFacultyOptions() {
       const uniqueFaculties = Array.from(
         new Set(
           data
-            .map((row) => String((row as Record<string, unknown>)[column] ?? "").trim())
+            .map((row) => {
+              const record = row as unknown as Record<string, unknown>;
+              return String(record[column] ?? "").trim();
+            })
             .filter(Boolean),
         ),
       )
