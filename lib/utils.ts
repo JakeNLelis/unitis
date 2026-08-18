@@ -9,8 +9,16 @@ export const hasEnvVars = Boolean(
 
 const STUDENT_ID_PATTERN = /^\d{2}-\d-\d{5}$/;
 
+export function normalizeStudentId(studentId: string): string {
+  return studentId
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, "")
+    .trim();
+}
+
 export function isValidStudentId(studentId: string): boolean {
-  return STUDENT_ID_PATTERN.test(studentId.trim());
+  const normalized = normalizeStudentId(studentId);
+  return STUDENT_ID_PATTERN.test(normalized);
 }
 
 export function calculateAgeFromBirthDate(
