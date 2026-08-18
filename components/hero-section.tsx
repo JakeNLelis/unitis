@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import maingate from "@/public/maingate.jpg";
 function HeroSection() {
   return (
@@ -21,9 +22,12 @@ function HeroSection() {
           The official digital election management system of the VSU Student
           Electoral Board
         </p>
-        <button className="bg-white text-[#00C2FF] hover:bg-[#00C2FF] hover:text-white py-2 px-6 rounded-md transition duration-300 mt-3">
+        <Link
+          href="#active-elections"
+          className="bg-white text-[#00C2FF] hover:bg-[#00C2FF] hover:text-white py-2 px-6 rounded-md transition duration-300 mt-3 font-semibold text-center inline-block"
+        >
           Go to Active Elections
-        </button>
+        </Link>
       </div>
     </section>
   );

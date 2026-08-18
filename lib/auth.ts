@@ -80,8 +80,8 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
     return {
       id: user.id,
       email: sebOfficer.email,
-      role: "seb-officer",
-      display_name: `${sebOfficer.faculty_code} (${sebOfficer.campus})`,
+      role: sebOfficer.is_chairperson ? "chairperson" : "seb-officer",
+      display_name: `${sebOfficer.faculty_code} (${sebOfficer.campus})${sebOfficer.is_chairperson ? " (Chair)" : ""}`,
     };
   }
 
@@ -113,17 +113,7 @@ export async function getSEBOfficer(): Promise<SEBOfficer | null> {
   return getCurrentRoleRecord<SEBOfficer>("seb_officers");
 }
 
-export async function requireAuth() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  return user;
-}
-
-export async function requireRole(allowedRoles: UserRole[]) {
+async function requireRole(allowedRoles: UserRole[]) {
   const profile = await getCurrentProfile();
 
   if (!profile) {
@@ -141,23 +131,8 @@ export async function requireSystemAdmin() {
   return requireRole(["system-admin"]);
 }
 
-export async function requireSEBOfficer() {
-  const profile = await getCurrentProfile();
-
-  if (!profile) {
-    redirect("/login");
-  }
-
-  if (profile.role !== "seb-officer") {
-    redirect("/unauthorized");
-  }
-
-  const officer = await getSEBOfficer();
-  if (!officer) {
-    redirect("/unauthorized");
-  }
-
-  return { profile, officer };
+export async function requireAdminOrChairperson() {
+  return requireRole(["system-admin", "chairperson"]);
 }
 
 export async function requireElectionManager() {
@@ -167,11 +142,15 @@ export async function requireElectionManager() {
     redirect("/login");
   }
 
-  if (profile.role !== "seb-officer" && profile.role !== "system-admin") {
+  if (
+    profile.role !== "seb-officer" &&
+    profile.role !== "chairperson" &&
+    profile.role !== "system-admin"
+  ) {
     redirect("/unauthorized");
   }
 
-  if (profile.role === "seb-officer") {
+  if (profile.role === "seb-officer" || profile.role === "chairperson") {
     const officer = await getSEBOfficer();
     if (!officer) {
       redirect("/unauthorized");

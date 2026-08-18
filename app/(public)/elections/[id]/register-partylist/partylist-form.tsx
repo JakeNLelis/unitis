@@ -1,21 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { pdf } from "@react-pdf/renderer";
+import { useMemo, useState } from "react";
 import { registerPartylist } from "../actions";
-import PartylistRegistrationPDF from "./partylist-registration-pdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   Card,
   CardContent,
@@ -27,299 +18,37 @@ import { Badge } from "@/components/ui/badge";
 import type {
   CourseOption,
   PartylistRegistrationCandidateDraft,
-  PartylistRegistrationPDFProps,
   PartylistRegistrationPosition,
 } from "@/lib/types/public";
 import type { CandidacyFormData } from "@/lib/types/candidacy";
 import { calculateAgeFromBirthDate } from "@/lib/utils";
+import { Edit, Trash2, UserPlus, ShieldAlert } from "lucide-react";
+import CandidateDialogWizard from "./candidate-dialog-wizard";
+import createEmptyCandidate from "./create-empty-candidate";
+import toInputDate from "./to-input-date";
+import usePartylistPdf from "./use-partylist-pdf";
 
-function toInputDate(value: string) {
-  return value ? new Date(value).toISOString().slice(0, 10) : "";
-}
-
-function createEmptyCandidate(): PartylistRegistrationCandidateDraft {
-  return {
-    position_id: "",
-    course_id: "",
-    full_name: "",
-    student_id: "",
-    email: "",
-    age: "",
-    birth_date: "",
-    current_address: "",
-    permanent_address: "",
-    contact_number: "",
-    photo: "",
-    cog_link: "",
-    cor_link: "",
-    good_moral_link: "",
-    faculty: "",
-    department: "",
-  };
-}
-
-function CandidateCard({
-  position,
-  required,
-  candidate,
-  enabled,
-  courses,
-  onEnabledChange,
-  onCandidateChange,
-  onPhotoUpload,
-}: {
-  position: PartylistRegistrationPosition;
-  required: boolean;
-  candidate: PartylistRegistrationCandidateDraft;
-  enabled: boolean;
-  courses: CourseOption[];
-  onEnabledChange: (next: boolean) => void;
-  onCandidateChange: (
-    key: keyof PartylistRegistrationCandidateDraft,
-    value: string,
-  ) => void;
-  onPhotoUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  const selectedCourse = courses.find(
-    (course) => course.course_id === candidate.course_id,
-  );
-  const derivedAge = calculateAgeFromBirthDate(candidate.birth_date);
-
-  return (
-    <Card className={enabled ? "" : "opacity-70"}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <CardTitle className="text-base">{position.title}</CardTitle>
-          <div className="flex items-center gap-2">
-            {required && <Badge variant="outline">Required</Badge>}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={enabled}
-                disabled={required}
-                onCheckedChange={(value) => onEnabledChange(value === true)}
-                id={`include-${position.position_id}`}
-              />
-              <Label
-                htmlFor={`include-${position.position_id}`}
-                className="text-sm"
-              >
-                Include candidate
-              </Label>
-            </div>
-          </div>
-        </div>
-        <CardDescription>
-          {required
-            ? "This position must have a candidate before registration."
-            : "Optional slot. Include only if your partylist has a nominee."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {enabled ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Full Name *</Label>
-                <Input
-                  value={candidate.full_name}
-                  onChange={(event) =>
-                    onCandidateChange("full_name", event.target.value)
-                  }
-                  placeholder="Last Name, First Name, Middle Name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Student ID *</Label>
-                <Input
-                  value={candidate.student_id}
-                  onChange={(event) =>
-                    onCandidateChange("student_id", event.target.value)
-                  }
-                  placeholder="23-1-01457"
-                  pattern="^\\d{2}-\\d-\\d{5}$"
-                  title="Use format xx-x-xxxxx, e.g. 23-1-01457"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Email *</Label>
-                <Input
-                  type="email"
-                  value={candidate.email}
-                  onChange={(event) =>
-                    onCandidateChange("email", event.target.value)
-                  }
-                  placeholder="candidate@vsu.edu.ph"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Contact Number *</Label>
-                <Input
-                  value={candidate.contact_number}
-                  onChange={(event) =>
-                    onCandidateChange("contact_number", event.target.value)
-                  }
-                  placeholder="09XXXXXXXXX"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2 md:col-span-2">
-                <Label>Date of Birth *</Label>
-                <Input
-                  type="date"
-                  value={candidate.birth_date}
-                  onChange={(event) =>
-                    onCandidateChange("birth_date", event.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Age (Auto-computed)</Label>
-                <Input value={derivedAge} readOnly className="bg-muted/60" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Course / Degree Program *</Label>
-              <Select
-                value={candidate.course_id}
-                onValueChange={(value) => {
-                  onCandidateChange("course_id", value);
-                  const selected = courses.find(
-                    (course) => course.course_id === value,
-                  );
-                  onCandidateChange("faculty", selected?.faculty_name || "");
-                  onCandidateChange(
-                    "department",
-                    selected?.department_name || "",
-                  );
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.course_id} value={course.course_id}>
-                      {course.acronym
-                        ? `${course.acronym} - ${course.name}`
-                        : course.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedCourse && (
-                <p className="text-xs text-muted-foreground">
-                  {selectedCourse.faculty_name} /{" "}
-                  {selectedCourse.department_name}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Current Address *</Label>
-              <Input
-                value={candidate.current_address}
-                onChange={(event) =>
-                  onCandidateChange("current_address", event.target.value)
-                }
-                placeholder="Current address"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Permanent Address *</Label>
-              <Input
-                value={candidate.permanent_address}
-                onChange={(event) =>
-                  onCandidateChange("permanent_address", event.target.value)
-                }
-                placeholder="Permanent address"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>1x1 Photo *</Label>
-              <Input type="file" accept="image/*" onChange={onPhotoUpload} />
-              {candidate.photo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={candidate.photo}
-                  alt={`${position.title} candidate preview`}
-                  className="w-16 h-16 rounded object-cover border"
-                />
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>COG Link *</Label>
-                <Input
-                  value={candidate.cog_link}
-                  onChange={(event) =>
-                    onCandidateChange("cog_link", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>COR Link *</Label>
-                <Input
-                  value={candidate.cor_link}
-                  onChange={(event) =>
-                    onCandidateChange("cor_link", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Good Moral Link *</Label>
-                <Input
-                  value={candidate.good_moral_link}
-                  onChange={(event) =>
-                    onCandidateChange("good_moral_link", event.target.value)
-                  }
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Candidate entry for this position is currently skipped.
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// @CodeScene(disable:"Large Method")
 export function PartylistRegistrationForm({
   electionId,
   electionName,
   electionType,
   positions,
   courses,
+  ownerCampus,
+  ownerFacultyCode,
 }: {
   electionId: string;
   electionName: string;
   electionType: string;
   positions: PartylistRegistrationPosition[];
   courses: CourseOption[];
+  ownerCampus?: string | null;
+  ownerFacultyCode?: string | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [downloadState, setDownloadState] = useState<
-    "idle" | "generating" | "done" | "failed"
-  >("idle");
-  const [pdfPayload, setPdfPayload] =
-    useState<PartylistRegistrationPDFProps | null>(null);
+  const { downloadState, pdfPayload, setPdfPayload } = usePartylistPdf();
 
   const requiredPositionIds = useMemo(
     () =>
@@ -340,107 +69,93 @@ export function PartylistRegistrationForm({
   });
 
   const [candidateMap, setCandidateMap] = useState<
-    Record<string, PartylistRegistrationCandidateDraft>
+    Record<string, PartylistRegistrationCandidateDraft[]>
   >(() => {
-    const initial: Record<string, PartylistRegistrationCandidateDraft> = {};
+    const initial: Record<string, PartylistRegistrationCandidateDraft[]> = {};
     for (const position of positions) {
-      initial[position.position_id] = {
-        ...createEmptyCandidate(),
-        position_id: position.position_id,
-      };
+      initial[position.position_id] = [];
     }
     return initial;
   });
 
-  useEffect(() => {
-    if (!pdfPayload) {
-      return;
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activePositionId, setActivePositionId] = useState<string | null>(null);
+  const [activeCandidateIndex, setActiveCandidateIndex] = useState<number | null>(null);
+
+  const [dialogInitialData, setDialogInitialData] = useState<PartylistRegistrationCandidateDraft>(createEmptyCandidate());
+  const [dialogInitialAnswers, setDialogInitialAnswers] = useState({
+    bonafide: null as boolean | null,
+    failingGrades: null as boolean | null,
+    amaranth: null as boolean | null,
+    convicted: null as boolean | null,
+  });
+
+  const handleOpenAddDialog = (positionId: string) => {
+    setActivePositionId(positionId);
+    setActiveCandidateIndex(null);
+    setDialogInitialAnswers({
+      bonafide: null,
+      failingGrades: null,
+      amaranth: null,
+      convicted: null,
+    });
+    setDialogInitialData({
+      ...createEmptyCandidate(),
+      position_id: positionId,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (positionId: string, index: number) => {
+    setActivePositionId(positionId);
+    setActiveCandidateIndex(index);
+    const existing = candidateMap[positionId]?.[index];
+    setDialogInitialData(existing || {
+      ...createEmptyCandidate(),
+      position_id: positionId,
+    });
+    setDialogInitialAnswers({
+      bonafide: true,
+      failingGrades: existing?.has_two_failing_grades || false,
+      amaranth: false,
+      convicted: false,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleRemoveCandidate = (positionId: string, index: number) => {
+    const list = [...(candidateMap[positionId] || [])];
+    list.splice(index, 1);
+    setCandidateMap(prev => ({ ...prev, [positionId]: list }));
+    if (list.length === 0) {
+      setEnabledMap(prev => ({ ...prev, [positionId]: false }));
     }
+  };
 
-    const payload = pdfPayload;
-
-    let revokedUrl = "";
-
-    async function generateAndDownload() {
-      setDownloadState("generating");
-      try {
-        const blob = await pdf(
-          <PartylistRegistrationPDF
-            electionName={payload.electionName}
-            partylistName={payload.partylistName}
-            managerName={payload.managerName}
-            candidates={payload.candidates}
-          />,
-        ).toBlob();
-
-        const objectUrl = URL.createObjectURL(blob);
-        revokedUrl = objectUrl;
-
-        const anchor = document.createElement("a");
-        anchor.href = objectUrl;
-        anchor.download = `${payload.partylistName.replace(/\s+/g, "-").toLowerCase()}-partylist-registration.pdf`;
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
-
-        setDownloadState("done");
-      } catch (downloadError) {
-        console.error(downloadError);
-        setDownloadState("failed");
-      }
-    }
-
-    generateAndDownload();
-
-    return () => {
-      if (revokedUrl) {
-        URL.revokeObjectURL(revokedUrl);
-      }
+  const handleSaveCandidate = (finalCandidate: PartylistRegistrationCandidateDraft, answers: any) => {
+    const candidateToSave = {
+      ...finalCandidate,
+      has_two_failing_grades: !!answers.failingGrades,
+      bonafide: !!answers.bonafide,
+      amaranth: !!answers.amaranth,
+      convicted: !!answers.convicted,
     };
-  }, [pdfPayload]);
-
-  function updateCandidate(
-    positionId: string,
-    key: keyof PartylistRegistrationCandidateDraft,
-    value: string,
-  ) {
-    setCandidateMap((previous) => ({
-      ...previous,
-      [positionId]: {
-        ...previous[positionId],
-        [key]: value,
-      },
+    
+    setCandidateMap(prev => {
+      const list = [...(prev[activePositionId!] || [])];
+      if (activeCandidateIndex !== null) {
+        list[activeCandidateIndex] = candidateToSave;
+      } else {
+        list.push(candidateToSave);
+      }
+      return { ...prev, [activePositionId!]: list };
+    });
+    setEnabledMap(prev => ({
+      ...prev,
+      [activePositionId!]: true,
     }));
-  }
-
-  function validateCandidate(
-    positionTitle: string,
-    candidate: PartylistRegistrationCandidateDraft,
-  ) {
-    if (
-      !candidate.full_name ||
-      !candidate.student_id ||
-      !candidate.email ||
-      !candidate.position_id ||
-      !candidate.course_id ||
-      !candidate.birth_date ||
-      !candidate.current_address ||
-      !candidate.permanent_address ||
-      !candidate.contact_number ||
-      !candidate.photo ||
-      !candidate.cog_link ||
-      !candidate.cor_link ||
-      !candidate.good_moral_link
-    ) {
-      return `Candidate details are incomplete for ${positionTitle}.`;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate.email)) {
-      return `Candidate email is invalid for ${positionTitle}.`;
-    }
-
-    return null;
-  }
+    setDialogOpen(false);
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -453,27 +168,17 @@ export function PartylistRegistrationForm({
     const selectedCandidates: PartylistRegistrationCandidateDraft[] = [];
 
     for (const position of positions) {
-      const enabled = enabledMap[position.position_id];
-      const candidate = candidateMap[position.position_id];
+      const candidates = candidateMap[position.position_id] || [];
 
-      if (!enabled) {
-        continue;
-      }
-
-      if (requiredPositionIds.has(position.position_id) && !enabled) {
+      if (requiredPositionIds.has(position.position_id) && candidates.length === 0) {
         setError(`A candidate is required for ${position.title}.`);
         setLoading(false);
         return;
       }
 
-      const candidateError = validateCandidate(position.title, candidate);
-      if (candidateError) {
-        setError(candidateError);
-        setLoading(false);
-        return;
+      for (const candidate of candidates) {
+        selectedCandidates.push(candidate);
       }
-
-      selectedCandidates.push(candidate);
     }
 
     if (selectedCandidates.length === 0) {
@@ -482,118 +187,163 @@ export function PartylistRegistrationForm({
       return;
     }
 
-    for (const requiredPositionId of requiredPositionIds) {
-      if (!enabledMap[requiredPositionId]) {
-        const requiredPosition = positions.find(
-          (position) => position.position_id === requiredPositionId,
-        );
-        setError(
-          `A candidate is required for ${requiredPosition?.title || "a required position"}.`,
-        );
+    formData.set("candidate_slate", JSON.stringify(selectedCandidates));
+
+    try {
+      const result = await registerPartylist(formData);
+
+      if ("error" in result) {
+        setError(result.error || "Partylist registration failed.");
         setLoading(false);
         return;
       }
-    }
 
-    formData.set("candidate_slate", JSON.stringify(selectedCandidates));
+      const partylistName = String(formData.get("name") || "Partylist").trim();
+      const managerName = String(formData.get("registered_by_name") || "").trim();
+      const councilType = electionType === "Campus-Wide" ? "USSC" : "FSSC";
 
-    const result = await registerPartylist(formData);
+      const candidatesForPdf = selectedCandidates.map((candidate) => {
+        const course = courses.find(
+          (course) => course.course_id === candidate.course_id,
+        );
+        const position = positions.find(
+          (item) => item.position_id === candidate.position_id,
+        );
 
-    if ("error" in result) {
-      setError(result.error || "Partylist registration failed.");
+        const formDataPdf: CandidacyFormData = {
+          councilType,
+          photo: candidate.photo,
+          candidacyType: "Political Party",
+          partyName: partylistName,
+          campaignManager: managerName,
+          position: position?.title || "",
+          fullName: candidate.full_name,
+          age: calculateAgeFromBirthDate(candidate.birth_date),
+          birthday: toInputDate(candidate.birth_date),
+          studentId: candidate.student_id,
+          currentAddress: candidate.current_address,
+          permanentAddress: candidate.permanent_address,
+          faculty: candidate.faculty,
+          department: candidate.department,
+          email: candidate.email,
+          contactNumber: candidate.contact_number,
+          date: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        };
+
+        return {
+          position: position?.title || "",
+          fullName: candidate.full_name,
+          degreeProgram: course
+            ? course.acronym
+              ? `${course.acronym} - ${course.name}`
+              : course.name
+            : "",
+          formData: formDataPdf,
+        };
+      });
+
+      setPdfPayload({
+        electionName,
+        partylistName,
+        managerName,
+        candidates: candidatesForPdf,
+      });
+
+      setSuccess(true);
+    } catch (err: any) {
+      console.error("Partylist submission error:", err);
+      setError("The uploaded images are way too big. Even after compression, the total size exceeds the server's 4.5MB limit. Please upload a smaller image.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const partylistName = String(formData.get("name") || "Partylist").trim();
-    const managerName = String(formData.get("registered_by_name") || "").trim();
-    const councilType = electionType === "University-Wide" ? "USSC" : "FSSC";
-
-    const candidatesForPdf = selectedCandidates.map((candidate) => {
-      const course = courses.find(
-        (course) => course.course_id === candidate.course_id,
-      );
-      const position = positions.find(
-        (item) => item.position_id === candidate.position_id,
-      );
-
-      const formData: CandidacyFormData = {
-        councilType,
-        photo: candidate.photo,
-        candidacyType: "Political Party",
-        partyName: partylistName,
-        campaignManager: managerName,
-        position: position?.title || "",
-        fullName: candidate.full_name,
-        age: calculateAgeFromBirthDate(candidate.birth_date),
-        birthday: toInputDate(candidate.birth_date),
-        studentId: candidate.student_id,
-        currentAddress: candidate.current_address,
-        permanentAddress: candidate.permanent_address,
-        faculty: candidate.faculty,
-        department: candidate.department,
-        email: candidate.email,
-        contactNumber: candidate.contact_number,
-        date: new Date().toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-      };
-
-      return {
-        position: position?.title || "",
-        fullName: candidate.full_name,
-        degreeProgram: course
-          ? course.acronym
-            ? `${course.acronym} - ${course.name}`
-            : course.name
-          : "",
-        formData,
-      };
-    });
-
-    setPdfPayload({
-      electionName,
-      partylistName,
-      managerName,
-      candidates: candidatesForPdf,
-    });
-
-    setSuccess(true);
-    setLoading(false);
   }
 
   if (success) {
     return (
-      <Card className="max-w-2xl mx-auto">
-        <CardContent className="pt-6 text-center space-y-4">
-          <div className="mx-auto size-12 rounded-full bg-green-600/10 flex items-center justify-center">
-            <span className="text-lg font-bold text-green-600">&#10003;</span>
+      <Card className="w-full max-w-2xl mx-auto shadow-lg border-primary/20 bg-card overflow-hidden">
+        <div className="h-2 bg-gradient-to-r from-primary to-primary/60 w-full" />
+        <CardContent className="pt-10 pb-10 flex flex-col items-center text-center space-y-6">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-2 shadow-inner">
+            <svg
+              className="w-10 h-10 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
           </div>
-          <h2 className="text-xl font-bold">Partylist registered</h2>
-          <p className="text-muted-foreground">
-            Your partylist has been successfully registered for{" "}
-            <strong>{electionName}</strong>.
-          </p>
-          <Badge variant="secondary">Status: Active</Badge>
-          <p className="text-sm text-muted-foreground">
-            {downloadState === "generating" &&
-              "Generating your registration PDF..."}
-            {downloadState === "done" &&
-              "PDF downloaded. Print and submit signed hard copies to the election board."}
-            {downloadState === "failed" &&
-              "PDF generation failed. Please reload this page and re-submit."}
-          </p>
+          <div className="space-y-3 max-w-md">
+            <h2 className="text-3xl font-extrabold tracking-tight text-foreground">
+              Registration Submitted
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Your partylist registration has been submitted successfully and is
+              now pending review by the electoral board.
+            </p>
+          </div>
+
+          <div className="pt-4 flex flex-col gap-3 w-full max-w-sm">
+            <Button
+              className="w-full font-semibold shadow-sm"
+              size="lg"
+              variant="outline"
+              disabled={downloadState === "generating"}
+              onClick={() => {
+                if (pdfPayload) {
+                  setPdfPayload({ ...pdfPayload });
+                }
+              }}
+            >
+              {downloadState === "generating"
+                ? "Generating PDF..."
+                : "Re-download Registration PDF"}
+            </Button>
+            <Button
+              className="w-full font-semibold shadow-sm"
+              size="lg"
+              onClick={() => window.location.reload()}
+            >
+              Register Another Partylist
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full mt-2 text-muted-foreground hover:text-foreground"
+              asChild
+            >
+              <a href={`/elections/${electionId}`}>Return to Election Page</a>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
+          Partylist Registration
+        </h1>
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          Register your political party and submit your slate of candidates for
+          the upcoming election.
+        </p>
+      </div>
+
       {error && (
-        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/20">
+        <div className="bg-destructive/10 text-destructive p-4 rounded-md border border-destructive/20 font-medium shadow-sm flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 mt-0.5 flex-shrink-0" />
           {error}
         </div>
       )}
@@ -639,8 +389,10 @@ export function PartylistRegistrationForm({
               <Input
                 id="name"
                 name="name"
-                placeholder="Unity Movement"
+                placeholder="e.g. SAMAHAN Partylist"
                 required
+                autoComplete="off"
+                className="h-14 border-2 border-foreground rounded-none text-xl font-bold placeholder:font-medium placeholder:text-muted-foreground/30 focus-visible:ring-0 focus-visible:border-primary"
               />
             </div>
             <div className="space-y-2">
@@ -670,8 +422,7 @@ export function PartylistRegistrationForm({
         <CardHeader>
           <CardTitle className="text-lg">Candidate Slate</CardTitle>
           <CardDescription>
-            Fill candidate details per position. Required positions must always
-            be filled.
+            Add nominee candidates for each position slot. Required positions must be filled.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -681,51 +432,128 @@ export function PartylistRegistrationForm({
             </p>
           ) : (
             <div className="space-y-4">
-              {positions.map((position) => (
-                <CandidateCard
-                  key={position.position_id}
-                  position={position}
-                  required={requiredPositionIds.has(position.position_id)}
-                  enabled={enabledMap[position.position_id]}
-                  candidate={candidateMap[position.position_id]}
-                  courses={courses}
-                  onEnabledChange={(next) => {
-                    if (requiredPositionIds.has(position.position_id)) {
-                      return;
-                    }
-                    setEnabledMap((previous) => ({
-                      ...previous,
-                      [position.position_id]: next,
-                    }));
-                  }}
-                  onCandidateChange={(key, value) =>
-                    updateCandidate(position.position_id, key, value)
-                  }
-                  onPhotoUpload={(event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) {
-                      return;
-                    }
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      updateCandidate(
-                        position.position_id,
-                        "photo",
-                        String(reader.result || ""),
-                      );
-                    };
-                    reader.readAsDataURL(file);
-                  }}
-                />
-              ))}
+              {positions.map((position) => {
+                const candidates = candidateMap[position.position_id] || [];
+                const isRequired = requiredPositionIds.has(position.position_id);
+                const maxVotes = position.max_votes || 1;
+                const isFilled = candidates.length > 0;
+                const canAddMore = candidates.length < maxVotes;
+
+                return (
+                  <div key={position.position_id} className="border border-border p-5 bg-card flex flex-col gap-4 transition-all hover:bg-muted/5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-foreground text-sm">{position.title}</h3>
+                          {isRequired && (
+                            <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-destructive border-destructive/30 bg-destructive/5 font-bold">
+                              Required
+                            </Badge>
+                          )}
+                          <Badge variant="secondary" className="text-[10px] uppercase tracking-wider font-semibold">
+                            {candidates.length} / {maxVotes} Slot{maxVotes !== 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                        {isRequired && !isFilled && (
+                          <p className="text-xs text-destructive flex items-center gap-1 font-medium">
+                            <ShieldAlert className="w-3 h-3" /> Minimum 1 candidate required
+                          </p>
+                        )}
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isRequired && !isFilled ? "default" : "outline"}
+                        className="w-full sm:w-auto shadow-sm"
+                        onClick={() => handleOpenAddDialog(position.position_id)}
+                        disabled={!canAddMore}
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Add Nominee
+                      </Button>
+                    </div>
+
+                    {candidates.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                        {candidates.map((candidate, idx) => (
+                          <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-md border bg-background hover:border-primary/50 transition-colors group">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {candidate.photo ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={candidate.photo} alt={candidate.full_name} className="w-12 h-12 rounded object-cover border shrink-0" />
+                              ) : (
+                                <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0 border">
+                                  <UserPlus className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold truncate" title={candidate.full_name}>{candidate.full_name}</p>
+                                <p className="text-xs text-muted-foreground truncate" title={`${candidate.faculty} / ${candidate.department}`}>
+                                  {candidate.faculty} / {candidate.department}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                onClick={() => handleOpenEditDialog(position.position_id, idx)}
+                                title="Edit Nominee"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleRemoveCandidate(position.position_id, idx)}
+                                title="Remove Nominee"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Button type="submit" className="w-full" size="lg" disabled={loading}>
-        {loading ? "Registering..." : "Register Partylist"}
-      </Button>
+      <div className="flex justify-end pt-6 border-t border-border">
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full md:w-auto h-12 px-8 font-bold text-base shadow-md"
+          disabled={loading || downloadState === "generating"}
+        >
+          {loading || downloadState === "generating" ? "Processing..." : "Submit Partylist Registration"}
+        </Button>
+      </div>
+
+      {dialogOpen && activePositionId && (
+        <CandidateDialogWizard
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          initialData={dialogInitialData}
+          initialScreeningAnswers={dialogInitialAnswers}
+          courses={courses}
+          positionTitle={positions.find(p => p.position_id === activePositionId)?.title || "this position"}
+          electionType={electionType}
+          ownerFacultyCode={ownerFacultyCode}
+          onSave={handleSaveCandidate}
+        />
+      )}
     </form>
   );
 }
+
+export default PartylistRegistrationForm;

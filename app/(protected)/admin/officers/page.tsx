@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { SEBOfficer, ROLE_LABELS } from "@/lib/types/auth";
+import { SEBOfficer } from "@/lib/types/auth";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 async function getSEBOfficers(): Promise<SEBOfficer[]> {
   const supabase = await createClient();
@@ -71,7 +72,9 @@ async function OfficersList() {
             </div>
 
             <div className="mt-3">
-              <Badge variant="secondary">{ROLE_LABELS["seb-officer"]}</Badge>
+              <Badge variant={officer.is_chairperson ? "default" : "secondary"}>
+                {officer.is_chairperson ? "Chairperson" : "SEB Officer"}
+              </Badge>
             </div>
 
             <div className="mt-4 text-xs">
@@ -113,8 +116,8 @@ async function OfficersList() {
                     {officer.email}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">
-                      {ROLE_LABELS["seb-officer"]}
+                    <Badge variant={officer.is_chairperson ? "default" : "secondary"}>
+                      {officer.is_chairperson ? "Chairperson" : "SEB Officer"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -156,24 +159,28 @@ export default function OfficersPage() {
         fallback={
           <div className="space-y-3">
             <div className="space-y-3 md:hidden">
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-muted" />
-                <div className="mt-4 h-8 w-24 animate-pulse rounded bg-muted" />
-              </div>
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-muted" />
-                <div className="mt-4 h-8 w-24 animate-pulse rounded bg-muted" />
-              </div>
+              {[1, 2].map(i => (
+                <div key={i} className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-8 w-24 mt-4" />
+                </div>
+              ))}
             </div>
 
             <div className="hidden overflow-hidden rounded-lg border md:block">
               <div className="h-10 border-b bg-muted/50" />
               <div className="space-y-0 divide-y">
-                <div className="h-12 animate-pulse bg-muted/30" />
-                <div className="h-12 animate-pulse bg-muted/30" />
-                <div className="h-12 animate-pulse bg-muted/30" />
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-14 flex items-center px-4 gap-4 bg-muted/10">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-48 flex-1" />
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>

@@ -15,11 +15,14 @@ import { EditElectionDates } from "./edit-election-dates";
 import { DeleteElectionButton } from "./delete-election-button";
 import { ElectionResults } from "./election-results";
 import { VoterMasterlist } from "./voter-masterlist";
+import { CandidateDetailDialog } from "./candidate-detail-dialog";
 import { TurnoutAdjustmentForm } from "./turnout-adjustment-form";
 import { PartylistRequiredSettings } from "./partylist-required-settings";
 import { archivo } from "@/lib/fonts";
 import { InstitutionalDataTable } from "@/components/institutional/data-table";
 import { InstitutionalListItem } from "@/components/institutional/list-item";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getElectionPermissionsForActor } from "@/lib/election-permissions";
 import { BackToRegistryLink } from "./back-to-registry-link";
 import {
@@ -32,6 +35,10 @@ type VoterListRow = {
   voter_id: string;
   student_id: string;
   is_voted: boolean;
+  faculty_id: string | null;
+  course_id: string | null;
+  faculties: { acronym: string | null } | null;
+  courses: { acronym: string | null } | null;
 };
 
 function HeroHeaderSection({
@@ -323,14 +330,16 @@ function CandidateAuditSection({
             ]}
             data={candidatesData.map((candidate) => ({
               Candidate: (
-                <div className="space-y-0.5">
-                  <p className="font-bold text-foreground uppercase tracking-tight">
-                    {candidate.full_name}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
-                    {candidate.student_id}
-                  </p>
-                </div>
+                <CandidateDetailDialog candidate={candidate}>
+                  <button className="space-y-0.5 text-left hover:underline hover:text-primary transition-all cursor-pointer">
+                    <p className="font-bold text-foreground uppercase tracking-tight">
+                      {candidate.full_name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+                      {candidate.student_id}
+                    </p>
+                  </button>
+                </CandidateDetailDialog>
               ),
               Position: (
                 <span className="text-xs font-black uppercase text-foreground/80">
@@ -363,6 +372,7 @@ function CandidateAuditSection({
                     <a
                       href={candidate.cog_link}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="hover:text-primary transition-colors bg-surface-low border border-border rounded-none p-1.5"
                       title="COG"
                     >
@@ -373,6 +383,7 @@ function CandidateAuditSection({
                     <a
                       href={candidate.cor_link}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="hover:text-primary transition-colors bg-surface-low border border-border rounded-none p-1.5"
                       title="COR"
                     >
@@ -383,8 +394,9 @@ function CandidateAuditSection({
                     <a
                       href={candidate.good_moral_link}
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="hover:text-primary transition-colors bg-surface-low border border-border rounded-none p-1.5"
-                      title="COR"
+                      title="Good Moral Character"
                     >
                       <ExternalLink className="size-3" />
                     </a>
@@ -407,7 +419,7 @@ function CandidateAuditSection({
   );
 }
 
-function ResultsSection({ electionId }: { electionId: string }) {
+function ResultsSection({ electionId, electionName }: { electionId: string, electionName: string }) {
   return (
     <section>
       <div className="mb-8 flex items-baseline justify-between group">
@@ -425,7 +437,7 @@ function ResultsSection({ electionId }: { electionId: string }) {
         </span>
       </div>
       <div className="bg-surface-low border border-border p-8 ring-1 ring-border shadow-sm">
-        <ElectionResults electionId={electionId} />
+        <ElectionResults electionId={electionId} electionName={electionName} />
       </div>
     </section>
   );
@@ -436,11 +448,19 @@ function LowerLedgerSections({
   votersData,
   permissions,
   votingStatus,
+  faculties,
+  courses,
+  electionType,
+  electionFacultyId,
 }: {
   electionId: string;
   votersData: VoterListRow[];
   permissions: ElectionPermissions;
   votingStatus: string;
+  faculties: { faculty_id: string; name: string; acronym: string | null }[];
+  courses: { course_id: string; name: string; acronym: string | null; faculty_id: string | null }[];
+  electionType: string;
+  electionFacultyId: string | null;
 }) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
@@ -460,7 +480,15 @@ function LowerLedgerSections({
           <VoterMasterlist
             electionId={electionId}
             voters={votersData}
-            canEdit={permissions.canEdit && votingStatus === "not_started"}
+            canEdit={
+              permissions.canEdit &&
+              votingStatus !== "open" &&
+              votingStatus !== "ended"
+            }
+            faculties={faculties}
+            courses={courses}
+            electionType={electionType}
+            electionFacultyId={electionFacultyId}
           />
         </div>
       </section>
@@ -511,30 +539,89 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     notFound();
   }
 
-  const { data: positions } = await adminSupabase
-    .from("positions")
-    .select("*")
-    .eq("election_id", electionId)
-    .order("created_at", { ascending: true });
+  const [
+    positionsRes,
+    candidatesRes,
+    votersRes,
+    facultiesRes,
+    coursesRes,
+    auditLogsRes
+  ] = await Promise.all([
+    adminSupabase
+      .from("positions")
+      .select("*")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: true }),
+    adminSupabase
+      .from("candidates")
+      .select("candidate_id, election_id, position_id, course_id, full_name, age, birth_date, student_id, current_address, permanent_address, email, cog_link, cor_link, good_moral_link, application_status, partylist_id, affiliation_status, rejection_reason, user_id, created_at, updated_at, approved_by_user_id, approved_by_role, approved_by_display, approved_at, has_two_failing_grades, positions(title), courses(name, acronym), partylists(name, acronym)")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: false }),
+    adminSupabase
+      .from("voters")
+      .select("voter_id, student_id, is_voted, faculty_id, course_id, faculties(acronym), courses(acronym)")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: true }),
+    adminSupabase
+      .from("faculties")
+      .select("faculty_id, name, acronym")
+      .order("name", { ascending: true }),
+    adminSupabase
+      .from("courses")
+      .select("course_id, name, acronym, department_id, departments(faculty_id)")
+      .order("name", { ascending: true }),
+    adminSupabase
+      .from("admin_logs")
+      .select("log_id, created_at, actor_email, actor_role, action_type, description")
+      .eq("election_id", electionId)
+      .order("created_at", { ascending: false })
+      .limit(100)
+  ]);
 
-  const { data: candidates } = await adminSupabase
-    .from("candidates")
-    .select(
-      "*, positions(title), courses(name, acronym), partylists(name, acronym)",
-    )
-    .eq("election_id", electionId)
-    .order("created_at", { ascending: false });
+  if (
+    positionsRes.error ||
+    candidatesRes.error ||
+    votersRes.error ||
+    facultiesRes.error ||
+    coursesRes.error ||
+    auditLogsRes.error
+  ) {
+    throw new Error("Failed to load comprehensive election data. Please try again later.");
+  }
 
-  const { data: voters } = await adminSupabase
-    .from("voters")
-    .select("voter_id, student_id, is_voted")
-    .eq("election_id", electionId)
-    .order("created_at", { ascending: true });
+  const positions = positionsRes.data;
+  const candidates = candidatesRes.data;
+  const voters = votersRes.data;
+  const faculties = facultiesRes.data;
+  const coursesData = coursesRes.data;
+  const auditLogs = auditLogsRes.data;
+
+  const coursesList = (coursesData || []).map((c) => {
+    const dept = Array.isArray(c.departments)
+      ? c.departments[0]
+      : c.departments;
+    return {
+      course_id: c.course_id,
+      name: c.name,
+      acronym: c.acronym,
+      faculty_id: dept?.faculty_id || null,
+    };
+  });
 
   const electionData = election as Election;
   const positionsData = (positions || []) as Position[];
-  const candidatesData = (candidates || []) as CandidateWithDetails[];
-  const votersData = (voters || []) as VoterListRow[];
+  const candidatesData = ((candidates || []) as unknown as CandidateWithDetails[]).map(c => ({
+    ...c,
+    photo: `/api/candidates/${c.candidate_id}/photo`
+  }));
+  const votersData = ((voters || []).map((v: unknown) => {
+    const raw = v as Record<string, unknown>;
+    return {
+      ...raw,
+      faculties: Array.isArray(raw.faculties) ? raw.faculties[0] || null : raw.faculties,
+      courses: Array.isArray(raw.courses) ? raw.courses[0] || null : raw.courses,
+    };
+  })) as VoterListRow[];
 
   const permissions = getElectionPermissionsForActor(
     {
@@ -568,12 +655,28 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
     electionData.start_date,
     electionData.end_date,
   );
-  const votingStarted = votingStatus === "open" || votingStatus === "ended";
+  const votingEnded = votingStatus === "ended";
 
   const headersList = await headers();
   const host = headersList.get("host") || "localhost:3000";
   const proto = headersList.get("x-forwarded-proto") || "http";
   const baseUrl = `${proto}://${host}`;
+
+  const auditLogData = (auditLogs || []).map((log) => ({
+    Date: new Date(log.created_at).toLocaleString(),
+    Actor: log.actor_email,
+    Role: (
+      <Badge variant="outline" className="text-[10px]">
+        {log.actor_role}
+      </Badge>
+    ),
+    Action: (
+      <Badge variant="secondary" className="text-[10px] font-mono">
+        {log.action_type}
+      </Badge>
+    ),
+    Description: log.description,
+  }));
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -615,14 +718,51 @@ async function ElectionDetail({ electionId }: { electionId: string }) {
           permissions={permissions}
         />
 
-        {votingStarted && <ResultsSection electionId={electionId} />}
+        {votingEnded && <ResultsSection electionId={electionId} electionName={electionData.name} />}
 
         <LowerLedgerSections
           electionId={electionId}
           votersData={votersData}
           permissions={permissions}
           votingStatus={votingStatus}
+          faculties={faculties || []}
+          courses={coursesList}
+          electionType={electionData.election_type}
+          electionFacultyId={(faculties || []).find((f) => f.acronym === electionData.owner_faculty_code)?.faculty_id || null}
         />
+
+        <section>
+          <div className="mb-8 flex items-baseline justify-between group">
+            <h2
+              className={cn(
+                "text-xl font-black uppercase tracking-tight",
+                archivo.className,
+              )}
+            >
+              Election Audit Logs
+            </h2>
+            <div className="h-px flex-1 mx-4 bg-border/60 group-hover:bg-primary/30 transition-colors" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+              Latest activity
+            </span>
+          </div>
+          <InstitutionalDataTable
+            headers={["Date", "Actor", "Role", "Action", "Description"]}
+            data={
+              auditLogData.length > 0
+                ? auditLogData
+                : [
+                    {
+                      Date: "",
+                      Actor: "",
+                      Role: "",
+                      Action: "",
+                      Description: "No audit log entries found for this election yet.",
+                    },
+                  ]
+            }
+          />
+        </section>
       </div>
     </div>
   );
@@ -637,15 +777,15 @@ export default function ElectionDetailPage({
     <Suspense
       fallback={
         <div className="space-y-6 container max-w-6xl mx-auto px-6 pt-20">
-          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+          <Skeleton className="h-4 w-32" />
           <div className="space-y-4">
-            <div className="h-16 w-3/4 bg-muted rounded animate-pulse" />
-            <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+            <Skeleton className="h-16 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
           </div>
-          <div className="grid grid-cols-3 gap-8 mt-12 text-center">
-            <div className="h-24 bg-muted/50 rounded animate-pulse" />
-            <div className="h-24 bg-muted/50 rounded animate-pulse" />
-            <div className="h-24 bg-muted/50 rounded animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
           </div>
         </div>
       }

@@ -88,7 +88,7 @@ export function UpcomingElectionSection({
   elections,
 }: UpcomingElectionSectionProps) {
   return (
-    <section className="space-y-4" aria-label="Upcoming elections">
+    <section id="upcoming-elections" className="space-y-4" aria-label="Upcoming elections">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">

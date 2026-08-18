@@ -64,29 +64,38 @@ export function CopyableUrl({ url }: { url: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <code className="text-sm bg-muted px-3 py-2 rounded-lg block flex-1 truncate">
-        {url}
-      </code>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        onClick={handleCopy}
-        className="shrink-0"
-        aria-label={copied ? "Copied" : "Copy URL"}
-      >
-        {copied ? (
-          <Check className="size-4 text-green-600" />
-        ) : (
-          <Copy className="size-4 text-muted-foreground" />
-        )}
-      </Button>
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <code className="text-xs bg-muted px-3 py-2 rounded-lg block flex-1 truncate font-mono">
+          {url}
+        </code>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleCopy}
+          className="shrink-0 h-9 font-bold uppercase tracking-widest text-[10px]"
+          aria-label={copied ? "Copied" : "Copy URL"}
+        >
+          {copied ? (
+            <>
+              <Check className="size-3.5 mr-1 text-green-600" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy className="size-3.5 mr-1 text-muted-foreground" />
+              Copy Link
+            </>
+          )}
+        </Button>
+      </div>
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={handleDownload}
+        className="w-full sm:w-auto h-9 shrink-0"
         aria-label="Download QR code"
       >
         {downloaded ? "Downloaded" : "Download QR"}

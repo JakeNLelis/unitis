@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile, getSystemAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logAdminAction } from "@/lib/logging";
 
 export async function createSEBOfficer(formData: FormData) {
   const profile = await getCurrentProfile();
@@ -23,6 +24,7 @@ export async function createSEBOfficer(formData: FormData) {
     ?.trim()
     .toUpperCase();
   const campus = (formData.get("campus") as string)?.trim();
+  const is_chairperson = formData.get("is_chairperson") === "true";
 
   if (!email || !password || !faculty_code || !campus) {
     return { error: "Missing required fields" };
@@ -93,6 +95,7 @@ export async function createSEBOfficer(formData: FormData) {
     faculty_code: canonicalFacultyCode,
     campus: campusMatch.name,
     email,
+    is_chairperson,
   });
 
   if (officerError) {
@@ -101,15 +104,24 @@ export async function createSEBOfficer(formData: FormData) {
 
     if (
       officerError.code === "23505" &&
-      officerError.message.includes("seb_officers_campus_faculty_code_uidx")
+      (officerError.message.includes(
+        "unique_seb_officer_role_per_faculty_campus",
+      ) ||
+        officerError.message.includes("seb_officers_campus_faculty_code_uidx"))
     ) {
+      const designation = is_chairperson ? "Chairperson" : "SEB Officer";
       return {
-        error: `Faculty code "${canonicalFacultyCode}" already exists in ${campusMatch.name}.`,
+        error: `A ${designation} already exists for faculty code "${canonicalFacultyCode}" in ${campusMatch.name}.`,
       };
     }
 
     return { error: officerError.message };
   }
+
+  await logAdminAction(
+    "officer.created",
+    `Created ${is_chairperson ? "chairperson" : "SEB officer"} for ${canonicalFacultyCode} (${campusMatch.name})`,
+  );
 
   redirect("/admin/officers");
 }
@@ -145,6 +157,10 @@ export async function deleteSEBOfficer(sebOfficerId: string) {
     return { error: deleteUserError.message };
   }
 
+  await logAdminAction(
+    "officer.deleted",
+    `Deleted SEB officer ${sebOfficerId}`,
+  );
   revalidatePath("/admin/officers");
   return { success: true };
 }

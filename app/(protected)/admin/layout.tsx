@@ -1,4 +1,4 @@
-import { requireSystemAdmin } from "@/lib/auth";
+import { requireAdminOrChairperson } from "@/lib/auth";
 import { Suspense } from "react";
 import {
   ProtectedTopNav,
@@ -6,7 +6,7 @@ import {
 } from "@/components/institutional/protected-top-nav";
 
 async function AdminNav() {
-  const profile = await requireSystemAdmin();
+  const profile = await requireAdminOrChairperson();
 
   return (
     <ProtectedTopNav
@@ -16,11 +16,8 @@ async function AdminNav() {
         { href: "/admin/officers", label: "SEB Officers" },
         { href: "/admin/elections", label: "Elections" },
         { href: "/admin/academics", label: "Academics" },
-<<<<<<< Updated upstream
-=======
         { href: "/admin/special-election", label: "Special Election" },
         { href: "/admin/logs", label: "Audit Logs" },
->>>>>>> Stashed changes
       ]}
     />
   );

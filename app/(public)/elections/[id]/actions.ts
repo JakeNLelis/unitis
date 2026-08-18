@@ -156,6 +156,7 @@ export async function registerPartylist(formData: FormData) {
     faculty: candidate.faculty || null,
     department: candidate.department || null,
     campaign_manager: registered_by_name,
+    has_two_failing_grades: candidate.has_two_failing_grades || false,
   }));
 
   const { error: candidatesInsertError } = await adminSupabase

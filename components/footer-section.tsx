@@ -3,7 +3,7 @@ import Link from "next/link";
 
 function FooterSection() {
   return (
-    <footer className="flex flex-col px-6 md:px-12 py-10 md:py-6 text-[10px] border-t border-border mt-auto">
+    <footer id="footer" className="flex flex-col px-6 md:px-12 py-10 md:py-6 text-[10px] border-t border-border mt-auto">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-4 mb-10 md:mb-6">
         <div className="flex flex-col w-full md:w-48 gap-3">
           <Logo size="sm" color="blue" />

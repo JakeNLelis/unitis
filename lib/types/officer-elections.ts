@@ -18,12 +18,20 @@ export interface VoterMasterlistVoter {
   voter_id: string;
   student_id: string;
   is_voted: boolean;
+  faculty_id: string | null;
+  course_id: string | null;
+  faculties?: { acronym: string | null } | null;
+  courses?: { acronym: string | null } | null;
 }
 
 export interface VoterMasterlistProps {
   electionId: string;
   voters: VoterMasterlistVoter[];
   canEdit: boolean;
+  faculties: Array<{ faculty_id: string; name: string; acronym: string | null }>;
+  courses: Array<{ course_id: string; name: string; acronym: string | null; faculty_id: string | null }>;
+  electionType: string;
+  electionFacultyId?: string | null;
 }
 
 export interface TurnoutAdjustmentFormProps {
@@ -66,6 +74,7 @@ export interface OfficerPositionResult {
 
 export interface ElectionResultsProps {
   electionId: string;
+  electionName: string;
 }
 
 export interface EditElectionDatesProps {

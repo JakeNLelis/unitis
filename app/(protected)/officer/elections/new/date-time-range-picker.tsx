@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { Clock3, Calendar as CalendarIcon } from "lucide-react";
 
@@ -35,6 +35,16 @@ export function DateTimeRangePicker({
   const [range, setRange] = useState<DateRange | undefined>();
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("17:00");
+  const [monthsCount, setMonthsCount] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setMonthsCount(window.innerWidth < 768 ? 1 : 2);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const startDateTime = useMemo(
     () => buildDateTimeLocalValue(range?.from, startTime),
@@ -69,7 +79,7 @@ export function DateTimeRangePicker({
             mode="range"
             selected={range}
             onSelect={setRange}
-            numberOfMonths={2}
+            numberOfMonths={monthsCount}
             className="w-full flex justify-center"
           />
         </div>

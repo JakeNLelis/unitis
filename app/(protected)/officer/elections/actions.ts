@@ -4,17 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { TurnoutAdjustmentInput } from "@/lib/types/election";
+import { logAdminAction } from "@/lib/logging";
 import { isElectionActive, isValidStudentId } from "@/lib/utils";
 import {
   canActorCreateElectionType,
-  getElectionPermissionsForActor,
 } from "@/lib/election-permissions";
-import type {
-  ActionActor,
-  ElectionContext,
-  ElectionAccessPolicyRow,
-  ElectionActor,
-} from "@/lib/types/auth";
 import {
   requireActionActor,
   getElectionContextForActor,
@@ -61,7 +55,7 @@ export async function createElection(formData: FormData) {
     return {
       error:
         actor.role === "system-admin"
-          ? "System administrators can only create university-wide elections."
+          ? "System administrators can only create campus-wide elections."
           : "SEB officers can only create faculty-wide elections.",
     };
   }
@@ -103,10 +97,13 @@ export async function createElection(formData: FormData) {
   const supabase = await createAdminClient();
 
   const electionTypeNormalized = election_type.trim().toLowerCase();
+  const owner_faculty_code = formData.get("owner_faculty_code") as string;
   const scopeCampus =
-    actor.role === "seb-officer" ? actor.officer?.campus : null;
+    actor.role === "seb-officer" || actor.role === "chairperson" ? actor.officer?.campus : null;
   const scopeFacultyCode =
-    actor.role === "seb-officer" ? actor.officer?.faculty_code : null;
+    actor.role === "seb-officer" || actor.role === "chairperson" 
+      ? actor.officer?.faculty_code 
+      : (actor.role === "system-admin" && electionTypeNormalized === "faculty-wide" ? owner_faculty_code : null);
 
   const { data, error } = await supabase
     .from("elections")
@@ -114,11 +111,11 @@ export async function createElection(formData: FormData) {
       name,
       election_type,
       created_by:
-        actor.role === "seb-officer" ? actor.officer?.seb_officer_id : null,
+        actor.role === "seb-officer" || actor.role === "chairperson" ? actor.officer?.seb_officer_id : null,
       created_by_admin_id:
         actor.role === "system-admin" ? actor.systemAdminId : null,
       owner_campus:
-        electionTypeNormalized === "university-wide" ? null : scopeCampus,
+        electionTypeNormalized === "campus-wide" ? null : scopeCampus,
       owner_faculty_code:
         electionTypeNormalized === "faculty-wide" ? scopeFacultyCode : null,
       access_policy_locked: true,
@@ -134,13 +131,19 @@ export async function createElection(formData: FormData) {
     return { error: error.message };
   }
 
-  if (actor.role === "seb-officer" && actor.officer) {
+  if ((actor.role === "seb-officer" || actor.role === "chairperson") && actor.officer) {
     // Keep the creator officer linked to the election for existing workflows.
     await supabase
       .from("seb_officers")
       .update({ election_id: data.election_id })
       .eq("seb_officer_id", actor.officer.seb_officer_id);
   }
+
+  await logAdminAction(
+    "election.created",
+    `Created election: ${name}`,
+    data.election_id,
+  );
 
   redirect(`${redirectBase}/${data.election_id}`);
 }
@@ -181,6 +184,11 @@ export async function createPosition(formData: FormData) {
   }
 
   revalidateElectionManagementPaths(election_id);
+  await logAdminAction(
+    "position.created",
+    `Created position: ${title}`,
+    election_id,
+  );
   return { success: true };
 }
 
@@ -205,7 +213,7 @@ export async function updateCandidateStatus(
   const { data: candidateRow, error: candidateFetchError } = await supabase
     .from("candidates")
     .select(
-      "candidate_id, election_id, application_status, approved_by_display, approved_at",
+      "candidate_id, election_id, application_status, approved_by_display, approved_at, full_name",
     )
     .eq("candidate_id", candidateId)
     .single();
@@ -296,6 +304,11 @@ export async function updateCandidateStatus(
     };
   }
 
+  await logAdminAction(
+    status === "approved" ? "candidate.approved" : "candidate.rejected",
+    `${status === "approved" ? "Approved" : "Rejected"} candidate ${candidateRow.full_name}`,
+    candidateRow.election_id,
+  );
   return { success: true };
 }
 
@@ -347,6 +360,11 @@ export async function updatePosition(
     return { error: error.message };
   }
 
+  await logAdminAction(
+    "position.updated",
+    `Updated position ${positionId}`,
+    electionId,
+  );
   return { success: true };
 }
 
@@ -382,6 +400,11 @@ export async function deletePosition(positionId: string) {
     return { error: error.message };
   }
 
+  await logAdminAction(
+    "position.deleted",
+    `Deleted position ${positionId}`,
+    positionResult.election_id,
+  );
   return { success: true };
 }
 
@@ -448,6 +471,11 @@ export async function updatePartylistRequiredPositions(
   }
 
   revalidateElectionManagementPaths(electionId);
+  await logAdminAction(
+    "partylist.requirements_updated",
+    "Updated partylist required positions",
+    electionId,
+  );
   return { success: true };
 }
 
@@ -528,6 +556,12 @@ export async function updateElectionDates(
     return { error: error.message };
   }
 
+  await logAdminAction(
+    "election.dates_updated",
+    "Updated election dates",
+    electionId,
+  );
+
   return { success: true };
 }
 
@@ -598,10 +632,24 @@ export async function deleteElection(electionId: string) {
   revalidatePath("/admin/elections");
   revalidateElectionManagementPaths(electionId);
 
+  await logAdminAction({
+    actionType: "election.deleted",
+    description: `Deleted election ${electionId}`,
+    electionId,
+    actorId: actorResult.userId,
+    actorEmail: actorResult.email,
+    actorRole: actorResult.role,
+  });
+
   return { success: true };
 }
 
-export async function addVoterMasterlist(electionId: string, rawText: string) {
+export async function addVoterMasterlist(
+  electionId: string,
+  rawText: string,
+  facultyId: string | null = null,
+  courseId: string | null = null,
+) {
   const actorResult = await requireActionActor();
   if ("error" in actorResult) {
     return actorResult;
@@ -640,6 +688,56 @@ export async function addVoterMasterlist(electionId: string, rawText: string) {
 
   const supabase = await createAdminClient();
 
+  if (facultyId) {
+    const { data: faculty, error: facultyError } = await supabase
+      .from("faculties")
+      .select("faculty_id, acronym")
+      .eq("faculty_id", facultyId)
+      .single();
+    if (facultyError || !faculty) {
+      return { error: "Invalid faculty selected." };
+    }
+
+    if (permissionContext.election.owner_faculty_code) {
+      if (faculty.acronym !== permissionContext.election.owner_faculty_code) {
+        return { error: "Selected faculty does not match the election's assigned faculty." };
+      }
+    }
+  }
+
+  if (courseId) {
+    const { data: course, error: courseError } = await supabase
+      .from("courses")
+      .select("course_id, departments(faculty_id, faculties(acronym))")
+      .eq("course_id", courseId)
+      .single();
+    if (courseError || !course) {
+      return { error: "Invalid course selected." };
+    }
+
+    const courseFacultyId = Array.isArray(course.departments)
+      ? course.departments[0]?.faculty_id
+      : (course.departments as Record<string, unknown>)?.faculty_id;
+
+    const facultiesData = Array.isArray(course.departments)
+      ? course.departments[0]?.faculties
+      : (course.departments as Record<string, unknown>)?.faculties;
+      
+    const courseFacultyAcronym = Array.isArray(facultiesData)
+      ? facultiesData[0]?.acronym
+      : (facultiesData as Record<string, unknown>)?.acronym;
+
+    if (facultyId) {
+      if (courseFacultyId !== facultyId) {
+        return { error: "Selected course does not belong to the selected faculty." };
+      }
+    } else if (permissionContext.election.owner_faculty_code) {
+      if (courseFacultyAcronym !== permissionContext.election.owner_faculty_code) {
+        return { error: "Selected course does not belong to the selected faculty." };
+      }
+    }
+  }
+
   // Get existing student IDs for this election to skip duplicates
   const { data: existing } = await supabase
     .from("voters")
@@ -662,13 +760,38 @@ export async function addVoterMasterlist(electionId: string, rawText: string) {
     student_id: studentId,
     email: `${studentId}@masterlist.pending`,
     is_voted: false,
+    faculty_id: facultyId || null,
+    course_id: courseId || null,
   }));
 
-  const { error } = await supabase.from("voters").insert(rows);
-
-  if (error) {
-    return { error: error.message };
+  const CHUNK_SIZE = 500;
+  let totalInserted = 0;
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+    const { error } = await supabase.from("voters").insert(chunk);
+    
+    if (error) {
+      if (totalInserted > 0) {
+        await logAdminAction(
+          "voter.masterlist_added",
+          `Added ${totalInserted} voters to masterlist before encountering an error`,
+          electionId,
+        );
+      }
+      return { 
+        error: `Error in batch insert: ${error.message}. Successfully added ${totalInserted} before failing.`,
+        added: totalInserted,
+        success: false 
+      };
+    }
+    totalInserted += chunk.length;
   }
+
+  await logAdminAction(
+    "voter.masterlist_added",
+    `Added ${newIds.length} voters to masterlist (${uniqueIds.length - newIds.length} skipped)`,
+    electionId,
+  );
 
   return {
     success: true,
@@ -709,6 +832,11 @@ export async function removeVoter(voterId: string) {
     return { error: error.message };
   }
 
+  await logAdminAction(
+    "voter.removed",
+    `Removed voter ${voterId}`,
+    voterResult.election_id,
+  );
   return { success: true };
 }
 
@@ -740,6 +868,12 @@ export async function clearVoterMasterlist(electionId: string) {
     return { error: error.message };
   }
 
+  await logAdminAction(
+    "voter.masterlist_cleared",
+    "Cleared voter masterlist",
+    electionId,
+  );
+
   return { success: true };
 }
 
@@ -754,7 +888,7 @@ export async function clearVoterMasterlist(electionId: string) {
  * - Election manager auth required (SEB officer or system admin)
  * - Actor must have edit rights on target election
  * - Election must be active
- * - At least one of casted_votes_delta or expected_voters_value required
+ * - At least one of casted_votes_delta or expected_voters_delta required
  * - Validated values must be non-negative
  * - If casted_votes > expected_voters after adjustment, auto-adjust expected_voters = casted_votes
  */
@@ -782,7 +916,7 @@ export async function submitTurnoutAdjustment(
     return { error: inputValidationError };
   }
 
-  const supabase = await createAdminClient();
+
 
   const election = permissionContext.election;
 
@@ -805,5 +939,18 @@ export async function submitTurnoutAdjustment(
   revalidatePath(`/elections/${electionId}/turnout`); // Live turnout (US3)
   revalidatePath("/archive"); // Archive page (US3)
 
+  await logAdminAction(
+    "turnout.adjusted",
+    "Adjusted turnout for election",
+    electionId,
+  );
+
   return { success: true, data: adjustment };
+}
+
+export async function getFacultiesForSelect() {
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const { data } = await supabase.from("faculties").select("faculty_id, name, acronym").order("name");
+  return data || [];
 }

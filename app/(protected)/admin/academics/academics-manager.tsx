@@ -579,7 +579,7 @@ export function AcademicsManager({
                         <div className="flex items-center justify-between mb-2">
                           {editing?.type === "faculty" &&
                           editing.id === faculty.faculty_id ? (
-                            <div className="flex items-center gap-2 w-full max-w-md">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full max-w-md">
                               <Input
                                 value={editing.name}
                                 onChange={(e) =>
@@ -594,7 +594,7 @@ export function AcademicsManager({
                                 onChange={(e) =>
                                   updateEditingAcronym(e.target.value)
                                 }
-                                className="h-8 w-28 text-sm"
+                                className="h-8 w-full sm:w-28 text-sm"
                                 disabled={loading}
                                 placeholder="Acronym"
                               />
@@ -692,7 +692,7 @@ export function AcademicsManager({
                                 <div className="flex items-center justify-between mb-2">
                                   {editing?.type === "department" &&
                                   editing.id === dept.department_id ? (
-                                    <div className="flex items-center gap-2 w-full max-w-md">
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full max-w-md">
                                       <Input
                                         value={editing.name}
                                         onChange={(e) =>
@@ -704,10 +704,10 @@ export function AcademicsManager({
                                       />
                                       <Input
                                         value={editing.acronym || ""}
-                                        onChange={(e) =>
-                                          updateEditingAcronym(e.target.value)
+                                        onChange={(event) =>
+                                          updateEditingAcronym(event.target.value)
                                         }
-                                        className="h-8 w-28 text-sm"
+                                        className="h-8 w-full sm:w-28 text-sm"
                                         disabled={loading}
                                         placeholder="Acronym"
                                       />
@@ -804,7 +804,7 @@ export function AcademicsManager({
                                       >
                                         {editing?.type === "course" &&
                                         editing.id === course.course_id ? (
-                                          <div className="flex items-center gap-2 w-full max-w-md">
+                                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full max-w-md">
                                             <Input
                                               value={editing.name}
                                               onChange={(e) =>
@@ -823,7 +823,7 @@ export function AcademicsManager({
                                                   e.target.value,
                                                 )
                                               }
-                                              className="h-8 w-28 text-sm"
+                                              className="h-8 w-full sm:w-28 text-sm"
                                               disabled={loading}
                                               placeholder="Acronym"
                                             />
