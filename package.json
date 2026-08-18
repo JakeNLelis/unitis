@@ -20,11 +20,11 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.511.0",
-    "next": "latest",
+    "next": "16.1.6",
     "radix-ui": "^1.4.3",
-    "react": "^19.0.0",
+    "react": "19.2.4",
     "react-day-picker": "^9.14.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "19.2.4",
     "recharts": "^3.8.0",
     "tailwind-merge": "^3.3.0"
   },
@@ -44,6 +44,6 @@
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.2.1",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }
