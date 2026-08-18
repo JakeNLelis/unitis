@@ -9,6 +9,8 @@ const PUBLIC_PATH_PREFIXES = [
   "/auth",
   "/elections",
   "/archive",
+  "/special-election",
+  "/specialelection2026",
   "/unauthorized",
 ] as const;
 
