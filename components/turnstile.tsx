@@ -36,7 +36,6 @@ declare global {
       reset: (widgetId: string) => void;
       remove: (widgetId: string) => void;
     };
-    onTurnstileLoaded?: () => void;
   }
 }
 
@@ -64,7 +63,11 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
     useImperativeHandle(ref, () => ({
       reset: () => {
         if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.reset(widgetIdRef.current);
+          try {
+            window.turnstile.reset(widgetIdRef.current);
+          } catch {
+            // Ignore
+          }
         }
       },
     }));
@@ -75,12 +78,11 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
       function renderWidget() {
         if (!containerRef.current || !window.turnstile || !isMounted) return;
 
-        // Clean up previous widget if any
         if (widgetIdRef.current) {
           try {
             window.turnstile.remove(widgetIdRef.current);
           } catch {
-            // Ignore cleanup errors
+            // Ignore
           }
           widgetIdRef.current = null;
         }
@@ -92,7 +94,17 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
               if (isMounted) onSuccess(token);
             },
             "error-callback": (err: unknown) => {
-              if (isMounted && onError) onError(err);
+              if (isMounted) {
+                if (onError) onError(err);
+                // In local development, if domain is not configured or blocked, fallback
+                if (
+                  typeof window !== "undefined" &&
+                  (window.location.hostname === "localhost" ||
+                    window.location.hostname === "127.0.0.1")
+                ) {
+                  onSuccess("dummy_dev_token");
+                }
+              }
             },
             "expired-callback": () => {
               if (isMounted && onExpire) onExpire();
@@ -105,8 +117,9 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
         }
       }
 
-      // Check if script is already added
-      const existingScript = document.getElementById("cloudflare-turnstile-api");
+      const existingScript = document.getElementById(
+        "cloudflare-turnstile-api",
+      );
 
       if (window.turnstile) {
         renderWidget();
@@ -119,6 +132,16 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
         script.defer = true;
         script.onload = () => {
           renderWidget();
+        };
+        script.onerror = () => {
+          // If script blocked by adblocker on localhost
+          if (
+            typeof window !== "undefined" &&
+            (window.location.hostname === "localhost" ||
+              window.location.hostname === "127.0.0.1")
+          ) {
+            onSuccess("dummy_dev_token");
+          }
         };
         document.head.appendChild(script);
       } else {
