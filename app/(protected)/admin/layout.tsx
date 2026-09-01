@@ -17,6 +17,7 @@ async function AdminNav() {
         { href: "/admin/elections", label: "Elections" },
         { href: "/admin/academics", label: "Academics" },
         { href: "/admin/special-election", label: "Special Election" },
+        { href: "/admin/usscsplebiscite", label: "USSC Plebiscite" },
         { href: "/admin/logs", label: "Audit Logs" },
       ]}
     />

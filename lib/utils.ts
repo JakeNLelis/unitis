@@ -21,6 +21,46 @@ export function isValidStudentId(studentId: string): boolean {
   return STUDENT_ID_PATTERN.test(normalized);
 }
 
+export function maskEmail(email: string): string {
+  if (!email || typeof email !== "string") {
+    return "";
+  }
+
+  const trimmed = email.trim();
+  const atIndex = trimmed.indexOf("@");
+  if (atIndex === -1) {
+    return maskLocalPart(trimmed);
+  }
+
+  const localPart = trimmed.slice(0, atIndex);
+  const domainPart = trimmed.slice(atIndex);
+
+  return `${maskLocalPart(localPart)}${domainPart}`;
+}
+
+function maskLocalPart(local: string): string {
+  const len = local.length;
+  if (len === 0) return "";
+  if (len === 1) return "*";
+  if (len === 2) return `${local[0]}*`;
+  if (len === 3) return `${local[0]}*${local[2]}`;
+  if (len === 4) return `${local[0]}**${local[3]}`;
+
+  return local
+    .split("")
+    .map((char, index) => {
+      if (index === 0 || index === len - 1) {
+        return char;
+      }
+      // Retain every 3rd character and middle landmarks, mask other characters with *
+      if (index % 3 === 0) {
+        return char;
+      }
+      return "*";
+    })
+    .join("");
+}
+
 export function calculateAgeFromBirthDate(
   birthDate: string,
   now: Date = new Date(),

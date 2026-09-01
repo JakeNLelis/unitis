@@ -1,11 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { isValidStudentId, normalizeStudentId } from "@/lib/utils";
+import { isValidStudentId, maskEmail, normalizeStudentId } from "@/lib/utils";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { applyTarpitDelay } from "@/lib/tarpit";
 
-export type SpecialElectionLookupResult =
+export type UsscPlebisciteLookupResult =
   | { error: string }
   | {
       notFound: true;
@@ -16,8 +16,10 @@ export type SpecialElectionLookupResult =
   | {
       success: true;
       studentName: string;
-      email: string;
+      maskedEmail: string;
+      hasEmail: boolean;
       googleFormUrl: string;
+      altEmailGoogleFormUrl: string;
       facultyAssigned: string;
     };
 
@@ -32,11 +34,11 @@ function getRosterField(row: Record<string, unknown>, ...keys: string[]) {
   return "";
 }
 
-export async function lookupSpecialElectionVoter(
+export async function lookupUsscPlebisciteVoter(
   facultyCode: string,
   studentId: string,
   turnstileToken?: string,
-): Promise<SpecialElectionLookupResult> {
+): Promise<UsscPlebisciteLookupResult> {
   // A.3 Progressive Tarpitting: Add intentional asynchronous delay to thwart automated scrapers
   await applyTarpitDelay(1000, 400);
 
@@ -70,14 +72,14 @@ export async function lookupSpecialElectionVoter(
   const supabase = await createClient();
 
   const { data: rosterMatches, error: rosterError } = await supabase
-    .from("specialelection2026")
+    .from("usscplebiscite2026")
     .select("*")
     .eq("student_id", normalizedStudentId.toUpperCase());
 
   if (rosterError) {
     return {
       error:
-        "The special-election roster is unavailable right now. Please try again later.",
+        "The USSC plebiscite roster is unavailable right now. Please try again later.",
     };
   }
 
@@ -90,63 +92,24 @@ export async function lookupSpecialElectionVoter(
     return assignedFaculty === normalizedFaculty.toUpperCase();
   });
 
-  if (!rosterMatches || rosterMatches.length === 0) {
+  if (!rosterMatches || rosterMatches.length === 0 || !matchingRecord) {
     const facultyCodeUpper = normalizedFaculty.toUpperCase();
     const { data: facultyOfficers, error: officersError } = await supabase
       .from("seb_officers")
       .select("email, faculty_code, campus")
       .eq("faculty_code", facultyCodeUpper);
 
-    if (officersError) {
-      return {
-        notFound: true,
-        message:
-          "Your student ID was not found in the faculty roster of eligible voters.",
-        facultyEmails: "",
-        facultyCode: facultyCodeUpper,
-      };
-    }
-
-    const facultyEmails = (facultyOfficers ?? [])
-      .map((officer) => officer.email)
-      .filter(Boolean)
-      .join(", ");
+    const facultyEmails = officersError
+      ? ""
+      : (facultyOfficers ?? [])
+          .map((officer) => officer.email)
+          .filter(Boolean)
+          .join(", ");
 
     return {
       notFound: true,
       message:
-        "Your student ID was not found in the faculty roster of eligible voters.",
-      facultyEmails,
-      facultyCode: facultyCodeUpper,
-    };
-  }
-
-  if (!matchingRecord) {
-    const facultyCodeUpper = normalizedFaculty.toUpperCase();
-    const { data: facultyOfficers, error: officersError } = await supabase
-      .from("seb_officers")
-      .select("email, faculty_code, campus")
-      .eq("faculty_code", facultyCodeUpper);
-
-    if (officersError) {
-      return {
-        notFound: true,
-        message:
-          "Your student ID was not found in the faculty roster of eligible voters.",
-        facultyEmails: "",
-        facultyCode: facultyCodeUpper,
-      };
-    }
-
-    const facultyEmails = (facultyOfficers ?? [])
-      .map((officer) => officer.email)
-      .filter(Boolean)
-      .join(", ");
-
-    return {
-      notFound: true,
-      message:
-        "Your student ID was not found in the faculty roster of eligible voters.",
+        "Your student ID was not found in the roster of eligible voters for this faculty.",
       facultyEmails,
       facultyCode: facultyCodeUpper,
     };
@@ -154,21 +117,42 @@ export async function lookupSpecialElectionVoter(
 
   const facultyAssigned = getRosterField(
     matchingRecord as Record<string, unknown>,
-    "faculty",
     "faculty_assigned",
+    "faculty",
   );
+
   const googleFormUrl = getRosterField(
     matchingRecord as Record<string, unknown>,
-    "ballotlink",
     "google_form_url",
+    "ballotlink",
     "ballot_link",
   );
+
+  const rawEmail = getRosterField(
+    matchingRecord as Record<string, unknown>,
+    "email_address",
+    "email",
+    "student_email",
+  );
+
+  const altEmailGoogleFormUrl = getRosterField(
+    matchingRecord as Record<string, unknown>,
+    "alt_email_google_form_url",
+    "alternative_email_google_form_url",
+    "alt_email_form_url",
+    "alt_email_google_form_link",
+    "change_email_form_url",
+  );
+
+  const maskedEmail = rawEmail ? maskEmail(rawEmail) : "";
 
   return {
     success: true,
     studentName: "Eligible voter",
-    email: "No email stored for this roster entry.",
+    maskedEmail,
+    hasEmail: Boolean(rawEmail),
     googleFormUrl,
+    altEmailGoogleFormUrl,
     facultyAssigned,
   };
 }

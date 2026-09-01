@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SpecialElectionAccess } from "@/components/special-election-access";
+import { UsscPlebisciteAccess } from "@/components/ussc-plebiscite-access";
 
 const facultyList = [
   "FC",
@@ -21,7 +21,7 @@ function getFacultyOptions() {
   }));
 }
 
-export default function SpecialElection2026Page() {
+export default function UsscPlebiscite2026Page() {
   const faculties = getFacultyOptions();
 
   return (
@@ -38,14 +38,14 @@ export default function SpecialElection2026Page() {
 
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold font-heading tracking-tight text-foreground">
-            Special Election 2026
+            USSC Plebiscite 2026
           </h1>
           <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-            Verify your faculty roster status and access your assigned voting form.
+            Verify your student voter eligibility and retrieve your assigned ballot form.
           </p>
         </div>
 
-        <SpecialElectionAccess faculties={faculties} />
+        <UsscPlebisciteAccess faculties={faculties} />
       </div>
     </main>
   );

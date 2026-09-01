@@ -13,30 +13,41 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { lookupSpecialElectionVoter } from "@/app/specialelection2026/actions";
+import { lookupUsscPlebisciteVoter } from "@/app/usscplebiscite2026/actions";
 import { Turnstile, type TurnstileRef } from "@/components/turnstile";
 
-export function SpecialElectionAccess({
+interface FacultyOption {
+  value: string;
+  label: string;
+}
+
+interface SuccessState {
+  studentName: string;
+  maskedEmail: string;
+  hasEmail: boolean;
+  googleFormUrl: string;
+  altEmailGoogleFormUrl: string;
+  facultyAssigned: string;
+}
+
+interface NotFoundState {
+  message: string;
+  facultyEmails: string;
+  facultyCode: string;
+}
+
+export function UsscPlebisciteAccess({
   faculties,
 }: {
-  faculties: { value: string; label: string }[];
+  faculties: FacultyOption[];
 }) {
   const [faculty, setFaculty] = useState("");
   const [studentId, setStudentId] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState<{
-    studentName: string;
-    email: string;
-    googleFormUrl: string;
-    facultyAssigned: string;
-  } | null>(null);
-  const [notFound, setNotFound] = useState<{
-    message: string;
-    facultyEmails: string;
-    facultyCode: string;
-  } | null>(null);
+  const [success, setSuccess] = useState<SuccessState | null>(null);
+  const [notFound, setNotFound] = useState<NotFoundState | null>(null);
   const turnstileRef = useRef<TurnstileRef>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -47,7 +58,7 @@ export function SpecialElectionAccess({
     setLoading(true);
 
     try {
-      const result = await lookupSpecialElectionVoter(
+      const result = await lookupUsscPlebisciteVoter(
         faculty,
         studentId,
         turnstileToken,
@@ -66,8 +77,10 @@ export function SpecialElectionAccess({
       } else if ("success" in result && result.success) {
         setSuccess({
           studentName: result.studentName,
-          email: result.email,
+          maskedEmail: result.maskedEmail,
+          hasEmail: result.hasEmail,
           googleFormUrl: result.googleFormUrl,
+          altEmailGoogleFormUrl: result.altEmailGoogleFormUrl,
           facultyAssigned: result.facultyAssigned,
         });
       }
@@ -177,7 +190,7 @@ export function SpecialElectionAccess({
                   Eligible Voter Confirmed
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Your record is registered in the official election roster.
+                  Your record is registered in the official plebiscite roster.
                 </p>
               </div>
             </div>
@@ -203,10 +216,19 @@ export function SpecialElectionAccess({
 
               <div className="sm:col-span-2 rounded-md border border-border p-3">
                 <dt className="text-xs text-muted-foreground uppercase font-semibold">
-                  Ballot Access Account
+                  Authorized Voting Email
                 </dt>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Use your official university email (e.g. <code>{studentId || "studentid"}@vsu.edu.ph</code>) or your enrolled email to sign in.
+                <dd className="font-mono text-sm text-foreground mt-1">
+                  {success.hasEmail ? (
+                    <span className="font-medium">{success.maskedEmail}</span>
+                  ) : (
+                    <span className="text-muted-foreground italic text-xs">
+                      Official university email ({studentId}@vsu.edu.ph)
+                    </span>
+                  )}
+                </dd>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Ensure you are logged into Google with this account to access the ballot.
                 </p>
               </div>
             </dl>
@@ -224,6 +246,27 @@ export function SpecialElectionAccess({
                     <ExternalLink className="size-4" />
                   </Link>
                 </Button>
+              </div>
+            )}
+
+            {success.altEmailGoogleFormUrl && (
+              <div className="rounded-md bg-muted/40 border border-border p-3 text-xs text-muted-foreground space-y-1">
+                <p className="font-medium text-foreground">
+                  Cannot access your registered email?
+                </p>
+                <p>
+                  Submit a request to update your email via the{" "}
+                  <Link
+                    href={success.altEmailGoogleFormUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline text-foreground font-medium hover:text-primary inline-flex items-center gap-1"
+                  >
+                    Email Change Request Form
+                    <ExternalLink className="size-3" />
+                  </Link>
+                  .
+                </p>
               </div>
             )}
 
