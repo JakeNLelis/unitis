@@ -55,6 +55,13 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const widgetIdRef = useRef<string | null>(null);
 
+    // Keep latest callbacks in a ref to avoid re-rendering and tearing down the
+    // Turnstile widget whenever parent component re-renders (e.g. while typing).
+    const callbacksRef = useRef({ onSuccess, onError, onExpire });
+    useEffect(() => {
+      callbacksRef.current = { onSuccess, onError, onExpire };
+    });
+
     const activeSiteKey =
       siteKey ||
       process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY ||
@@ -80,7 +87,11 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
 
         if (widgetIdRef.current) {
           try {
-            window.turnstile.remove(widgetIdRef.current);
+            // Only remove if the container is still in the DOM to avoid
+            // "Nothing to remove found for the provided container" error
+            if (containerRef.current && document.body.contains(containerRef.current)) {
+              window.turnstile.remove(widgetIdRef.current);
+            }
           } catch {
             // Ignore
           }
@@ -91,23 +102,23 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: activeSiteKey,
             callback: (token: string) => {
-              if (isMounted) onSuccess(token);
+              if (isMounted) callbacksRef.current.onSuccess(token);
             },
             "error-callback": (err: unknown) => {
               if (isMounted) {
-                if (onError) onError(err);
+                if (callbacksRef.current.onError) callbacksRef.current.onError(err);
                 // In local development, if domain is not configured or blocked, fallback
                 if (
                   typeof window !== "undefined" &&
                   (window.location.hostname === "localhost" ||
                     window.location.hostname === "127.0.0.1")
                 ) {
-                  onSuccess("dummy_dev_token");
+                  callbacksRef.current.onSuccess("dummy_dev_token");
                 }
               }
             },
             "expired-callback": () => {
-              if (isMounted && onExpire) onExpire();
+              if (isMounted && callbacksRef.current.onExpire) callbacksRef.current.onExpire();
             },
             theme,
             size,
@@ -140,7 +151,7 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
             (window.location.hostname === "localhost" ||
               window.location.hostname === "127.0.0.1")
           ) {
-            onSuccess("dummy_dev_token");
+            callbacksRef.current.onSuccess("dummy_dev_token");
           }
         };
         document.head.appendChild(script);
@@ -152,13 +163,18 @@ export const Turnstile = forwardRef<TurnstileRef, TurnstileProps>(
         isMounted = false;
         if (widgetIdRef.current && window.turnstile) {
           try {
-            window.turnstile.remove(widgetIdRef.current);
+            // Only remove if the container is still in the DOM to avoid the Turnstile error
+            // "Nothing to remove found for the provided container" during unmounting
+            if (containerRef.current && document.body.contains(containerRef.current)) {
+              window.turnstile.remove(widgetIdRef.current);
+            }
           } catch {
             // Ignore
           }
+          widgetIdRef.current = null;
         }
       };
-    }, [activeSiteKey, theme, size, onSuccess, onError, onExpire]);
+    }, [activeSiteKey, theme, size]);
 
     return <div ref={containerRef} className={className} />;
   },
