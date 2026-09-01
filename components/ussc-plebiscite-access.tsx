@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { lookupUsscPlebisciteVoter } from "@/app/usscplebiscite2026/actions";
 import { Turnstile, type TurnstileRef } from "@/components/turnstile";
+import { ensureAbsoluteUrl } from "@/lib/utils";
 
 interface FacultyOption {
   value: string;
@@ -236,15 +237,15 @@ export function UsscPlebisciteAccess({
             {success.googleFormUrl && (
               <div className="pt-1">
                 <Button asChild className="w-full font-medium" size="lg">
-                  <Link
-                    href={success.googleFormUrl}
+                  <a
+                    href={ensureAbsoluteUrl(success.googleFormUrl)}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center justify-center gap-2"
                   >
                     <span>Proceed to Ballot Form</span>
                     <ExternalLink className="size-4" />
-                  </Link>
+                  </a>
                 </Button>
               </div>
             )}
@@ -252,34 +253,23 @@ export function UsscPlebisciteAccess({
             {success.altEmailGoogleFormUrl && (
               <div className="rounded-md bg-muted/40 border border-border p-3 text-xs text-muted-foreground space-y-1">
                 <p className="font-medium text-foreground">
-                  Cannot access your registered email?
+                  Cannot access your authorized email?
                 </p>
                 <p>
                   Submit a request to update your email via the{" "}
-                  <Link
-                    href={success.altEmailGoogleFormUrl}
+                  <a
+                    href={ensureAbsoluteUrl(success.altEmailGoogleFormUrl)}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="underline text-foreground font-medium hover:text-primary inline-flex items-center gap-1"
                   >
-                    Email Change Request Form
+                    Alternate Email Form
                     <ExternalLink className="size-3" />
-                  </Link>
+                  </a>
                   .
                 </p>
               </div>
             )}
-
-            <div className="pt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReset}
-                className="w-full text-xs text-muted-foreground hover:text-foreground"
-              >
-                Look up another Student ID
-              </Button>
-            </div>
           </div>
         )}
 
@@ -295,26 +285,18 @@ export function UsscPlebisciteAccess({
               </p>
             </div>
 
-            <div className="rounded-md border border-border p-3 text-xs text-muted-foreground space-y-1">
+            <div className="rounded-md border border-border p-3 text-xs text-muted-foreground space-y-1.5">
               <p className="font-medium text-foreground">Next steps</p>
               <p>
-                If you believe this is an omission, contact your Faculty Student Electoral Board ({notFound.facultyCode || faculty}):
+                If you believe this is a mistake, please contact{" "}
+                <a
+                  href="mailto:fcbaybayseb@vsu.edu.ph"
+                  className="underline text-foreground font-medium hover:text-primary transition-colors"
+                >
+                  fcbaybayseb@vsu.edu.ph
+                </a>{" "}
+                for assistance.
               </p>
-              {notFound.facultyEmails ? (
-                <p className="font-mono text-foreground font-medium pt-1">
-                  {notFound.facultyEmails}
-                </p>
-              ) : (
-                <p className="pt-1">
-                  Email:{" "}
-                  <a
-                    href="mailto:fcbaybayseb@vsu.edu.ph"
-                    className="underline text-foreground font-medium"
-                  >
-                    fcbaybayseb@vsu.edu.ph
-                  </a>
-                </p>
-              )}
             </div>
 
             <Button

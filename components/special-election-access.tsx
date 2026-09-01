@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { lookupSpecialElectionVoter } from "@/app/specialelection2026/actions";
 import { Turnstile, type TurnstileRef } from "@/components/turnstile";
+import { ensureAbsoluteUrl } from "@/lib/utils";
 
 export function SpecialElectionAccess({
   faculties,
@@ -214,15 +215,15 @@ export function SpecialElectionAccess({
             {success.googleFormUrl && (
               <div className="pt-1">
                 <Button asChild className="w-full font-medium" size="lg">
-                  <Link
-                    href={success.googleFormUrl}
+                  <a
+                    href={ensureAbsoluteUrl(success.googleFormUrl)}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center justify-center gap-2"
                   >
                     <span>Proceed to Ballot Form</span>
                     <ExternalLink className="size-4" />
-                  </Link>
+                  </a>
                 </Button>
               </div>
             )}

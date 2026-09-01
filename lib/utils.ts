@@ -257,3 +257,16 @@ function isElectionEnded(
 
   return now.getTime() > end.getTime();
 }
+
+/** Ensure a URL is fully qualified with a protocol prefix.
+ *  If it does not have http:// or https://, prepend https:// to prevent 
+ *  the browser from treating it as a relative path and prepending the base URL (localhost/plenums.app)
+ */
+export function ensureAbsoluteUrl(url: string): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (/^(?:f|ht)tps?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
