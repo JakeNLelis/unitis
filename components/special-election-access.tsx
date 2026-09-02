@@ -136,10 +136,11 @@ export function SpecialElectionAccess({
               </Label>
               <Input
                 id="student-id"
+                type="text"
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
                 placeholder="23-1-01457"
-                inputMode="numeric"
+                inputMode="text"
                 pattern="[0-9]{2}-[0-9]-[0-9]{5}"
                 title="Use format XX-X-XXXXX, e.g. 23-1-01457"
                 className="h-9 font-mono text-sm"
